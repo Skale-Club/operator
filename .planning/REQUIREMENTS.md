@@ -15,10 +15,10 @@
 
 ### Authentication
 
-- [ ] **AUTH-01**: Admin can log in with email and password via Supabase Auth
-- [ ] **AUTH-02**: Admin session persists across browser refreshes
+- [x] **AUTH-01**: Admin can log in with email and password via Supabase Auth
+- [x] **AUTH-02**: Admin session persists across browser refreshes
 - [ ] **AUTH-03**: Admin can log out from any page
-- [ ] **AUTH-04**: Unauthenticated users are redirected to login page
+- [x] **AUTH-04**: Unauthenticated users are redirected to login page
 - [ ] **AUTH-05**: User account is associated with an organization and role (admin/member)
 
 ### Action Engine
@@ -114,10 +114,10 @@
 | TEN-03 | Phase 1 | Pending |
 | TEN-04 | Phase 1 | Pending |
 | TEN-05 | Phase 1 | Pending |
-| AUTH-01 | Phase 1 | Pending |
-| AUTH-02 | Phase 1 | Pending |
+| AUTH-01 | Phase 1 | Complete (01-02) |
+| AUTH-02 | Phase 1 | Complete (01-02) |
 | AUTH-03 | Phase 1 | Pending |
-| AUTH-04 | Phase 1 | Pending |
+| AUTH-04 | Phase 1 | Complete (01-02) |
 | AUTH-05 | Phase 1 | Pending |
 | ACTN-01 | Phase 2 | Pending |
 | ACTN-02 | Phase 2 | Pending |
