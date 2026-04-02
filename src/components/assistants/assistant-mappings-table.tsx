@@ -248,9 +248,7 @@ export function AssistantMappingsTable({ mappings: initialMappings }: AssistantM
         mode="create"
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}
-        onSuccess={() => {
-          // Page will revalidate via server action's revalidatePath
-        }}
+        onSuccess={() => window.location.reload()}
       />
 
       {editMapping && (

@@ -1,5 +1,6 @@
 'use server'
 import { createClient } from '@/lib/supabase/server'
+import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 
 function generateSlug(name: string): string {
@@ -8,14 +9,27 @@ function generateSlug(name: string): string {
 
 export async function createOrganization(data: { name: string }): Promise<{ error?: string } | void> {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated.' }
+
+  const admin = createServiceRoleClient()
   const slug = generateSlug(data.name)
-  const { error } = await supabase
+
+  const { data: org, error: orgError } = await admin
     .from('organizations')
     .insert({ name: data.name, slug })
-  if (error) {
-    if (error.code === '23505') return { error: 'An organization with this name already exists.' }
-    return { error: error.message }
+    .select('id')
+    .single()
+  if (orgError) {
+    if (orgError.code === '23505') return { error: 'An organization with this name already exists.' }
+    return { error: orgError.message }
   }
+
+  const { error: memberError } = await admin
+    .from('org_members')
+    .insert({ organization_id: org.id, user_id: user.id, role: 'admin' })
+  if (memberError) return { error: memberError.message }
+
   revalidatePath('/dashboard/organizations')
 }
 
