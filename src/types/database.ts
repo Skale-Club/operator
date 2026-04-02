@@ -41,6 +41,7 @@ export interface Database {
           is_active?: boolean
           updated_at?: string
         }
+        Relationships: []
       }
       org_members: {
         Row: {
@@ -60,6 +61,22 @@ export interface Database {
         Update: {
           role?: UserRole
         }
+        Relationships: [
+          {
+            foreignKeyName: 'org_members_organization_id_fkey'
+            columns: ['organization_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'org_members_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          }
+        ]
       }
       assistant_mappings: {
         Row: {
@@ -86,6 +103,15 @@ export interface Database {
           is_active?: boolean
           updated_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: 'assistant_mappings_organization_id_fkey'
+            columns: ['organization_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          }
+        ]
       }
     }
     Views: Record<string, never>
