@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: VoiceOps MVP
 status: executing
-last_updated: "2026-04-02T21:49:26.657Z"
+last_updated: "2026-04-02T23:15:00.000Z"
 last_activity: 2026-04-02
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 6
-  completed_plans: 1
+  completed_plans: 3
 ---
 
 # VoiceOps — State
@@ -17,9 +17,9 @@ progress:
 ## Current Position
 
 Phase: 1 (Foundation) — EXECUTING
-Plan: 2 of 6
+Plan: 5 of 6
 Status: Ready to execute
-Last activity: 2026-04-02
+Last activity: 2026-04-02 -- Plan 01-04 complete (Login page + dashboard layout shell + sidebar)
 
 ## Milestone
 
@@ -51,9 +51,16 @@ Started: 2026-04-02
 | No Stripe/billing in MVP | Monetization handled outside platform initially |
 | TEN + AUTH in one foundation phase | RLS and auth are co-dependent — neither is safe to ship without the other |
 | ACTN as a dedicated phase before OBS | You need tool executions before you can observe them — action_logs feeds the inline badges in Phase 3 |
+| NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY naming | New Supabase key naming (not ANON_KEY) since late 2025 — used consistently across all clients |
+| getClaims() in middleware | Supabase deprecated getSession() in middleware — getClaims() is the current recommended approach |
+| Database type deferred to Plan 01-03 | Wave 1 parallel execution — Supabase clients import Database type but 01-03 provides the actual type |
+| Belt-and-suspenders auth guard in dashboard layout | Dashboard layout checks getUser() directly even though middleware enforces auth — protects against middleware bypass edge cases |
+| SidebarTrigger in sidebar header (not inset) | Collapses naturally with sidebar on mobile |
+| Error boundary at app root | Catches layout-level rendering errors across all routes |
 
 - [Phase 01-foundation]: vitest node environment — integration tests target Supabase server clients, not browser DOM
 - [Phase 01-foundation]: it.todo stubs allow test harness to exit 0 before any feature implementation exists
+- [Phase 01-02]: Manual scaffold instead of create-next-app due to existing files in worktree directory
 
 ## Blockers
 
