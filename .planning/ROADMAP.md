@@ -121,8 +121,15 @@ Plans:
   3. Admin can start, pause, and stop a campaign — the platform respects the configured cadence when dialing contacts via the Vapi Outbound API
   4. Each contact shows a real-time status (pending, calling, completed, failed, no answer) that updates as Vapi end-of-call webhooks arrive
   5. The same contact is never dialed more than once per campaign attempt — duplicate calls do not appear in the logs
-**Plans:** TBD
+**Plans:** 5 plans
 **UI hint:** yes
+
+Plans:
+- [ ] 05-01-PLAN.md — DB migration 005_campaigns.sql (campaigns + campaign_contacts, REPLICA IDENTITY FULL, UNIQUE deduplication) + database.ts types
+- [ ] 05-02-PLAN.md — npm install papaparse + 3 test stub files + csv-parser.ts utility with Zod validation
+- [ ] 05-03-PLAN.md — outbound.ts (Vapi POST /call client) + engine.ts (startCampaignBatch, mapEndedReasonToStatus) + /api/vapi/campaigns webhook Edge Function
+- [ ] 05-04-PLAN.md — Campaign server actions (createCampaign, getCampaigns, getCampaignDetail, importContacts, deleteCampaign) + start/pause/stop API routes + Vapi phone numbers proxy
+- [ ] 05-05-PLAN.md — Campaigns dashboard UI: list page + create form + detail page with Realtime contact status board + CSV import form + sidebar activation
 
 ---
 
@@ -134,7 +141,7 @@ Plans:
 | 2. Action Engine | 7/7 | Complete   | 2026-04-03 |
 | 3. Observability | 0/6 | Planned | - |
 | 4. Knowledge Base | 0/5 | Planned | - |
-| 5. Outbound Campaigns | 0/? | Not started | - |
+| 5. Outbound Campaigns | 0/5 | Planned | - |
 
 ---
 
@@ -159,3 +166,4 @@ Plans:
 *Phase 2 planned: 2026-04-02 — 7 plans in 4 waves (Wave 0 + Waves 1-3)*
 *Phase 3 planned: 2026-04-02 — 6 plans in 4 waves (Wave 0 + Waves 1-3)*
 *Phase 4 planned: 2026-04-02 — 5 plans in 3 waves*
+*Phase 5 planned: 2026-04-02 — 5 plans in 4 waves*
