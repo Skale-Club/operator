@@ -7,7 +7,7 @@ import { encrypt, decrypt, maskApiKey } from '@/lib/crypto'
 export type IntegrationForDisplay = {
   id: string
   organization_id: string
-  provider: 'gohighlevel' | 'twilio' | 'calcom' | 'custom_webhook'
+  provider: 'gohighlevel' | 'twilio' | 'calcom' | 'custom_webhook' | 'openai' | 'anthropic' | 'openrouter' | 'vapi'
   name: string
   masked_api_key: string // ••••••••last4 — never full key
   location_id: string | null
@@ -16,11 +16,14 @@ export type IntegrationForDisplay = {
   created_at: string
 }
 
+type Provider = IntegrationForDisplay['provider']
+
 export async function createIntegration(data: {
   name: string
   provider: string
   apiKey: string
   locationId: string
+  config?: Record<string, string>
 }): Promise<{ error?: string } | void> {
   const supabase = await createClient()
   const {
@@ -40,10 +43,11 @@ export async function createIntegration(data: {
 
   const { error } = await supabase.from('integrations').insert({
     organization_id: member.organization_id,
-    provider: data.provider as 'gohighlevel' | 'twilio' | 'calcom' | 'custom_webhook',
+    provider: data.provider as Provider,
     name: data.name,
     encrypted_api_key: encryptedKey,
     location_id: data.locationId || null,
+    config: data.config ?? {},
   })
 
   if (error) return { error: error.message }
@@ -53,7 +57,7 @@ export async function createIntegration(data: {
 
 export async function updateIntegration(
   id: string,
-  data: { name: string; locationId: string; apiKey?: string }
+  data: { name: string; locationId: string; config?: Record<string, string>; apiKey?: string }
 ): Promise<{ error?: string } | void> {
   const supabase = await createClient()
   const {
@@ -64,6 +68,7 @@ export async function updateIntegration(
   const updateData: Record<string, unknown> = {
     name: data.name,
     location_id: data.locationId || null,
+    config: data.config ?? {},
   }
 
   if (data.apiKey && data.apiKey.trim().length > 0) {
@@ -124,28 +129,70 @@ export async function testConnection(
     return { success: false, error: 'Failed to decrypt credentials.' }
   }
 
-  const locationId = integration.location_id ?? ''
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), 5000)
 
   try {
-    const response = await fetch(
-      `https://services.leadconnectorhq.com/contacts/?locationId=${encodeURIComponent(locationId)}&limit=1`,
-      {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          Version: '2021-07-28',
-        },
-        signal: controller.signal,
-      }
-    )
+    const provider = integration.provider as Provider
 
-    if (response.ok || response.status === 200 || response.status === 201) {
-      return { success: true }
+    if (provider === 'gohighlevel') {
+      const locationId = integration.location_id ?? ''
+      const response = await fetch(
+        `https://services.leadconnectorhq.com/contacts/?locationId=${encodeURIComponent(locationId)}&limit=1`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            Version: '2021-07-28',
+          },
+          signal: controller.signal,
+        }
+      )
+
+      if (response.ok || response.status === 200 || response.status === 201) {
+        return { success: true }
+      }
+      return { success: false, error: `GHL returned status ${response.status}` }
     }
 
-    return { success: false, error: `GHL returned status ${response.status}` }
+    if (provider === 'openai') {
+      const response = await fetch('https://api.openai.com/v1/models', {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${apiKey}` },
+        signal: controller.signal,
+      })
+      if (response.ok) return { success: true }
+      return { success: false, error: `OpenAI returned status ${response.status}` }
+    }
+
+    if (provider === 'anthropic') {
+      // Validate key format (sk-ant-...) — avoids billing a real API call for test
+      if (apiKey.startsWith('sk-ant-')) return { success: true }
+      return { success: false, error: 'Invalid Anthropic API key format — expected key starting with sk-ant-' }
+    }
+
+    if (provider === 'openrouter') {
+      const response = await fetch('https://openrouter.ai/api/v1/models', {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${apiKey}` },
+        signal: controller.signal,
+      })
+      if (response.ok) return { success: true }
+      return { success: false, error: `OpenRouter returned status ${response.status}` }
+    }
+
+    if (provider === 'vapi') {
+      const response = await fetch('https://api.vapi.ai/assistant', {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${apiKey}` },
+        signal: controller.signal,
+      })
+      if (response.ok) return { success: true }
+      return { success: false, error: `Vapi returned status ${response.status}` }
+    }
+
+    // Other providers (twilio, calcom, custom_webhook) — no test endpoint defined yet
+    return { success: false, error: `Test not supported for provider: ${provider}` }
   } catch (err) {
     if (err instanceof Error && err.name === 'AbortError') {
       return { success: false, error: 'Connection timed out after 5 seconds.' }

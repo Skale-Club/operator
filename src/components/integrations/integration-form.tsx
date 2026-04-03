@@ -26,27 +26,30 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
+type Provider = 'gohighlevel' | 'twilio' | 'calcom' | 'custom_webhook' | 'openai' | 'anthropic' | 'openrouter' | 'vapi'
+
+const PROVIDER_LABELS: Record<Provider, string> = {
+  gohighlevel: 'GoHighLevel',
+  twilio: 'Twilio',
+  calcom: 'Cal.com',
+  custom_webhook: 'Custom Webhook',
+  openai: 'OpenAI',
+  anthropic: 'Anthropic',
+  openrouter: 'OpenRouter',
+  vapi: 'Vapi',
+}
+
+// Single schema used for both create and edit.
+// apiKey validation is enforced at submit time for create mode.
 const integrationSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100, 'Name must be 100 characters or fewer'),
-  provider: z.enum(['gohighlevel', 'twilio', 'calcom', 'custom_webhook']),
-  apiKey: z.string().min(1, 'API key is required'),
-  locationId: z.string().min(1, 'Location ID is required'),
-})
-
-const integrationEditSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(100, 'Name must be 100 characters or fewer'),
-  provider: z.enum(['gohighlevel', 'twilio', 'calcom', 'custom_webhook']),
-  // In edit mode apiKey is optional — only re-encrypt if provided
+  provider: z.enum(['gohighlevel', 'twilio', 'calcom', 'custom_webhook', 'openai', 'anthropic', 'openrouter', 'vapi'] as const),
   apiKey: z.string(),
-  locationId: z.string().min(1, 'Location ID is required'),
+  locationId: z.string().optional(),
+  defaultModel: z.string().optional(),
 })
 
-type IntegrationFormValues = {
-  name: string
-  provider: 'gohighlevel' | 'twilio' | 'calcom' | 'custom_webhook'
-  apiKey: string
-  locationId: string
-}
+type IntegrationFormValues = z.infer<typeof integrationSchema>
 
 interface IntegrationFormProps {
   mode: 'create' | 'edit'
@@ -57,35 +60,49 @@ interface IntegrationFormProps {
 export function IntegrationForm({ mode, integration, onSuccess }: IntegrationFormProps) {
   const [isPending, setIsPending] = useState(false)
 
-  const schema = mode === 'create' ? integrationSchema : integrationEditSchema
-
   const form = useForm<IntegrationFormValues>({
-    resolver: zodResolver(schema),
+    resolver: zodResolver(integrationSchema),
     mode: 'onSubmit',
     defaultValues: {
       name: integration?.name ?? '',
-      provider: integration?.provider ?? 'gohighlevel',
+      provider: (integration?.provider ?? 'gohighlevel') as Provider,
       apiKey: '', // Never pre-fill API key for security — not even in edit mode
       locationId: integration?.location_id ?? '',
+      defaultModel: (integration?.config as Record<string, string> | null)?.model ?? '',
     },
   })
 
+  const selectedProvider = form.watch('provider')
+
   async function onSubmit(values: IntegrationFormValues) {
+    // Enforce apiKey required for create
+    if (mode === 'create' && !values.apiKey.trim()) {
+      form.setError('apiKey', { message: 'API key is required' })
+      return
+    }
+
     setIsPending(true)
     try {
       let result: { error?: string } | void = undefined
+
+      const config: Record<string, string> = {}
+      if (values.defaultModel?.trim()) {
+        config.model = values.defaultModel.trim()
+      }
 
       if (mode === 'create') {
         result = await createIntegration({
           name: values.name,
           provider: values.provider,
           apiKey: values.apiKey,
-          locationId: values.locationId,
+          locationId: values.locationId ?? '',
+          config,
         })
       } else if (integration) {
         result = await updateIntegration(integration.id, {
           name: values.name,
-          locationId: values.locationId,
+          locationId: values.locationId ?? '',
+          config,
           // Only pass apiKey if user entered a new one
           apiKey: values.apiKey.trim().length > 0 ? values.apiKey : undefined,
         })
@@ -150,10 +167,11 @@ export function IntegrationForm({ mode, integration, onSuccess }: IntegrationFor
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="gohighlevel">GoHighLevel</SelectItem>
-                    <SelectItem value="twilio">Twilio</SelectItem>
-                    <SelectItem value="calcom">Cal.com</SelectItem>
-                    <SelectItem value="custom_webhook">Custom Webhook</SelectItem>
+                    {(Object.keys(PROVIDER_LABELS) as Provider[]).map((p) => (
+                      <SelectItem key={p} value={p}>
+                        {PROVIDER_LABELS[p]}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -183,23 +201,45 @@ export function IntegrationForm({ mode, integration, onSuccess }: IntegrationFor
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="locationId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Location ID</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="GHL Location ID"
-                    disabled={isPending}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {selectedProvider === 'gohighlevel' && (
+            <FormField
+              control={form.control}
+              name="locationId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Location ID</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="GHL Location ID"
+                      disabled={isPending}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {selectedProvider === 'openrouter' && (
+            <FormField
+              control={form.control}
+              name="defaultModel"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Default Model (optional)</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="anthropic/claude-haiku-4-5"
+                      disabled={isPending}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
           <div className="flex gap-3 pt-2">
             <Button type="submit" disabled={isPending}>
