@@ -23,18 +23,18 @@
 
 ### Action Engine
 
-- [ ] **ACTN-01**: Platform receives Vapi tool-call webhooks via Edge Function and identifies the organization by assistant ID
-- [ ] **ACTN-02**: Platform routes tool calls to the correct tool configuration for that organization
-- [ ] **ACTN-03**: Admin can configure integration credentials per organization (GoHighLevel, Twilio, Cal.com, custom webhook)
-- [ ] **ACTN-04**: Integration credentials are encrypted at rest and never exposed in the UI
-- [ ] **ACTN-05**: Admin can test integration connections via a "Test Connection" button
-- [ ] **ACTN-06**: Admin can create tool configurations mapping a Vapi tool name to an action type (create_contact, get_availability, create_appointment, send_sms, knowledge_base, custom_webhook)
-- [ ] **ACTN-07**: Admin can assign a specific integration to each tool configuration
-- [ ] **ACTN-08**: Admin can set a fallback message per tool that Vapi speaks if execution fails
-- [ ] **ACTN-09**: Platform executes GoHighLevel actions (create contact, check availability, book appointment) using configured credentials
-- [ ] **ACTN-10**: Platform logs every tool execution with status (success/error/timeout), execution time in ms, request payload, and response payload
-- [ ] **ACTN-11**: Platform returns fallback message to Vapi if tool execution fails, preventing bot silence during live calls
-- [ ] **ACTN-12**: Edge Function responds to Vapi within 500ms — heavy processing is delegated asynchronously via EdgeRuntime.waitUntil()
+- [x] **ACTN-01**: Platform receives Vapi tool-call webhooks via Edge Function and identifies the organization by assistant ID
+- [x] **ACTN-02**: Platform routes tool calls to the correct tool configuration for that organization
+- [x] **ACTN-03**: Admin can configure integration credentials per organization (GoHighLevel, Twilio, Cal.com, custom webhook)
+- [x] **ACTN-04**: Integration credentials are encrypted at rest and never exposed in the UI
+- [x] **ACTN-05**: Admin can test integration connections via a "Test Connection" button
+- [x] **ACTN-06**: Admin can create tool configurations mapping a Vapi tool name to an action type (create_contact, get_availability, create_appointment, send_sms, knowledge_base, custom_webhook)
+- [x] **ACTN-07**: Admin can assign a specific integration to each tool configuration
+- [x] **ACTN-08**: Admin can set a fallback message per tool that Vapi speaks if execution fails
+- [x] **ACTN-09**: Platform executes GoHighLevel actions (create contact, check availability, book appointment) using configured credentials
+- [x] **ACTN-10**: Platform logs every tool execution with status (success/error/timeout), execution time in ms, request payload, and response payload
+- [x] **ACTN-11**: Platform returns fallback message to Vapi if tool execution fails, preventing bot silence during live calls
+- [x] **ACTN-12**: Edge Function responds to Vapi within 500ms — heavy processing is delegated asynchronously via EdgeRuntime.waitUntil()
 
 ### Observability
 
@@ -119,18 +119,18 @@
 | AUTH-03 | Phase 1 | Pending |
 | AUTH-04 | Phase 1 | Complete (01-02) |
 | AUTH-05 | Phase 1 | Pending |
-| ACTN-01 | Phase 2 | Pending |
-| ACTN-02 | Phase 2 | Pending |
-| ACTN-03 | Phase 2 | Pending |
-| ACTN-04 | Phase 2 | Pending |
-| ACTN-05 | Phase 2 | Pending |
-| ACTN-06 | Phase 2 | Pending |
-| ACTN-07 | Phase 2 | Pending |
-| ACTN-08 | Phase 2 | Pending |
-| ACTN-09 | Phase 2 | Pending |
-| ACTN-10 | Phase 2 | Pending |
-| ACTN-11 | Phase 2 | Pending |
-| ACTN-12 | Phase 2 | Pending |
+| ACTN-01 | Phase 2 | Complete |
+| ACTN-02 | Phase 2 | Complete |
+| ACTN-03 | Phase 2 | Complete |
+| ACTN-04 | Phase 2 | Complete |
+| ACTN-05 | Phase 2 | Complete |
+| ACTN-06 | Phase 2 | Complete |
+| ACTN-07 | Phase 2 | Complete |
+| ACTN-08 | Phase 2 | Complete |
+| ACTN-09 | Phase 2 | Complete |
+| ACTN-10 | Phase 2 | Complete |
+| ACTN-11 | Phase 2 | Complete |
+| ACTN-12 | Phase 2 | Complete |
 | OBS-01 | Phase 3 | Pending |
 | OBS-02 | Phase 3 | Pending |
 | OBS-03 | Phase 3 | Pending |
