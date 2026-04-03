@@ -99,8 +99,15 @@ Plans:
   3. An uploaded document transitions from Processing to Ready after its text is extracted, chunked, and stored as vector embeddings in pgvector
   4. When Vapi calls the knowledge_base tool during a live call, the platform performs a tenant-scoped semantic search and returns the top matching chunks to Vapi within the 500ms budget
   5. A semantic search against organization A's knowledge base returns zero results from organization B's documents
-**Plans:** TBD
+**Plans:** 5 plans
 **UI hint:** yes
+
+Plans:
+- [ ] 04-01-PLAN.md — DB migration 003_knowledge_base.sql (documents, document_chunks, match function, HNSW index) + database.ts types
+- [ ] 04-02-PLAN.md — npm packages + knowledge-base.test.ts stubs + chunk-text.ts + extract-text.ts + embed.ts + .env.example
+- [ ] 04-03-PLAN.md — POST /api/knowledge/upload Route Handler + knowledge server actions (insertDocument, addUrlDocument, deleteDocument) + Deno Edge Function process-embeddings
+- [ ] 04-04-PLAN.md — query-knowledge.ts (embed → RPC → haiku synthesis) + executeAction knowledge_base case + vapi/tools ctx pass-through
+- [ ] 04-05-PLAN.md — /dashboard/knowledge page + DocumentList + UploadForm components + sidebar activation
 
 ---
 
@@ -126,7 +133,7 @@ Plans:
 | 1. Foundation | 6/6 | Complete | 2026-04-02 |
 | 2. Action Engine | 7/7 | Complete   | 2026-04-03 |
 | 3. Observability | 0/6 | Planned | - |
-| 4. Knowledge Base | 0/? | Not started | - |
+| 4. Knowledge Base | 0/5 | Planned | - |
 | 5. Outbound Campaigns | 0/? | Not started | - |
 
 ---
@@ -151,3 +158,4 @@ Plans:
 *Phase 1 planned: 2026-04-02 — 6 plans in 4 waves*
 *Phase 2 planned: 2026-04-02 — 7 plans in 4 waves (Wave 0 + Waves 1-3)*
 *Phase 3 planned: 2026-04-02 — 6 plans in 4 waves (Wave 0 + Waves 1-3)*
+*Phase 4 planned: 2026-04-02 — 5 plans in 3 waves*
