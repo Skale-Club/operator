@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: VoiceOps MVP
 status: verifying
-last_updated: "2026-04-03T00:54:57.417Z"
+last_updated: "2026-04-03T01:00:56.722Z"
 last_activity: 2026-04-03
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 13
-  completed_plans: 10
+  completed_plans: 11
 ---
 
 # VoiceOps — State
@@ -69,6 +69,7 @@ Started: 2026-04-02
 - [Phase 02-action-engine]: action_logs tool_config_id ON DELETE SET NULL — preserves audit history even when tool configs are reconfigured or deleted
 - [Phase 02-action-engine]: ToolConfigWithIntegration type exported from resolve-tool.ts — gives webhook route a named type for the joined result
 - [Phase 02-action-engine]: logAction uses try/catch to also catch synchronous errors from Supabase client construction, not just async rejection
+- [Phase 02-action-engine]: AbortController timeout set to 400ms in ghlFetch — leaves 100ms margin within 500ms Vapi budget
 
 ## Blockers
 
