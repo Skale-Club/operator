@@ -34,3 +34,54 @@ export type VapiToolCallMessage = z.infer<typeof VapiToolCallMessageSchema>
 export function getToolArguments(toolCall: VapiToolCall): Record<string, unknown> {
   return toolCall.arguments ?? toolCall.parameters ?? {}
 }
+
+// ---------------------------------------------------------------------------
+// End-of-call webhook schemas (OBS-01)
+// ---------------------------------------------------------------------------
+
+export const ArtifactMessageSchema = z.object({
+  role: z.string(),
+  message: z.string().optional(),
+  time: z.number().optional(),
+  endTime: z.number().optional(),
+  secondsFromStart: z.number().optional(),
+  toolCalls: z.array(z.record(z.unknown())).optional(),
+  result: z.string().optional(),
+}).passthrough()
+
+export type ArtifactMessage = z.infer<typeof ArtifactMessageSchema>
+
+export const VapiEndOfCallMessageSchema = z.object({
+  message: z.object({
+    type: z.literal('end-of-call-report'),
+    endedReason: z.string(),
+    startedAt: z.string().optional(),
+    endedAt: z.string().optional(),
+    cost: z.number().optional(),
+    call: z.object({
+      id: z.string(),
+      assistantId: z.string().optional(),
+      orgId: z.string().optional(),
+      status: z.string().optional(),
+      type: z.string().optional(),
+      startedAt: z.string().optional(),
+      endedAt: z.string().optional(),
+      cost: z.number().optional(),
+      customer: z.object({
+        number: z.string().optional(),
+        name: z.string().optional(),
+      }).optional(),
+    }).passthrough().optional(),
+    artifact: z.object({
+      transcript: z.string().optional(),
+      messages: z.array(ArtifactMessageSchema).optional(),
+    }).passthrough().optional(),
+    analysis: z.object({
+      summary: z.string().optional(),
+      successEvaluation: z.string().optional(),
+      structuredData: z.record(z.unknown()).optional(),
+    }).optional(),
+  }),
+})
+
+export type VapiEndOfCallMessage = z.infer<typeof VapiEndOfCallMessageSchema>
