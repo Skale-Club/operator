@@ -62,7 +62,7 @@ Plans:
 - [x] 02-04-PLAN.md — GHL fetch client + createContact, getAvailability, createAppointment executors
 - [x] 02-05-PLAN.md — Action engine core: resolveOrg, resolveTool, executeAction, logAction
 - [ ] 02-06-PLAN.md — Webhook Edge Function: POST /api/vapi/tools with after() async logging
-- [ ] 02-07-PLAN.md — Admin UI: integrations page + tool configs page + sidebar nav update
+- [x] 02-07-PLAN.md — Admin UI: integrations page + tool configs page + sidebar nav update
 
 ---
 
