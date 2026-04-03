@@ -301,12 +301,107 @@ export interface Database {
           }
         ]
       }
+      documents: {
+        Row: {
+          id: string
+          organization_id: string
+          name: string
+          source_type: 'pdf' | 'text' | 'csv' | 'url'
+          source_url: string | null
+          status: 'processing' | 'ready' | 'error'
+          error_detail: string | null
+          chunk_count: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          name: string
+          source_type: 'pdf' | 'text' | 'csv' | 'url'
+          source_url?: string | null
+          status?: 'processing' | 'ready' | 'error'
+          error_detail?: string | null
+          chunk_count?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          name?: string
+          status?: 'processing' | 'ready' | 'error'
+          error_detail?: string | null
+          chunk_count?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'documents_organization_id_fkey'
+            columns: ['organization_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      document_chunks: {
+        Row: {
+          id: string
+          organization_id: string
+          document_id: string
+          content: string
+          chunk_index: number
+          embedding: number[] | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          document_id: string
+          content: string
+          chunk_index: number
+          embedding?: number[] | null
+          created_at?: string
+        }
+        Update: {
+          embedding?: number[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'document_chunks_organization_id_fkey'
+            columns: ['organization_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'document_chunks_document_id_fkey'
+            columns: ['document_id']
+            isOneToOne: false
+            referencedRelation: 'documents'
+            referencedColumns: ['id']
+          }
+        ]
+      }
     }
     Views: Record<string, never>
     Functions: {
       get_current_org_id: {
         Args: Record<string, never>
         Returns: string | null
+      }
+      match_document_chunks: {
+        Args: {
+          p_organization_id: string
+          query_embedding: number[]
+          match_count?: number
+          match_threshold?: number
+        }
+        Returns: Array<{
+          id: string
+          document_id: string
+          content: string
+          similarity: number
+        }>
       }
     }
     Enums: {
