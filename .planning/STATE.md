@@ -2,24 +2,24 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: VoiceOps MVP
-status: verifying
-last_updated: "2026-04-03T01:08:31.805Z"
-last_activity: 2026-04-03
+status: in-progress
+last_updated: "2026-04-02T05:20:00Z"
+last_activity: 2026-04-02
 progress:
   total_phases: 5
-  completed_phases: 2
-  total_plans: 13
-  completed_plans: 13
+  completed_phases: 3
+  total_plans: 19
+  completed_plans: 19
 ---
 
 # VoiceOps — State
 
 ## Current Position
 
-Phase: 1 (Foundation) — COMPLETE ✓
+Phase: 3 (Observability) — COMPLETE ✓
 Plan: 6 of 6
-Status: Phase complete — ready for verification
-Last activity: 2026-04-03
+Status: Phase complete — all 6 plans executed
+Last activity: 2026-04-02
 
 ## Milestone
 
@@ -73,6 +73,14 @@ Started: 2026-04-02
 - [Phase 02-action-engine]: API key never pre-filled in integration edit form (security requirement ACTN-04)
 - [Phase 02-action-engine]: Textarea shadcn component added to ui/ to support fallback message field in tool-config-form
 - [Phase 02-action-engine]: Cast getToolArguments() return to Json type for logAction payload — resolves TS2322 type mismatch between Record<string,unknown> and Json
+- [Phase 03-observability]: calls.vapi_call_id is TEXT NOT NULL UNIQUE — joins with action_logs.vapi_call_id (both TEXT)
+- [Phase 03-observability]: transcript_turns JSONB stores artifact.messages array (NOT flat transcript string)
+- [Phase 03-observability]: duration_seconds GENERATED ALWAYS AS computed column — no manual calculation needed
+- [Phase 03-observability]: POST /api/vapi/calls always returns 200 — end-of-call webhook has no latency constraint, written synchronously
+- [Phase 03-observability]: buildTimeline is pure — no React/Next.js imports, fully unit-testable without mocking
+- [Phase 03-observability]: Filter state for calls list lives entirely in URL searchParams — no client state
+- [Phase 03-observability]: getDashboardMetrics runs 6 queries in Promise.all for minimum latency
+- [Phase 03-observability]: toolSuccessRate null when no action_logs exist — shown as "No data" in UI
 
 ## Blockers
 
@@ -80,4 +88,4 @@ Started: 2026-04-02
 
 ## Todos
 
-(none)
+Phase 4 (Knowledge Base) — ready to start
