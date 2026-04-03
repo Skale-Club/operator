@@ -113,6 +113,145 @@ export interface Database {
           }
         ]
       }
+      integrations: {
+        Row: {
+          id: string
+          organization_id: string
+          provider: 'gohighlevel' | 'twilio' | 'calcom' | 'custom_webhook'
+          name: string
+          encrypted_api_key: string
+          location_id: string | null
+          config: Json
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          provider: 'gohighlevel' | 'twilio' | 'calcom' | 'custom_webhook'
+          name: string
+          encrypted_api_key: string
+          location_id?: string | null
+          config?: Json
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          name?: string
+          encrypted_api_key?: string
+          location_id?: string | null
+          config?: Json
+          is_active?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'integrations_organization_id_fkey'
+            columns: ['organization_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      tool_configs: {
+        Row: {
+          id: string
+          organization_id: string
+          integration_id: string
+          tool_name: string
+          action_type: 'create_contact' | 'get_availability' | 'create_appointment' | 'send_sms' | 'knowledge_base' | 'custom_webhook'
+          config: Json
+          fallback_message: string
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          integration_id: string
+          tool_name: string
+          action_type: 'create_contact' | 'get_availability' | 'create_appointment' | 'send_sms' | 'knowledge_base' | 'custom_webhook'
+          config?: Json
+          fallback_message: string
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          integration_id?: string
+          tool_name?: string
+          action_type?: 'create_contact' | 'get_availability' | 'create_appointment' | 'send_sms' | 'knowledge_base' | 'custom_webhook'
+          config?: Json
+          fallback_message?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'tool_configs_organization_id_fkey'
+            columns: ['organization_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'tool_configs_integration_id_fkey'
+            columns: ['integration_id']
+            isOneToOne: false
+            referencedRelation: 'integrations'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      action_logs: {
+        Row: {
+          id: string
+          organization_id: string
+          tool_config_id: string | null
+          vapi_call_id: string
+          tool_name: string
+          status: 'success' | 'error' | 'timeout'
+          execution_ms: number
+          request_payload: Json
+          response_payload: Json
+          error_detail: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          tool_config_id?: string | null
+          vapi_call_id: string
+          tool_name: string
+          status: 'success' | 'error' | 'timeout'
+          execution_ms: number
+          request_payload?: Json
+          response_payload?: Json
+          error_detail?: string | null
+          created_at?: string
+        }
+        Update: Record<string, never>
+        Relationships: [
+          {
+            foreignKeyName: 'action_logs_organization_id_fkey'
+            columns: ['organization_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'action_logs_tool_config_id_fkey'
+            columns: ['tool_config_id']
+            isOneToOne: false
+            referencedRelation: 'tool_configs'
+            referencedColumns: ['id']
+          }
+        ]
+      }
     }
     Views: Record<string, never>
     Functions: {
@@ -123,6 +262,8 @@ export interface Database {
     }
     Enums: {
       user_role: UserRole
+      action_type: 'create_contact' | 'get_availability' | 'create_appointment' | 'send_sms' | 'knowledge_base' | 'custom_webhook'
+      integration_provider: 'gohighlevel' | 'twilio' | 'calcom' | 'custom_webhook'
     }
   }
 }
