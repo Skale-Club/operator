@@ -6,6 +6,7 @@ import {
   Building2,
   Bot,
   Zap,
+  Plug2,
   Eye,
   BookOpen,
   Phone,
@@ -38,7 +39,8 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 const navItems = [
   { icon: Building2, label: 'Organizations', href: '/dashboard/organizations', active: true },
   { icon: Bot, label: 'Assistants', href: '/dashboard/assistants', active: true },
-  { icon: Zap, label: 'Action Engine', href: '/dashboard/tools', active: false },
+  { icon: Plug2, label: 'Integrations', href: '/dashboard/integrations', active: true },
+  { icon: Zap, label: 'Tools', href: '/dashboard/tools', active: true },
   { icon: Eye, label: 'Observability', href: '/dashboard/calls', active: false },
   { icon: BookOpen, label: 'Knowledge Base', href: '/dashboard/knowledge', active: false },
   { icon: Phone, label: 'Campaigns', href: '/dashboard/outbound', active: false },
