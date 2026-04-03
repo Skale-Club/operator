@@ -12,6 +12,7 @@ import {
   ChevronUp,
   LogOut,
   Settings,
+  LayoutDashboard,
 } from 'lucide-react'
 import type { User } from '@supabase/supabase-js'
 
@@ -37,6 +38,7 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 
 const navItems = [
+  { icon: LayoutDashboard, label: 'Dashboard', href: '/', active: true },
   { icon: PhoneCall, label: 'Calls', href: '/calls', active: true },
   { icon: Phone, label: 'Campaigns', href: '/outbound', active: true },
   { icon: Zap, label: 'Tools', href: '/tools', active: true },

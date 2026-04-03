@@ -27,7 +27,7 @@ export function AppBreadcrumb() {
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
-            <BreadcrumbPage>Calls</BreadcrumbPage>
+            <BreadcrumbPage>Dashboard</BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
@@ -39,7 +39,7 @@ export function AppBreadcrumb() {
       <BreadcrumbList>
         <BreadcrumbItem>
           <BreadcrumbLink asChild>
-            <Link href="/calls">Calls</Link>
+            <Link href="/">Dashboard</Link>
           </BreadcrumbLink>
         </BreadcrumbItem>
         {segments.map((segment, index) => {
