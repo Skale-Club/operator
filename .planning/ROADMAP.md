@@ -76,8 +76,16 @@ Plans:
   3. Admin can open a call detail page and read the conversation in chat format with speaker turns clearly distinguished
   4. Inline badges appear between transcript turns showing each tool that fired — including tool name, success or failure, execution time, and error detail on failure
   5. The main dashboard displays total calls (today, week, month), tool success rate percentage, 10 most recent calls, and recent failure alerts — all scoped to the admin's organization
-**Plans:** TBD
+**Plans:** 6 plans
 **UI hint:** yes
+
+Plans:
+- [ ] 03-01-PLAN.md — Wave 0 test stubs: call-ingestion, calls-actions, call-detail, dashboard-metrics
+- [ ] 03-02-PLAN.md — DB migration 003_observability.sql (calls table) + database.ts types
+- [ ] 03-03-PLAN.md — VapiEndOfCallMessageSchema + POST /api/vapi/calls Edge Function
+- [ ] 03-04-PLAN.md — getCalls server action + /dashboard/calls list page + table + filters
+- [ ] 03-05-PLAN.md — buildTimeline utility + /dashboard/calls/[callId] detail page + transcript component
+- [ ] 03-06-PLAN.md — getDashboardMetrics + /dashboard metrics page + sidebar Observability activation
 
 ---
 
@@ -117,7 +125,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Foundation | 6/6 | Complete | 2026-04-02 |
 | 2. Action Engine | 7/7 | Complete   | 2026-04-03 |
-| 3. Observability | 0/? | Not started | - |
+| 3. Observability | 0/6 | Planned | - |
 | 4. Knowledge Base | 0/? | Not started | - |
 | 5. Outbound Campaigns | 0/? | Not started | - |
 
@@ -142,3 +150,4 @@ Plans:
 *Milestone: v1.0 VoiceOps MVP*
 *Phase 1 planned: 2026-04-02 — 6 plans in 4 waves*
 *Phase 2 planned: 2026-04-02 — 7 plans in 4 waves (Wave 0 + Waves 1-3)*
+*Phase 3 planned: 2026-04-02 — 6 plans in 4 waves (Wave 0 + Waves 1-3)*
