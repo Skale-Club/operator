@@ -3,7 +3,7 @@
 ## Commands
 
 ```bash
-npm run dev      # dev server (Turbopack, usually port 3001 if 3000 is taken)
+npm run dev      # dev server (Turbopack on port 4267)
 npm run build    # production build + type check
 npm run lint     # ESLint
 npx supabase db push   # apply pending migrations to remote DB

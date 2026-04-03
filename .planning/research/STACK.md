@@ -65,7 +65,7 @@ These run in the **Deno runtime** (not Node.js). Specify via `import_map.json`.
 |------|---------|-------|
 | Supabase CLI | Local dev, migrations, edge functions | `supabase init`, `supabase functions serve`, `supabase db push` |
 | `supabase` npm package | Type generation | `supabase gen types typescript` — generate DB types from schema |
-| Vapi CLI | Webhook testing, tool management | `vapi listen --forward-to localhost:3000/webhook` for local dev |
+| Vapi CLI | Webhook testing, tool management | `vapi listen --forward-to localhost:4267/webhook` for local dev |
 | ngrok | Local tunnel for Vapi webhooks | Required for `vapi listen` to forward to local server |
 | ESLint + Prettier | Code quality | Standard Next.js config. Strict TypeScript rules. |
 

@@ -55,7 +55,7 @@
 
 **Development Tools:**
 - Planned: Supabase CLI — Local development, database migrations (`supabase db push`), Edge Function local serving (`supabase functions serve`), TypeScript type generation (`supabase gen types typescript`).
-- Planned: Vapi CLI — Webhook testing. `vapi listen --forward-to localhost:3000/webhook` for local development.
+- Planned: Vapi CLI — Webhook testing. `vapi listen --forward-to localhost:4267/webhook` for local development.
 - Planned: ngrok — Local tunnel required for Vapi CLI webhook forwarding to local server.
 
 **Build:**
