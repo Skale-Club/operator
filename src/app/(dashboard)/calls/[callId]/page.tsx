@@ -40,7 +40,7 @@ export default async function CallDetailPage({
   return (
     <div className="p-6 max-w-3xl mx-auto">
       <Link
-        href="/dashboard/calls"
+        href="/calls"
         className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6"
       >
         <ChevronLeft className="h-4 w-4" />

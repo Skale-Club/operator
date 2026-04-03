@@ -25,7 +25,7 @@ export async function createAssistantMapping(data: { vapi_assistant_id: string; 
     if (error.code === '23505') return { error: 'This assistant ID is already mapped to an organization.' }
     return { error: error.message }
   }
-  revalidatePath('/dashboard/assistants')
+  revalidatePath('/assistants')
 }
 
 export async function updateAssistantMapping(id: string, data: { vapi_assistant_id: string; name?: string }) {
@@ -38,7 +38,7 @@ export async function updateAssistantMapping(id: string, data: { vapi_assistant_
     if (error.code === '23505') return { error: 'This assistant ID is already mapped to an organization.' }
     return { error: error.message }
   }
-  revalidatePath('/dashboard/assistants')
+  revalidatePath('/assistants')
 }
 
 export async function toggleAssistantMappingStatus(id: string, is_active: boolean) {
@@ -48,7 +48,7 @@ export async function toggleAssistantMappingStatus(id: string, is_active: boolea
     .update({ is_active })
     .eq('id', id)
   if (error) return { error: error.message }
-  revalidatePath('/dashboard/assistants')
+  revalidatePath('/assistants')
 }
 
 export async function deleteAssistantMapping(id: string) {
@@ -58,5 +58,5 @@ export async function deleteAssistantMapping(id: string) {
     .delete()
     .eq('id', id)
   if (error) return { error: error.message }
-  revalidatePath('/dashboard/assistants')
+  revalidatePath('/assistants')
 }

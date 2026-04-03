@@ -78,7 +78,7 @@ export function CallsTable({ calls, total: _total, page, totalPages }: CallsTabl
   function navigatePage(newPage: number) {
     const params = new URLSearchParams(searchParams.toString())
     params.set('page', String(newPage))
-    router.replace('/dashboard/calls?' + params.toString())
+    router.replace('/calls?' + params.toString())
   }
 
   const columns: ColumnDef<CallRow>[] = [
@@ -137,7 +137,7 @@ export function CallsTable({ calls, total: _total, page, totalPages }: CallsTabl
       header: () => null,
       cell: ({ row }) => (
         <Link
-          href={`/dashboard/calls/${row.original.id}`}
+          href={`/calls/${row.original.id}`}
           className="text-sm text-primary hover:underline whitespace-nowrap"
         >
           View

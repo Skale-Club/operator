@@ -30,7 +30,7 @@ export async function createOrganization(data: { name: string }): Promise<{ erro
     .insert({ organization_id: org.id, user_id: user.id, role: 'admin' })
   if (memberError) return { error: memberError.message }
 
-  revalidatePath('/dashboard/organizations')
+  revalidatePath('/organizations')
 }
 
 export async function updateOrganization(
@@ -44,7 +44,7 @@ export async function updateOrganization(
     .update({ name: data.name, slug, is_active: data.is_active })
     .eq('id', id)
   if (error) return { error: error.message }
-  revalidatePath('/dashboard/organizations')
+  revalidatePath('/organizations')
 }
 
 export async function toggleOrganizationStatus(
@@ -57,5 +57,5 @@ export async function toggleOrganizationStatus(
     .update({ is_active })
     .eq('id', id)
   if (error) return { error: error.message }
-  revalidatePath('/dashboard/organizations')
+  revalidatePath('/organizations')
 }

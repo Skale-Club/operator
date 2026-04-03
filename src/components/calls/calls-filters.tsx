@@ -29,7 +29,7 @@ export function CallsFilters({ assistants }: CallsFiltersProps) {
     }
     // Reset to page 1 on filter change
     params.delete('page')
-    router.replace('/dashboard/calls?' + params.toString())
+    router.replace('/calls?' + params.toString())
   }
 
   function handleSearch(value: string) {

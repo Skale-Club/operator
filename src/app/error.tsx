@@ -20,7 +20,7 @@ export default function Error({
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-4">
       <h1 className="text-xl font-semibold">Something went wrong.</h1>
-      <Button variant="outline" onClick={() => router.push('/dashboard/organizations')}>
+      <Button variant="outline" onClick={() => router.push('/organizations')}>
         Go to Organizations
       </Button>
     </div>

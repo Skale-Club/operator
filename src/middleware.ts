@@ -39,7 +39,7 @@ export async function middleware(request: NextRequest) {
   }
 
   if (isAuthRoute && claims) {
-    return NextResponse.redirect(new URL('/dashboard/organizations', request.url))
+    return NextResponse.redirect(new URL('/organizations', request.url))
   }
 
   return response

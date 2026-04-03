@@ -60,7 +60,7 @@ export function CampaignList({ campaigns }: CampaignListProps) {
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">{campaigns.length} campaign{campaigns.length !== 1 ? 's' : ''}</p>
         <Button asChild size="sm">
-          <Link href="/dashboard/outbound/new">
+          <Link href="/outbound/new">
             <Plus className="h-4 w-4 mr-1" />
             New Campaign
           </Link>
@@ -75,7 +75,7 @@ export function CampaignList({ campaigns }: CampaignListProps) {
             <p className="text-xs text-muted-foreground mt-1">Create your first outbound calling campaign</p>
           </div>
           <Button asChild size="sm" variant="outline">
-            <Link href="/dashboard/outbound/new">New Campaign</Link>
+            <Link href="/outbound/new">New Campaign</Link>
           </Button>
         </div>
       ) : (
@@ -97,7 +97,7 @@ export function CampaignList({ campaigns }: CampaignListProps) {
               {campaigns.map((c) => (
                 <TableRow key={c.id}>
                   <TableCell>
-                    <Link href={`/dashboard/outbound/${c.id}`} className="font-medium hover:underline">
+                    <Link href={`/outbound/${c.id}`} className="font-medium hover:underline">
                       {c.name}
                     </Link>
                   </TableCell>
@@ -118,7 +118,7 @@ export function CampaignList({ campaigns }: CampaignListProps) {
                   <TableCell>
                     <div className="flex items-center gap-1">
                       <Button asChild variant="ghost" size="sm">
-                        <Link href={`/dashboard/outbound/${c.id}`}>View</Link>
+                        <Link href={`/outbound/${c.id}`}>View</Link>
                       </Button>
                       {['draft', 'completed', 'stopped'].includes(c.status) && (
                         <Button

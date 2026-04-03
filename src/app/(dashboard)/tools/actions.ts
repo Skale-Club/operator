@@ -59,7 +59,7 @@ export async function createToolConfig(data: {
     return { error: error.message }
   }
 
-  revalidatePath('/dashboard/tools')
+  revalidatePath('/tools')
 }
 
 export async function updateToolConfig(
@@ -96,7 +96,7 @@ export async function updateToolConfig(
     return { error: error.message }
   }
 
-  revalidatePath('/dashboard/tools')
+  revalidatePath('/tools')
 }
 
 export async function getToolConfigs(): Promise<ToolConfigWithIntegration[]> {
@@ -123,7 +123,7 @@ export async function deleteToolConfig(id: string): Promise<{ error?: string } |
 
   if (error) return { error: error.message }
 
-  revalidatePath('/dashboard/tools')
+  revalidatePath('/tools')
 }
 
 export { getIntegrations }

@@ -37,13 +37,13 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 
 const navItems = [
-  { icon: Building2, label: 'Organizations', href: '/dashboard/organizations', active: true },
-  { icon: Bot, label: 'Assistants', href: '/dashboard/assistants', active: true },
-  { icon: Plug2, label: 'Integrations', href: '/dashboard/integrations', active: true },
-  { icon: Zap, label: 'Tools', href: '/dashboard/tools', active: true },
-  { icon: Eye, label: 'Observability', href: '/dashboard/calls', active: true },
-  { icon: BookOpen, label: 'Knowledge Base', href: '/dashboard/knowledge', active: true },
-  { icon: Phone, label: 'Campaigns', href: '/dashboard/outbound', active: true },
+  { icon: Building2, label: 'Organizations', href: '/organizations', active: true },
+  { icon: Bot, label: 'Assistants', href: '/assistants', active: true },
+  { icon: Plug2, label: 'Integrations', href: '/integrations', active: true },
+  { icon: Zap, label: 'Tools', href: '/tools', active: true },
+  { icon: Eye, label: 'Observability', href: '/calls', active: true },
+  { icon: BookOpen, label: 'Knowledge Base', href: '/knowledge', active: true },
+  { icon: Phone, label: 'Campaigns', href: '/outbound', active: true },
 ]
 
 function getInitials(user: User): string {

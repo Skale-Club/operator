@@ -44,7 +44,7 @@ export async function createCampaign(
     .single()
 
   if (error) throw new Error(error.message)
-  revalidatePath('/dashboard/outbound')
+  revalidatePath('/outbound')
   return { id: data.id }
 }
 
@@ -176,7 +176,7 @@ export async function importContacts(
   const imported = data?.length ?? 0
   const duplicates = rows.length - imported
 
-  revalidatePath(`/dashboard/outbound/${input.campaignId}`)
+  revalidatePath(`/outbound/${input.campaignId}`)
   return { imported, duplicates }
 }
 
@@ -191,5 +191,5 @@ export async function deleteCampaign(campaignId: string): Promise<void> {
     .in('status', ['draft', 'completed', 'stopped']) // cannot delete active campaigns
 
   if (error) throw new Error(error.message)
-  revalidatePath('/dashboard/outbound')
+  revalidatePath('/outbound')
 }

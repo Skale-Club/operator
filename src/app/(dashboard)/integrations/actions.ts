@@ -52,7 +52,7 @@ export async function createIntegration(data: {
 
   if (error) return { error: error.message }
 
-  revalidatePath('/dashboard/integrations')
+  revalidatePath('/integrations')
 }
 
 export async function updateIntegration(
@@ -79,7 +79,7 @@ export async function updateIntegration(
 
   if (error) return { error: error.message }
 
-  revalidatePath('/dashboard/integrations')
+  revalidatePath('/integrations')
 }
 
 export async function getIntegrations(): Promise<IntegrationForDisplay[]> {
@@ -214,5 +214,5 @@ export async function deleteIntegration(id: string): Promise<{ error?: string } 
 
   if (error) return { error: error.message }
 
-  revalidatePath('/dashboard/integrations')
+  revalidatePath('/integrations')
 }

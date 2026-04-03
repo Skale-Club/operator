@@ -128,7 +128,7 @@ export function DashboardMetrics({ metrics }: DashboardMetricsProps) {
                 <div className="flex items-center gap-3 shrink-0">
                   <EndedReasonBadge reason={call.ended_reason} />
                   <Link
-                    href={`/dashboard/calls/${call.id}`}
+                    href={`/calls/${call.id}`}
                     className="text-xs text-primary hover:underline"
                   >
                     View

@@ -73,7 +73,7 @@ export function CampaignForm() {
         scheduled_start_at: scheduledStartAt ? new Date(scheduledStartAt).toISOString() : null,
         calls_per_minute: callsPerMinute,
       })
-      router.push('/dashboard/outbound')
+      router.push('/outbound')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create campaign')
       setSubmitting(false)
