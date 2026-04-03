@@ -2,6 +2,27 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 
+// ---- Helpers for building mock Vapi webhook payloads ----
+function makeVapiPayload(overrides: Record<string, unknown> = {}) {
+  return {
+    message: {
+      type: 'tool-calls',
+      call: {
+        id: 'call_abc',
+        assistantId: 'asst_known',
+      },
+      toolCallList: [
+        {
+          id: 'tc_call_001',
+          name: 'create_lead',
+          arguments: { firstName: 'Jane', email: 'jane@example.com' },
+        },
+      ],
+      ...overrides,
+    },
+  }
+}
+
 // ---- Helpers for building mock Supabase query chains ----
 function makeSingleChain(result: { data: unknown; error: unknown }) {
   const chain = {
@@ -198,5 +219,233 @@ describe('ACTN-12: logAction writes action_logs and swallows errors', () => {
     const { logAction } = await import('@/lib/action-engine/log-action')
     // Must resolve (not reject) even when DB throws
     await expect(logAction(payload, supabase)).resolves.toBeUndefined()
+  })
+})
+
+// ---- ACTN-09 + ACTN-10: Vapi tools webhook route ----
+
+describe('POST /api/vapi/tools — webhook route', () => {
+  beforeEach(() => vi.resetModules())
+
+  const mockToolConfig = {
+    id: 'tc_001',
+    organization_id: 'org_abc',
+    integration_id: 'int_001',
+    tool_name: 'create_lead',
+    action_type: 'create_contact' as const,
+    config: {},
+    fallback_message: 'Sorry, unable to help right now.',
+    is_active: true,
+    integrations: {
+      id: 'int_001',
+      encrypted_api_key: 'aXY=:Y3Q=',  // fake base64 iv:ct
+      location_id: 'loc_xyz',
+      provider: 'gohighlevel' as const,
+      config: {},
+    },
+  }
+
+  function buildMockSupabase(
+    assistantResult: { data: unknown; error: unknown },
+    toolResult: { data: unknown; error: unknown }
+  ) {
+    let callCount = 0
+    const fromFn = vi.fn().mockImplementation((table: string) => {
+      if (table === 'assistant_mappings') {
+        return makeSingleChain(assistantResult)
+      }
+      if (table === 'tool_configs') {
+        return makeSingleChain(toolResult)
+      }
+      if (table === 'action_logs') {
+        return makeInsertChain({ data: null, error: null })
+      }
+      callCount++
+      return makeSingleChain({ data: null, error: { code: 'unknown', message: 'unexpected table' } })
+    })
+    return { from: fromFn } as unknown as SupabaseClient<Database>
+  }
+
+  it('Test 1: POST with valid assistantId + tool → returns 200 with results[0].result string', async () => {
+    vi.doMock('@supabase/supabase-js', () => ({
+      createClient: vi.fn().mockReturnValue(
+        buildMockSupabase(
+          { data: { organization_id: 'org_abc' }, error: null },
+          { data: mockToolConfig, error: null }
+        )
+      ),
+    }))
+    vi.doMock('@/lib/crypto', () => ({
+      decrypt: vi.fn().mockResolvedValue('decrypted-api-key'),
+    }))
+    vi.doMock('@/lib/action-engine/execute-action', () => ({
+      executeAction: vi.fn().mockResolvedValue('Contact created. ID: cid_123'),
+    }))
+    vi.doMock('@/lib/action-engine/log-action', () => ({
+      logAction: vi.fn().mockResolvedValue(undefined),
+    }))
+    vi.doMock('next/server', () => ({
+      after: vi.fn(),
+    }))
+
+    const { POST } = await import('@/app/api/vapi/tools/route')
+    const req = new Request('http://localhost/api/vapi/tools', {
+      method: 'POST',
+      body: JSON.stringify(makeVapiPayload()),
+      headers: { 'Content-Type': 'application/json' },
+    })
+    const res = await POST(req)
+    const body = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(body.results).toHaveLength(1)
+    expect(body.results[0].toolCallId).toBe('tc_call_001')
+    expect(typeof body.results[0].result).toBe('string')
+    expect(body.results[0].result).toBe('Contact created. ID: cid_123')
+  })
+
+  it('Test 2: POST with unknown assistantId → returns 200 with result: "Service unavailable."', async () => {
+    vi.doMock('@supabase/supabase-js', () => ({
+      createClient: vi.fn().mockReturnValue(
+        buildMockSupabase(
+          { data: null, error: { code: 'PGRST116', message: 'Not found' } },
+          { data: null, error: null }
+        )
+      ),
+    }))
+    vi.doMock('next/server', () => ({
+      after: vi.fn(),
+    }))
+
+    const { POST } = await import('@/app/api/vapi/tools/route')
+    const req = new Request('http://localhost/api/vapi/tools', {
+      method: 'POST',
+      body: JSON.stringify(makeVapiPayload()),
+      headers: { 'Content-Type': 'application/json' },
+    })
+    const res = await POST(req)
+    const body = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(body.results[0].result).toBe('Service unavailable.')
+  })
+
+  it('Test 3: POST with known assistantId but unconfigured tool → returns 200 with result: "Tool not configured."', async () => {
+    vi.doMock('@supabase/supabase-js', () => ({
+      createClient: vi.fn().mockReturnValue(
+        buildMockSupabase(
+          { data: { organization_id: 'org_abc' }, error: null },
+          { data: null, error: { code: 'PGRST116', message: 'Not found' } }
+        )
+      ),
+    }))
+    vi.doMock('next/server', () => ({
+      after: vi.fn(),
+    }))
+
+    const { POST } = await import('@/app/api/vapi/tools/route')
+    const req = new Request('http://localhost/api/vapi/tools', {
+      method: 'POST',
+      body: JSON.stringify(makeVapiPayload()),
+      headers: { 'Content-Type': 'application/json' },
+    })
+    const res = await POST(req)
+    const body = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(body.results[0].result).toBe('Tool not configured.')
+  })
+
+  it('Test 4: POST where GHL executor throws → returns 200 with toolConfig.fallback_message', async () => {
+    vi.doMock('@supabase/supabase-js', () => ({
+      createClient: vi.fn().mockReturnValue(
+        buildMockSupabase(
+          { data: { organization_id: 'org_abc' }, error: null },
+          { data: mockToolConfig, error: null }
+        )
+      ),
+    }))
+    vi.doMock('@/lib/crypto', () => ({
+      decrypt: vi.fn().mockResolvedValue('decrypted-api-key'),
+    }))
+    vi.doMock('@/lib/action-engine/execute-action', () => ({
+      executeAction: vi.fn().mockRejectedValue(new Error('GHL API error 500')),
+    }))
+    vi.doMock('@/lib/action-engine/log-action', () => ({
+      logAction: vi.fn().mockResolvedValue(undefined),
+    }))
+    vi.doMock('next/server', () => ({
+      after: vi.fn(),
+    }))
+
+    const { POST } = await import('@/app/api/vapi/tools/route')
+    const req = new Request('http://localhost/api/vapi/tools', {
+      method: 'POST',
+      body: JSON.stringify(makeVapiPayload()),
+      headers: { 'Content-Type': 'application/json' },
+    })
+    const res = await POST(req)
+    const body = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(body.results[0].result).toBe(mockToolConfig.fallback_message)
+  })
+
+  it('Test 5: POST with invalid JSON body → returns 200 with results: []', async () => {
+    vi.doMock('next/server', () => ({
+      after: vi.fn(),
+    }))
+
+    const { POST } = await import('@/app/api/vapi/tools/route')
+    const req = new Request('http://localhost/api/vapi/tools', {
+      method: 'POST',
+      body: 'not-valid-json{{{',
+      headers: { 'Content-Type': 'application/json' },
+    })
+    const res = await POST(req)
+    const body = await res.json()
+
+    expect(res.status).toBe(200)
+    expect(body.results).toEqual([])
+  })
+
+  it('Test 6: logAction is called via after() — NOT awaited inline before the Response is returned', async () => {
+    const afterMock = vi.fn()
+    const logActionMock = vi.fn().mockResolvedValue(undefined)
+
+    vi.doMock('@supabase/supabase-js', () => ({
+      createClient: vi.fn().mockReturnValue(
+        buildMockSupabase(
+          { data: { organization_id: 'org_abc' }, error: null },
+          { data: mockToolConfig, error: null }
+        )
+      ),
+    }))
+    vi.doMock('@/lib/crypto', () => ({
+      decrypt: vi.fn().mockResolvedValue('decrypted-api-key'),
+    }))
+    vi.doMock('@/lib/action-engine/execute-action', () => ({
+      executeAction: vi.fn().mockResolvedValue('Contact created.'),
+    }))
+    vi.doMock('@/lib/action-engine/log-action', () => ({
+      logAction: logActionMock,
+    }))
+    vi.doMock('next/server', () => ({
+      after: afterMock,
+    }))
+
+    const { POST } = await import('@/app/api/vapi/tools/route')
+    const req = new Request('http://localhost/api/vapi/tools', {
+      method: 'POST',
+      body: JSON.stringify(makeVapiPayload()),
+      headers: { 'Content-Type': 'application/json' },
+    })
+    await POST(req)
+
+    // after() must be called exactly once (to schedule async logging)
+    expect(afterMock).toHaveBeenCalledTimes(1)
+    // logAction must NOT have been directly awaited before the response
+    // (it is passed as a callback to after(), so logAction itself is not called yet)
+    expect(logActionMock).not.toHaveBeenCalled()
   })
 })
