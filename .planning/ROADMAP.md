@@ -52,12 +52,12 @@ Plans:
   3. A real Vapi tool-call webhook sent to /api/vapi/tools is routed to the correct organization based on assistant ID and executes the configured GoHighLevel action
   4. Every tool execution is logged with status (success/error/timeout), execution time in milliseconds, and the request and response payloads
   5. When a tool execution fails, Vapi receives the configured fallback message within 500ms — the call does not go silent
-**Plans:** 2/7 plans executed
+**Plans:** 3/7 plans executed
 **UI hint:** yes
 
 Plans:
 - [x] 02-01-PLAN.md — Wave 0 test stubs: crypto.test.ts, ghl-executor.test.ts, action-engine.test.ts, integrations.test.ts
-- [ ] 02-02-PLAN.md — DB migration 002_action_engine.sql + TypeScript database types
+- [x] 02-02-PLAN.md — DB migration 002_action_engine.sql + TypeScript database types
 - [x] 02-03-PLAN.md — AES-256-GCM crypto utility (Edge-safe) + Vapi webhook Zod schemas
 - [ ] 02-04-PLAN.md — GHL fetch client + createContact, getAvailability, createAppointment executors
 - [ ] 02-05-PLAN.md — Action engine core: resolveOrg, resolveTool, executeAction, logAction
@@ -116,7 +116,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 6/6 | Complete | 2026-04-02 |
-| 2. Action Engine | 2/7 | In Progress|  |
+| 2. Action Engine | 3/7 | In Progress|  |
 | 3. Observability | 0/? | Not started | - |
 | 4. Knowledge Base | 0/? | Not started | - |
 | 5. Outbound Campaigns | 0/? | Not started | - |

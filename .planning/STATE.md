@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: VoiceOps MVP
 status: verifying
-last_updated: "2026-04-03T00:18:47.897Z"
+last_updated: "2026-04-03T00:22:12.224Z"
 last_activity: 2026-04-03
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 13
-  completed_plans: 8
+  completed_plans: 9
 ---
 
 # VoiceOps — State
@@ -65,6 +65,8 @@ Started: 2026-04-02
 - [Phase 01-foundation]: getClaims() returns `{ data: { claims } }` — middleware uses `claimsData?.claims` pattern (not direct destructure)
 - [Phase 02-action-engine]: 37 total it.todo stubs across 4 files covering all ACTN-01 through ACTN-12 requirement IDs
 - [Phase 02-action-engine]: Use dynamic import() in vitest tests (not require()) for ESM path alias compatibility with @/ prefix
+- [Phase 02-action-engine]: status TEXT CHECK instead of ENUM for action_logs.status — avoids third enum for a simple 3-value domain
+- [Phase 02-action-engine]: action_logs tool_config_id ON DELETE SET NULL — preserves audit history even when tool configs are reconfigured or deleted
 
 ## Blockers
 
