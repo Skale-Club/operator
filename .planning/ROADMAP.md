@@ -10,7 +10,7 @@
 ## Phases
 
 - [x] **Phase 1: Foundation** - Multi-tenant org management, authentication, and RLS data isolation
-- [ ] **Phase 2: Action Engine** - Vapi webhook receiver, integration credentials, GoHighLevel execution, and action logging
+- [x] **Phase 2: Action Engine** - Vapi webhook receiver, integration credentials, GoHighLevel execution, and action logging (completed 2026-04-03)
 - [ ] **Phase 3: Observability** - End-of-call ingestion, call list, chat-format transcripts, inline tool badges, and dashboard
 - [ ] **Phase 4: Knowledge Base** - Document upload, vectorization pipeline, and RAG semantic search during calls
 - [ ] **Phase 5: Outbound Campaigns** - Campaign creation, CSV contact import, Vapi outbound dialing, and real-time status tracking
@@ -52,7 +52,7 @@ Plans:
   3. A real Vapi tool-call webhook sent to /api/vapi/tools is routed to the correct organization based on assistant ID and executes the configured GoHighLevel action
   4. Every tool execution is logged with status (success/error/timeout), execution time in milliseconds, and the request and response payloads
   5. When a tool execution fails, Vapi receives the configured fallback message within 500ms — the call does not go silent
-**Plans:** 5/7 plans executed
+**Plans:** 7/7 plans complete
 **UI hint:** yes
 
 Plans:
@@ -61,7 +61,7 @@ Plans:
 - [x] 02-03-PLAN.md — AES-256-GCM crypto utility (Edge-safe) + Vapi webhook Zod schemas
 - [x] 02-04-PLAN.md — GHL fetch client + createContact, getAvailability, createAppointment executors
 - [x] 02-05-PLAN.md — Action engine core: resolveOrg, resolveTool, executeAction, logAction
-- [ ] 02-06-PLAN.md — Webhook Edge Function: POST /api/vapi/tools with after() async logging
+- [x] 02-06-PLAN.md — Webhook Edge Function: POST /api/vapi/tools with after() async logging
 - [x] 02-07-PLAN.md — Admin UI: integrations page + tool configs page + sidebar nav update
 
 ---
@@ -116,7 +116,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 6/6 | Complete | 2026-04-02 |
-| 2. Action Engine | 5/7 | In Progress|  |
+| 2. Action Engine | 7/7 | Complete   | 2026-04-03 |
 | 3. Observability | 0/? | Not started | - |
 | 4. Knowledge Base | 0/? | Not started | - |
 | 5. Outbound Campaigns | 0/? | Not started | - |
