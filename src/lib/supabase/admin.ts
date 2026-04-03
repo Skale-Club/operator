@@ -1,5 +1,5 @@
 // DANGER: Service role key bypasses ALL RLS policies.
-// ONLY import this in /api/vapi/* Edge Function route handlers.
+// ONLY import this in trusted server-only code such as /api/vapi/* route handlers.
 // NEVER import in browser code, dashboard pages, or Server Components.
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'

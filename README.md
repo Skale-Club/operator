@@ -29,9 +29,9 @@ The current codebase reflects a shipped `v1.0` MVP completed on `2026-04-03`. Th
 
 ### Runtime split
 
-- Node.js: dashboard pages, server actions, most app logic
-- Edge Runtime: `src/app/api/vapi/*` webhook routes and [`src/middleware.ts`](/c:/Users/Vanildo/Dev/voiceops/src/middleware.ts)
+- Node.js: dashboard pages, server actions, and `src/app/api/vapi/*` webhook routes
 - Deno: Supabase Edge Function in [`supabase/functions/process-embeddings/index.ts`](/c:/Users/Vanildo/Dev/voiceops/supabase/functions/process-embeddings/index.ts)
+- GitHub Actions: low-frequency maintenance cron like [`.github/workflows/supabase-keepalive.yml`](C:/Users/Vanildo/Dev/voiceops/.github/workflows/supabase-keepalive.yml)
 
 ### Core flow
 
@@ -101,6 +101,14 @@ npm run dev
 ```
 
 The root route redirects to `/calls`.
+
+## Deployment Target
+
+- Vercel Hobby: hosts the Next.js app with Node.js route handlers
+- Supabase: Postgres, Auth, Storage, pgvector, and background Edge Functions
+- GitHub Actions: auxiliary scheduled automation only
+
+This repo is aligned to avoid depending on Vercel Edge Runtime or Vercel Cron for core product flows.
 
 ## Useful Commands
 
@@ -180,7 +188,7 @@ The planning documents currently call out these notable follow-ups:
 - Do not bypass cached auth helpers in [`src/lib/supabase/server.ts`](/c:/Users/Vanildo/Dev/voiceops/src/lib/supabase/server.ts)
 - Do not store provider secrets in plaintext
 - Do not edit old Supabase migrations; add new numbered migrations instead
-- Be careful with shared code used by Edge Runtime paths
+- Keep Vercel-hosted routes Node.js-compatible; background work belongs in Supabase or GitHub automation
 
 ## Additional Repo Guidance
 

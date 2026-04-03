@@ -2,7 +2,7 @@
 // Proxies Vapi GET /phone-number to list available outbound phone numbers.
 // Used by the create campaign form dropdown.
 
-export const runtime = 'edge'
+export const runtime = 'nodejs'
 
 export async function GET(): Promise<Response> {
   const vapiApiKey = process.env.VAPI_API_KEY

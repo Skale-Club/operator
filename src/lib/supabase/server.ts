@@ -23,7 +23,8 @@ export const createClient = cache(async () => {
               cookieStore.set(name, value, options)
             )
           } catch {
-            // Server Component — setAll handled by middleware
+            // Server Component renders cannot mutate response cookies directly.
+            // Cookie writes still work in route handlers and server actions.
           }
         },
       },

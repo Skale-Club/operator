@@ -1,12 +1,12 @@
 // src/app/api/vapi/calls/route.ts
-// Edge Function — receives Vapi end-of-call-report webhook after a call ends.
+// Node.js Route Handler — receives Vapi end-of-call-report webhook after a call ends.
 // No 500ms constraint — Vapi fires and forgets. Write synchronously, always return 200.
 
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import { VapiEndOfCallMessageSchema } from '@/types/vapi'
 
-export const runtime = 'edge'
+export const runtime = 'nodejs'
 
 export async function POST(request: Request): Promise<Response> {
   try {

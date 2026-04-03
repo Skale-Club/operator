@@ -12,30 +12,26 @@ progress:
   completed_plans: 30
 ---
 
-# VoiceOps — State
+# VoiceOps - State
 
 ## Current Position
 
 Status: MILESTONE v1.0 COMPLETE
-All 6 phases, 30 plans executed and archived.
+All 6 phases and 30 plans were executed and archived.
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-03)
+See `.planning/PROJECT.md`.
 
-**Core value:** Action Engine must respond to Vapi tool webhooks in <500ms
-**Current focus:** Planning next milestone
+- Core value: the Action Engine must respond fast enough for live Vapi tool calls
+- Current focus: Vercel Hobby deployment alignment and next milestone planning
 
 ## Accumulated Context
 
-- v1.0 shipped 2026-04-03 — full operational layer for Vapi.ai agencies
-- 42/42 requirements wired, 8/8 E2E flows verified
-- Tech debt accepted: no webhook HMAC validation, 132 test stubs, v2 action stubs
-- Next priorities: webhook security, send_sms/custom_webhook executors, client panel
-
-## Decisions
-
-See .planning/PROJECT.md Key Decisions table for full history.
+- v1.0 shipped on 2026-04-03
+- Core product is operational across tools, calls, knowledge base, campaigns, integrations, and organizations
+- Deployment target is now explicit: Vercel Hobby for the app, Supabase for background jobs, GitHub Actions for auxiliary cron
+- Remaining debt includes webhook HMAC validation, many test stubs, and unfinished v2 action types
 
 ## Blockers
 
@@ -44,6 +40,7 @@ See .planning/PROJECT.md Key Decisions table for full history.
 ## Todos
 
 - Apply all migrations to production Supabase
-- Enable Supabase Realtime for campaign_contacts table
+- Enable Supabase Realtime for `campaign_contacts`
 - Human UAT across all features
+- Verify auth session refresh behavior in production without middleware
 - Plan v1.1 milestone

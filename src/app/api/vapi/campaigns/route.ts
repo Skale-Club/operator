@@ -1,14 +1,15 @@
 // src/app/api/vapi/campaigns/route.ts
-// Edge Function — receives Vapi end-of-call-report for outbound campaign calls.
+// Node.js Route Handler — receives Vapi end-of-call-report for outbound campaign calls.
 // Pattern mirrors /api/vapi/calls/route.ts — always returns 200, async DB write.
 // Register this URL on the Vapi assistant or phone number used for campaigns
 // as the server URL for end-of-call-report events.
 
+import { after } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import { mapEndedReasonToStatus } from '@/lib/campaigns/engine'
 
-export const runtime = 'edge'
+export const runtime = 'nodejs'
 
 async function updateContactStatus(
   campaignContactId: string,
@@ -81,13 +82,12 @@ export async function POST(request: Request): Promise<Response> {
       return new Response(null, { status: 200 })
     }
 
-    // @ts-ignore — EdgeRuntime available in Edge Function context
-    EdgeRuntime.waitUntil(
-      updateContactStatus(campaignContactId, {
+    after(async () => {
+      await updateContactStatus(campaignContactId, {
         id: call?.id as string | undefined,
         endedReason: (payload?.endedReason as string | undefined) ?? (call?.endedReason as string | undefined),
       })
-    )
+    })
 
     return new Response(null, { status: 200 })
   } catch (err) {

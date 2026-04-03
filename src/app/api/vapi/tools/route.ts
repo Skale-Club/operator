@@ -1,6 +1,7 @@
 // src/app/api/vapi/tools/route.ts
-// Edge Function — receives Vapi tool-call webhooks during live calls
-// MUST respond within 500ms. MUST always return HTTP 200.
+// Node.js Route Handler — receives Vapi tool-call webhooks during live calls.
+// Vercel Hobby-friendly: no Edge Runtime dependency, but still must respond fast.
+// MUST always return HTTP 200.
 
 import { after } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
@@ -12,7 +13,7 @@ import { executeAction } from '@/lib/action-engine/execute-action'
 import { logAction } from '@/lib/action-engine/log-action'
 import { decrypt } from '@/lib/crypto'
 
-export const runtime = 'edge'
+export const runtime = 'nodejs'
 
 export async function POST(request: Request): Promise<Response> {
   const startTime = Date.now()
