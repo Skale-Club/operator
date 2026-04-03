@@ -21,7 +21,8 @@ export function mapEndedReasonToStatus(reason: string | null | undefined): Campa
 
 export async function startCampaignBatch(
   campaignId: string,
-  supabase: SupabaseClient<Database>
+  supabase: SupabaseClient<Database>,
+  vapiApiKey: string
 ): Promise<{ fired: number; errors: number }> {
   // Fetch campaign — verify it is still in_progress (optimistic guard)
   const { data: campaign, error: campaignErr } = await supabase
@@ -62,7 +63,7 @@ export async function startCampaignBatch(
   // Fire calls concurrently (Promise.allSettled — partial failure is acceptable)
   const results = await Promise.allSettled(
     contacts.map((contact) =>
-      fireContactCall(contact as CampaignContactRow, campaign, supabase)
+      fireContactCall(contact as CampaignContactRow, campaign, supabase, vapiApiKey)
     )
   )
 
@@ -79,7 +80,8 @@ async function fireContactCall(
     vapi_assistant_id: string
     vapi_phone_number_id: string
   },
-  supabase: SupabaseClient<Database>
+  supabase: SupabaseClient<Database>,
+  vapiApiKey: string
 ): Promise<void> {
   try {
     const { vapiCallId } = await createOutboundCall({
@@ -89,6 +91,7 @@ async function fireContactCall(
       name: contact.name,
       assistantId: campaign.vapi_assistant_id,
       phoneNumberId: campaign.vapi_phone_number_id,
+      vapiApiKey,
       customData: (contact.custom_data as Record<string, string>) ?? {},
     })
 

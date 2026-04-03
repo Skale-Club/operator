@@ -9,6 +9,7 @@ export interface OutboundCallParams {
   name: string | null     // customer name (optional)
   assistantId: string     // Vapi assistant UUID
   phoneNumberId: string   // Vapi phone number UUID (required for outbound)
+  vapiApiKey: string      // Fetched from org's vapi integration in integrations table
   customData?: Record<string, string>  // passed as variableValues to assistant
 }
 
@@ -17,10 +18,7 @@ export interface OutboundCallResult {
 }
 
 export async function createOutboundCall(params: OutboundCallParams): Promise<OutboundCallResult> {
-  const { contactId, campaignId, phone, name, assistantId, phoneNumberId, customData } = params
-
-  const vapiApiKey = process.env.VAPI_API_KEY
-  if (!vapiApiKey) throw new Error('VAPI_API_KEY environment variable is not set')
+  const { contactId, campaignId, phone, name, assistantId, phoneNumberId, vapiApiKey, customData } = params
 
   const payload = {
     assistantId,
