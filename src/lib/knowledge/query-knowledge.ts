@@ -1,33 +1,16 @@
 // src/lib/knowledge/query-knowledge.ts
 // Hot path: embed query → tenant-scoped similarity search → synthesize answer
-// Budget: ~50ms embed + ~50ms RPC + ~200ms haiku = ~300ms (within 500ms Vapi limit)
+// Keys fetched from DB integrations table (not env vars) — supports OpenRouter + Anthropic.
+// Budget: ~50ms embed + ~50ms RPC + ~200ms synthesis = ~300ms (within 500ms Vapi limit)
 
 import OpenAI from 'openai'
 import Anthropic from '@anthropic-ai/sdk'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
+import { embed } from '@/lib/knowledge/embed'
+import { getProviderKey } from '@/lib/integrations/get-provider-key'
 
 const FALLBACK_RESPONSE = "I don't have information about that in my knowledge base."
-
-// Module-level clients to avoid reinstantiation on hot path
-let openaiClient: OpenAI | null = null
-let anthropicClient: Anthropic | null = null
-
-function getOpenAI(): OpenAI {
-  if (!openaiClient) {
-    if (!process.env.OPENAI_API_KEY) throw new Error('OPENAI_API_KEY not set')
-    openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-  }
-  return openaiClient
-}
-
-function getAnthropic(): Anthropic {
-  if (!anthropicClient) {
-    if (!process.env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY not set')
-    anthropicClient = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-  }
-  return anthropicClient
-}
 
 export async function queryKnowledge(
   query: string,
@@ -37,16 +20,14 @@ export async function queryKnowledge(
   try {
     if (!query.trim()) return FALLBACK_RESPONSE
 
-    // Step 1: Embed the query (~50ms)
-    const openai = getOpenAI()
-    const embeddingResponse = await openai.embeddings.create({
-      model: 'text-embedding-3-small',
-      input: query.trim(),
-      encoding_format: 'float',
-    })
-    const queryEmbedding = embeddingResponse.data[0].embedding
+    // Step 1: Fetch OpenAI key for embedding (~0ms — DB read)
+    const openaiKey = await getProviderKey('openai', organizationId, supabase)
+    if (!openaiKey) return FALLBACK_RESPONSE
 
-    // Step 2: Tenant-scoped similarity search via RPC (~50ms)
+    // Step 2: Embed the query (~50ms)
+    const queryEmbedding = await embed(query.trim(), openaiKey)
+
+    // Step 3: Tenant-scoped similarity search via RPC (~50ms)
     const { data: chunks, error: rpcError } = await supabase.rpc('match_document_chunks', {
       p_organization_id: organizationId,
       query_embedding: queryEmbedding,
@@ -63,21 +44,37 @@ export async function queryKnowledge(
       return FALLBACK_RESPONSE
     }
 
-    // Step 3: Synthesize answer from top chunks (~200ms — haiku is fast)
+    // Step 4: Synthesize answer — prefer OpenRouter, fall back to Anthropic (~200ms)
     const context = chunks
       .map((c: { content: string }) => c.content)
       .join('\n\n---\n\n')
 
-    const anthropic = getAnthropic()
-    const message = await anthropic.messages.create({
+    const synthesisPrompt = `Answer the following question using ONLY the provided context. Be concise — 2-3 sentences maximum. If the context does not contain the answer, say you don't have that information.\n\nContext:\n${context}\n\nQuestion: ${query}`
+
+    // Try OpenRouter first
+    const openrouterKey = await getProviderKey('openrouter', organizationId, supabase)
+    if (openrouterKey) {
+      const openrouterClient = new OpenAI({
+        apiKey: openrouterKey,
+        baseURL: 'https://openrouter.ai/api/v1',
+      })
+      const completion = await openrouterClient.chat.completions.create({
+        model: 'anthropic/claude-haiku-4-5',
+        max_tokens: 256,
+        messages: [{ role: 'user', content: synthesisPrompt }],
+      })
+      return completion.choices[0]?.message?.content ?? FALLBACK_RESPONSE
+    }
+
+    // Fall back to Anthropic direct
+    const anthropicKey = await getProviderKey('anthropic', organizationId, supabase)
+    if (!anthropicKey) return FALLBACK_RESPONSE
+
+    const anthropicClient = new Anthropic({ apiKey: anthropicKey })
+    const message = await anthropicClient.messages.create({
       model: 'claude-3-5-haiku-20241022',
       max_tokens: 256,
-      messages: [
-        {
-          role: 'user',
-          content: `Answer the following question using ONLY the provided context. Be concise — 2-3 sentences maximum. If the context does not contain the answer, say you don't have that information.\n\nContext:\n${context}\n\nQuestion: ${query}`,
-        },
-      ],
+      messages: [{ role: 'user', content: synthesisPrompt }],
     })
 
     const textBlock = message.content.find((b) => b.type === 'text')
