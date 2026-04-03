@@ -42,7 +42,7 @@ const navItems = [
   { icon: Plug2, label: 'Integrations', href: '/dashboard/integrations', active: true },
   { icon: Zap, label: 'Tools', href: '/dashboard/tools', active: true },
   { icon: Eye, label: 'Observability', href: '/dashboard/calls', active: true },
-  { icon: BookOpen, label: 'Knowledge Base', href: '/dashboard/knowledge', active: false },
+  { icon: BookOpen, label: 'Knowledge Base', href: '/dashboard/knowledge', active: true },
   { icon: Phone, label: 'Campaigns', href: '/dashboard/outbound', active: false },
 ]
 
