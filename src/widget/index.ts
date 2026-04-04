@@ -1,8 +1,25 @@
 // src/widget/index.ts
 // Leaidear embeddable chat widget — standalone vanilla TypeScript, no React/Next.js imports
 
+interface WidgetConfig {
+  displayName: string
+  primaryColor: string
+  welcomeMessage: string
+}
+
+const DEFAULT_WIDGET_CONFIG: WidgetConfig = {
+  displayName: 'AI Assistant',
+  primaryColor: '#18181B',
+  welcomeMessage: 'Hi! How can I help?',
+}
+
 // --- CSS constant (inline string, full UI-SPEC values) ---
 const WIDGET_CSS = `
+/* Theme */
+:host {
+  --leaidear-primary-color: #18181B;
+}
+
 /* Reset */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -29,7 +46,7 @@ const WIDGET_CSS = `
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: #18181b;
+  background: var(--leaidear-primary-color);
   border: none;
   cursor: pointer;
   display: flex;
@@ -95,7 +112,7 @@ const WIDGET_CSS = `
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: #18181b;
+  background: var(--leaidear-primary-color);
   color: #ffffff;
   display: flex;
   align-items: center;
@@ -139,7 +156,7 @@ const WIDGET_CSS = `
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: #18181b;
+  background: var(--leaidear-primary-color);
   color: #ffffff;
   display: flex;
   align-items: center;
@@ -178,7 +195,7 @@ const WIDGET_CSS = `
   margin-top: 4px;
 }
 .leaidear-bubble-user {
-  background: #18181b;
+  background: var(--leaidear-primary-color);
   color: #ffffff;
   padding: 8px 16px;
   border-radius: 16px 16px 4px 16px;
@@ -267,8 +284,8 @@ const WIDGET_CSS = `
   transition: background 150ms ease;
   flex-shrink: 0;
 }
-.leaidear-send:hover:not(:disabled) { background: #3f3f46; }
-.leaidear-send:active:not(:disabled) { background: #52525b; }
+.leaidear-send:hover:not(:disabled) { opacity: 0.92; }
+.leaidear-send:active:not(:disabled) { opacity: 0.84; }
 .leaidear-send:disabled { background: #d4d4d8; cursor: default; }
 `
 
@@ -307,6 +324,49 @@ function storeSession(token: string, sessionId: string): void {
     localStorage.setItem(getStorageKey(token), sessionId)
   } catch {
     // Silent fail — private browsing mode (Safari) may throw SecurityError
+  }
+}
+
+function normalizeWidgetText(value: unknown, fallback: string): string {
+  if (typeof value !== 'string') return fallback
+
+  const trimmed = value.trim()
+  return trimmed.length > 0 ? trimmed : fallback
+}
+
+function normalizePrimaryColor(value: unknown): string {
+  if (typeof value !== 'string') return DEFAULT_WIDGET_CONFIG.primaryColor
+
+  const trimmed = value.trim()
+  return /^#[0-9A-Fa-f]{6}$/.test(trimmed)
+    ? trimmed.toUpperCase()
+    : DEFAULT_WIDGET_CONFIG.primaryColor
+}
+
+function getDisplayInitial(displayName: string): string {
+  return displayName.trim().charAt(0).toUpperCase() || DEFAULT_WIDGET_CONFIG.displayName.charAt(0)
+}
+
+async function fetchWidgetConfig(apiBase: string, token: string): Promise<WidgetConfig> {
+  try {
+    const response = await fetch(`${apiBase}/api/widget/${token}/config`, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    })
+
+    if (!response.ok) {
+      return DEFAULT_WIDGET_CONFIG
+    }
+
+    const payload = await response.json() as Record<string, unknown>
+
+    return {
+      displayName: normalizeWidgetText(payload.displayName, DEFAULT_WIDGET_CONFIG.displayName),
+      primaryColor: normalizePrimaryColor(payload.primaryColor),
+      welcomeMessage: normalizeWidgetText(payload.welcomeMessage, DEFAULT_WIDGET_CONFIG.welcomeMessage),
+    }
+  } catch {
+    return DEFAULT_WIDGET_CONFIG
   }
 }
 
@@ -387,7 +447,7 @@ function buildPanel(
   token: string,
   apiBase: string,
   _bubble: HTMLButtonElement
-): HTMLDivElement {
+): { panel: HTMLDivElement; applyConfig: (config: WidgetConfig) => void } {
   const panel = document.createElement('div')
   panel.className = 'leaidear-panel'
   panel.setAttribute('role', 'dialog')
@@ -399,10 +459,10 @@ function buildPanel(
   header.className = 'leaidear-header'
   const avatar = document.createElement('div')
   avatar.className = 'leaidear-avatar'
-  avatar.textContent = 'A'
+  avatar.textContent = getDisplayInitial(DEFAULT_WIDGET_CONFIG.displayName)
   const botName = document.createElement('span')
   botName.className = 'leaidear-bot-name'
-  botName.textContent = 'AI Assistant'
+  botName.textContent = DEFAULT_WIDGET_CONFIG.displayName
   header.appendChild(avatar)
   header.appendChild(botName)
 
@@ -416,10 +476,10 @@ function buildPanel(
   emptyState.className = 'leaidear-empty'
   const emptyAvatar = document.createElement('div')
   emptyAvatar.className = 'leaidear-empty-avatar'
-  emptyAvatar.textContent = 'A'
+  emptyAvatar.textContent = getDisplayInitial(DEFAULT_WIDGET_CONFIG.displayName)
   const emptyHeading = document.createElement('p')
   emptyHeading.className = 'leaidear-empty-heading'
-  emptyHeading.textContent = 'Hi! How can I help?'
+  emptyHeading.textContent = DEFAULT_WIDGET_CONFIG.welcomeMessage
   const emptyBody = document.createElement('p')
   emptyBody.className = 'leaidear-empty-body'
   emptyBody.textContent = 'Ask me anything \u2014 I\u2019m here to help.'
@@ -578,7 +638,15 @@ function buildPanel(
     }
   })
 
-  return panel
+  function applyConfig(config: WidgetConfig): void {
+    const displayInitial = getDisplayInitial(config.displayName)
+    avatar.textContent = displayInitial
+    botName.textContent = config.displayName
+    emptyAvatar.textContent = displayInitial
+    emptyHeading.textContent = config.welcomeMessage
+  }
+
+  return { panel, applyConfig }
 }
 
 // --- initWidget (top-level orchestrator, per Pattern 3) ---
@@ -608,9 +676,14 @@ function initWidget(token: string, apiBase: string): void {
   }
 
   // Build panel
-  const panel = buildPanel(shadow, token, apiBase, bubble)
+  const { panel, applyConfig } = buildPanel(shadow, token, apiBase, bubble)
   shadow.appendChild(bubble)
   shadow.appendChild(panel)
+
+  void fetchWidgetConfig(apiBase, token).then((config) => {
+    host.style.setProperty('--leaidear-primary-color', config.primaryColor)
+    applyConfig(config)
+  })
 
   // Toggle open/closed
   let isOpen = false
