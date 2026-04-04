@@ -1,4 +1,4 @@
-// Database type definitions for VoiceOps
+// Database type definitions for Leaidear
 // Auto-generated shape — replace with Supabase CLI output after applying migrations:
 //   npx supabase gen types typescript --local > src/types/database.ts
 //

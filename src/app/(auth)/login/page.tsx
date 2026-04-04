@@ -85,10 +85,10 @@ export default function LoginPage() {
             className="text-[28px] font-semibold leading-[1.1] tracking-tight"
             style={{ lineHeight: '1.1' }}
           >
-            VoiceOps
+            Leaidear
           </h1>
           <p className="text-[14px] font-normal text-muted-foreground mt-1">
-            Voice AI Operations Platform
+            AI Operations Platform
           </p>
         </div>
 

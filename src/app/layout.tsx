@@ -7,8 +7,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'VoiceOps',
-  description: 'Voice AI Operations Platform',
+  title: 'Leaidear',
+  description: 'AI Operations Platform',
 }
 
 export default function RootLayout({

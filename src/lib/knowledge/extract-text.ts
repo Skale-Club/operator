@@ -28,7 +28,7 @@ export async function extractText(file: File): Promise<string> {
 
 export async function extractTextFromUrl(url: string): Promise<string> {
   const response = await fetch(url, {
-    headers: { 'User-Agent': 'VoiceOps-KnowledgeBot/1.0' }
+    headers: { 'User-Agent': 'Leaidear-KnowledgeBot/1.0' }
   })
   if (!response.ok) {
     throw new Error(`Failed to fetch URL: ${response.status} ${response.statusText}`)
