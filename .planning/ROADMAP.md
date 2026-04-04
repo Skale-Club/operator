@@ -42,7 +42,7 @@ See [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 
 ### Phases
 
-- [ ] **Phase 1: Foundation** - Redis, Supabase schema, brand rename, and static widget asset — everything downstream phases require
+- [x] **Phase 1: Foundation** - Redis, Supabase schema, brand rename, and static widget asset — everything downstream phases require (completed 2026-04-04)
 - [ ] **Phase 2: Chat API** - Public `/api/chat/[token]` route with token validation, session management, and conversation persistence
 - [ ] **Phase 3: AI Conversation Engine** - Streaming responses via Vercel AI SDK, knowledge base retrieval, and action engine tool calls
 - [ ] **Phase 4: Widget Embed Script** - Client-side JS widget loaded via `<script>` tag with floating bubble and chat panel UI
@@ -67,7 +67,7 @@ Plans:
 - [x] 01-01-PLAN.md — Wave 0 test scaffolds (brand, redis, widget tests)
 - [x] 01-02-PLAN.md — Brand rename: VoiceOps → Leaidear across all src/ and doc files
 - [x] 01-03-PLAN.md — Redis singleton client module and widget placeholder
-- [ ] 01-04-PLAN.md — Supabase chat schema migration (chat_sessions, chat_messages)
+- [x] 01-04-PLAN.md — Supabase chat schema migration (chat_sessions, chat_messages)
 
 ### Phase 2: Chat API
 **Goal**: The public chat API is live, authenticates requests via org token, and persists conversation state
@@ -122,7 +122,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 2/4 | In Progress|  |
+| 1. Foundation | 4/4 | Complete   | 2026-04-04 |
 | 2. Chat API | 0/? | Not started | - |
 | 3. AI Conversation Engine | 0/? | Not started | - |
 | 4. Widget Embed Script | 0/? | Not started | - |

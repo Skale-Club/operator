@@ -40,7 +40,7 @@
 ### INFRA — Backend Infrastructure
 
 - [x] **INFRA-01**: Redis connection configured and available for chat session storage
-- [ ] **INFRA-02**: Supabase schema includes `chat_sessions` and `chat_messages` tables with RLS
+- [x] **INFRA-02**: Supabase schema includes `chat_sessions` and `chat_messages` tables with RLS
 - [ ] **INFRA-03**: Public-facing chat API route (`/api/chat/[token]`) validates org token and scopes all queries to the org
 - [x] **INFRA-04**: Widget asset served from the platform's own domain (no external CDN dependency required)
 
@@ -76,7 +76,7 @@
 | BRAND-01 | Phase 1 | Complete |
 | BRAND-02 | Phase 1 | Complete |
 | INFRA-01 | Phase 1 | Complete |
-| INFRA-02 | Phase 1 | pending |
+| INFRA-02 | Phase 1 | Complete |
 | INFRA-04 | Phase 1 | Complete |
 | CHAT-04 | Phase 2 | pending |
 | CHAT-05 | Phase 2 | pending |
