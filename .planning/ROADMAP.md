@@ -112,7 +112,7 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — Wave 1: CORS fix on chat route + RED test scaffolds (widget-asset + widget.test.ts)
+- [x] 04-01-PLAN.md — Wave 1: CORS fix on chat route + RED test scaffolds (widget-asset + widget.test.ts)
 - [ ] 04-02-PLAN.md — Wave 2: src/widget/index.ts full implementation + esbuild pipeline + widget-test.html
 - [ ] 04-03-PLAN.md — Wave 3: smoke test page prep + human browser verification checkpoint
 
@@ -137,7 +137,7 @@ Plans:
 | 1. Foundation | 4/4 | Complete   | 2026-04-04 |
 | 2. Chat API | 3/3 | Complete   | 2026-04-04 |
 | 3. AI Conversation Engine | 0/2 | Not started | - |
-| 4. Widget Embed Script | 0/3 | Not started | - |
+| 4. Widget Embed Script | 1/3 | In Progress|  |
 | 5. Admin Configuration | 0/? | Not started | - |
 
 ---
