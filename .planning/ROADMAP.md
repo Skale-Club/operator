@@ -78,7 +78,12 @@ Plans:
   2. Each conversation receives a unique anonymous session ID that persists across messages within the same session
   3. Active session context is read from and written to Redis on every message exchange within a session
   4. Completed conversation turns are stored in `chat_messages` in Supabase and are queryable by org and session ID
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — Wave 0: migration 012 (widget_token + session_key) and RED test scaffolds
+- [ ] 02-02-PLAN.md — Wave 1: session.ts and persist.ts helper implementations
+- [ ] 02-03-PLAN.md — Wave 2: POST /api/chat/[token] route handler
 
 ### Phase 3: AI Conversation Engine
 **Goal**: The chat API returns streamed AI responses that draw from the org's knowledge base and can invoke the action engine during conversation
@@ -123,7 +128,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 4/4 | Complete   | 2026-04-04 |
-| 2. Chat API | 0/? | Not started | - |
+| 2. Chat API | 0/3 | Planned | - |
 | 3. AI Conversation Engine | 0/? | Not started | - |
 | 4. Widget Embed Script | 0/? | Not started | - |
 | 5. Admin Configuration | 0/? | Not started | - |
@@ -160,4 +165,4 @@ Plans:
 
 ---
 
-*Last updated: 2026-04-04 — Phase 1, Plan 01 complete (Wave 0 test scaffolds)*
+*Last updated: 2026-04-04 — Phase 2 plans created (3 plans, 3 waves)*
