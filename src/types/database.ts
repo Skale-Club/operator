@@ -26,6 +26,7 @@ export interface Database {
           name: string
           slug: string
           is_active: boolean
+          widget_token: string
           created_at: string
           updated_at: string
         }
@@ -34,6 +35,7 @@ export interface Database {
           name: string
           slug: string
           is_active?: boolean
+          widget_token?: string
           created_at?: string
           updated_at?: string
         }
@@ -42,6 +44,7 @@ export interface Database {
           name?: string
           slug?: string
           is_active?: boolean
+          widget_token?: string
           updated_at?: string
         }
         Relationships: []
@@ -410,6 +413,7 @@ export interface Database {
           id: string
           organization_id: string
           widget_token: string
+          session_key: string | null
           last_active_at: string
           created_at: string
         }
@@ -417,6 +421,7 @@ export interface Database {
           id?: string
           organization_id: string
           widget_token: string
+          session_key?: string | null
           last_active_at?: string
           created_at?: string
         }
@@ -424,6 +429,7 @@ export interface Database {
           id?: string
           organization_id?: string
           widget_token?: string
+          session_key?: string | null
           last_active_at?: string
           created_at?: string
         }
