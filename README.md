@@ -1,10 +1,10 @@
-# VoiceOps
+# Leaidear
 
-VoiceOps is a multi-tenant operations layer for agencies running voice AI assistants with Vapi. It gives each client organization its own tools, integrations, knowledge base, outbound campaigns, and call observability inside one admin panel, with Supabase RLS enforcing tenant isolation at the data layer.
+Leaidear is a multi-tenant operations layer for agencies running voice AI assistants with Vapi. It gives each client organization its own tools, integrations, knowledge base, outbound campaigns, and call observability inside one admin panel, with Supabase RLS enforcing tenant isolation at the data layer.
 
 The platform is intentionally designed as a configurable integration and orchestration layer, not as a single hardcoded voice workflow. In practice, each client organization can have its own assistant mappings, provider credentials, tool behaviors, outbound flows, and follow-up actions while still running on the same product foundation.
 
-The current codebase reflects a shipped `v1.0` MVP completed on `2026-04-03`. The product focus is simple: when Vapi triggers a tool during a live call, VoiceOps must resolve the right organization, execute the action, and return a result fast enough for production call flows.
+The current codebase reflects a shipped `v1.0` MVP completed on `2026-04-03`. The product focus is simple: when Vapi triggers a tool during a live call, Leaidear must resolve the right organization, execute the action, and return a result fast enough for production call flows.
 
 The canonical production origin for the app and all first-party webhooks is `https://voiceops.skale.club`.
 
@@ -22,7 +22,7 @@ The canonical production origin for the app and all first-party webhooks is `htt
 
 ## Product Framing
 
-VoiceOps should be understood as the shared platform underneath many per-client automations.
+Leaidear should be understood as the shared platform underneath many per-client automations.
 
 - The product owns tenant resolution, credential storage, tool execution, observability, and outbound infrastructure.
 - A concrete workflow such as "find appointments in 1 hour, call to confirm, then notify the owner by SMS" is a client-specific orchestration built on top of those primitives.
@@ -49,7 +49,7 @@ VoiceOps should be understood as the shared platform underneath many per-client 
 ### Core flow
 
 1. Vapi sends a tool-call webhook to [`src/app/api/vapi/tools/route.ts`](/c:/Users/Vanildo/Dev/voiceops/src/app/api/vapi/tools/route.ts).
-2. VoiceOps resolves the organization from the assistant mapping.
+2. Leaidear resolves the organization from the assistant mapping.
 3. The configured tool and provider credentials are loaded for that tenant.
 4. The action executes and returns a result to Vapi.
 5. Execution logging is deferred asynchronously so the webhook still returns quickly.
@@ -65,7 +65,7 @@ Use `https://voiceops.skale.club` as the definitive public base URL for the prod
 - Vapi end-of-call webhook: `https://voiceops.skale.club/api/vapi/calls`
 - Vapi campaign webhook: `https://voiceops.skale.club/api/vapi/campaigns`
 
-When configuring Vapi server URLs, external callbacks, or customer-specific integrations that call into VoiceOps, prefer these canonical URLs over temporary Vercel preview URLs or other legacy webhook hosts.
+When configuring Vapi server URLs, external callbacks, or customer-specific integrations that call into Leaidear, prefer these canonical URLs over temporary Vercel preview URLs or other legacy webhook hosts.
 
 ### Tenant model
 
@@ -87,9 +87,9 @@ Across these areas, the design goal is composability: the same base capabilities
 
 ## Integration Conventions
 
-- When linking a Vapi assistant into VoiceOps, always store a human-friendly assistant name alongside the Vapi assistant ID.
+- When linking a Vapi assistant into Leaidear, always store a human-friendly assistant name alongside the Vapi assistant ID.
 - Prefer the same readable name your team already uses in Vapi.
-- Do not use raw UUIDs, timestamps, or generated test labels as the primary assistant label in VoiceOps.
+- Do not use raw UUIDs, timestamps, or generated test labels as the primary assistant label in Leaidear.
 - Treat the Vapi assistant ID as a routing key, not as the user-facing identifier.
 - Assistant mappings should make it easy to jump back to the assistant in Vapi when debugging or reviewing configuration.
 
@@ -198,7 +198,7 @@ tests/                 Vitest test suite
 .planning/             roadmap, state, milestone archive, and phase artifacts
 ```
 
-The `skills/` folder is the repo-local library for reusable integration skills. Add new provider-specific skills there as VoiceOps gains more integrations.
+The `skills/` folder is the repo-local library for reusable integration skills. Add new provider-specific skills there as Leaidear gains more integrations.
 
 ## Planning Folder
 

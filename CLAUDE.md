@@ -1,4 +1,4 @@
-# VoiceOps - Claude Code Instructions
+# Leaidear - Claude Code Instructions
 
 ## Commands
 
@@ -20,7 +20,7 @@ Always run `npm run build` after changes to catch type errors before finishing.
 - Deno - `supabase/functions/process-embeddings/` (Supabase Edge Function)
 - GitHub Actions - auxiliary scheduled automation such as Supabase keepalive
 
-**Product framing:** VoiceOps is a tenant-aware integration and orchestration platform. Client workflows can differ significantly, so prefer reusable platform capabilities over hardcoding one client's playbook as product-wide behavior.
+**Product framing:** Leaidear is a tenant-aware integration and orchestration platform. Client workflows can differ significantly, so prefer reusable platform capabilities over hardcoding one client's playbook as product-wide behavior.
 
 **Canonical production origin:** `https://voiceops.skale.club`. Use this host for first-party webhook construction and documentation examples unless an updated production host is explicitly documented.
 
