@@ -5,6 +5,26 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { existsSync, readFileSync } from 'fs'
 import { resolve } from 'path'
 
+// jsdom's localStorage may not implement all methods — use a Map-based mock
+const localStorageMock = (() => {
+  let store: Map<string, string> = new Map()
+  return {
+    getItem: (key: string) => store.get(key) ?? null,
+    setItem: (key: string, value: string) => { store.set(key, value) },
+    removeItem: (key: string) => { store.delete(key) },
+    clear: () => { store = new Map() },
+    get length() { return store.size },
+    key: (index: number) => Array.from(store.keys())[index] ?? null,
+  }
+})()
+
+vi.stubGlobal('localStorage', localStorageMock)
+
+// Compatibility wrapper — clears our mock
+function clearLocalStorage(): void {
+  localStorageMock.clear()
+}
+
 // Helper: evaluate the built widget script in the jsdom environment
 // The widget is an IIFE — evaluating it triggers init.
 function loadWidget(token: string, scriptSrc: string): void {
@@ -31,7 +51,7 @@ function loadWidget(token: string, scriptSrc: string): void {
 describe('Widget — token extraction and init guard (WIDGET-02, WIDGET-04)', () => {
   beforeEach(() => {
     document.body.innerHTML = ''
-    localStorage.clear()
+    clearLocalStorage()
     // Remove any existing leaidear-root
     document.getElementById('leaidear-root')?.remove()
   })
@@ -79,7 +99,7 @@ describe('Widget — token extraction and init guard (WIDGET-02, WIDGET-04)', ()
 describe('Widget — session localStorage (WIDGET-05, D-12, D-13)', () => {
   beforeEach(() => {
     document.body.innerHTML = ''
-    localStorage.clear()
+    clearLocalStorage()
     document.getElementById('leaidear-root')?.remove()
   })
 
@@ -111,7 +131,7 @@ describe('Widget — session localStorage (WIDGET-05, D-12, D-13)', () => {
 describe('Widget — Shadow DOM isolation (WIDGET-03, D-01, D-02)', () => {
   beforeEach(() => {
     document.body.innerHTML = ''
-    localStorage.clear()
+    clearLocalStorage()
     document.getElementById('leaidear-root')?.remove()
   })
 

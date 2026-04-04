@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack --port 4267",
-    "build": "next build",
+    "build:widget": "esbuild src/widget/index.ts --bundle --minify --platform=browser --format=iife --target=es2017 --outfile=public/widget.js",
+    "build": "npm run build:widget && next build",
     "start": "next start",
     "lint": "next lint",
     "vercel:pull": "vercel pull --yes --environment preview --scope skaleclub",
