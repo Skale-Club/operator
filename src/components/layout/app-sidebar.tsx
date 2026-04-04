@@ -9,6 +9,7 @@ import {
   PhoneCall,
   BookOpen,
   Phone,
+  MessageSquare,
   ChevronUp,
   LogOut,
   Settings,
@@ -45,6 +46,7 @@ const navItems = [
   { icon: BookOpen, label: 'Knowledge', href: '/knowledge', active: true },
   { icon: Bot, label: 'Assistants', href: '/assistants', active: true },
   { icon: Plug2, label: 'Integrations', href: '/integrations', active: true },
+  { icon: MessageSquare, label: 'Widget', href: '/widget', active: true },
 ]
 
 function getInitials(user: User): string {
