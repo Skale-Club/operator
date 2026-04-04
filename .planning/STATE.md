@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Leaidear + Embedded Chatbot
 status: planning
-last_updated: "2026-04-04T05:11:12.229Z"
+last_updated: "2026-04-04T05:16:00Z"
 last_activity: 2026-04-03 — v1.1 milestone archived
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 4
-  completed_plans: 2
+  completed_plans: 3
 ---
 
 # VoiceOps - State
@@ -17,15 +17,15 @@ progress:
 ## Current Position
 
 Milestone: v1.2 Leaidear + Embedded Chatbot — in progress
-Phase: 01-foundation | Plan: 03 of 4
+Phase: 01-foundation | Plan: 04 of 4
 
-Last session: 2026-04-04 — completed 01-02 (Brand rename: VoiceOps -> Leaidear)
+Last session: 2026-04-04 — completed 01-03 (Redis client + widget placeholder)
 
 ## Progress
 
 - v1.0 MVP: ✅ Shipped 2026-04-03
 - v1.1 Knowledge Base: ✅ Shipped 2026-04-03
-- v1.2: 🔄 In progress — [██████░░░░] 50% (2/4 plans complete)
+- v1.2: 🔄 In progress — [████████░░] 75% (3/4 plans complete)
 
 ## Project Reference
 
@@ -40,3 +40,4 @@ See `.planning/PROJECT.md` (updated 2026-04-03 after v1.1)
 - v1.1 shipped 2026-04-03 — LangChain vector pipeline, schema migration 010
 - Active known tech debt: no HMAC validation on Vapi webhooks, campaign calls don't appear in Observability, send_sms/custom_webhook are stubs
 - 01-02 (2026-04-04): voiceops.skale.club canonical URL preserved — deployment host not brand label; vo_active_org cookie name preserved — internal prefix not brand-visible
+- 01-03 (2026-04-04): redis npm package (not @upstash/redis) for provider-agnostic URL-based connection; globalThis HMR guard mirrors supabase singleton; widget.js is a static stub replaced in Phase 4

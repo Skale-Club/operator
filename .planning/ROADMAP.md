@@ -66,7 +66,7 @@ See [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 Plans:
 - [x] 01-01-PLAN.md — Wave 0 test scaffolds (brand, redis, widget tests)
 - [x] 01-02-PLAN.md — Brand rename: VoiceOps → Leaidear across all src/ and doc files
-- [ ] 01-03-PLAN.md — Redis singleton client module and widget placeholder
+- [x] 01-03-PLAN.md — Redis singleton client module and widget placeholder
 - [ ] 01-04-PLAN.md — Supabase chat schema migration (chat_sessions, chat_messages)
 
 ### Phase 2: Chat API
