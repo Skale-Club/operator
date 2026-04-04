@@ -61,7 +61,13 @@ See [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
   2. A Redis connection is live and accessible to server-side code in the Next.js app
   3. `chat_sessions` and `chat_messages` tables exist in Supabase with RLS policies that scope reads and writes to the owning org
   4. A static JS asset for the widget is served from the platform's own domain (route or public file), confirming no external CDN is required
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Wave 0 test scaffolds (brand, redis, widget tests)
+- [ ] 01-02-PLAN.md — Brand rename: VoiceOps → Leaidear across all src/ and doc files
+- [ ] 01-03-PLAN.md — Redis singleton client module and widget placeholder
+- [ ] 01-04-PLAN.md — Supabase chat schema migration (chat_sessions, chat_messages)
 
 ### Phase 2: Chat API
 **Goal**: The public chat API is live, authenticates requests via org token, and persists conversation state
@@ -116,7 +122,7 @@ See [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/? | Not started | - |
+| 1. Foundation | 0/4 | Planning complete | - |
 | 2. Chat API | 0/? | Not started | - |
 | 3. AI Conversation Engine | 0/? | Not started | - |
 | 4. Widget Embed Script | 0/? | Not started | - |
