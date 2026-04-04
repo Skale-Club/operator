@@ -153,7 +153,7 @@ Animation: `leaidear-pulse 1.4s ease-out 1.2s 2 both`. Runs twice, then stops. D
 | Background | #f4f4f5 |
 | Border bottom | `1px solid #e4e4e7` |
 | Padding | 0 16px |
-| Layout | flex, align-items center, gap 10px |
+| Layout | flex, align-items center, gap 8px |
 | Avatar | 28px circle, background accent (#18181b), initial letter of bot name in 11px semibold #ffffff |
 | Bot name text | 14px, weight 600, color #09090b |
 
@@ -232,7 +232,7 @@ Shown from the moment the `fetch()` call is initiated until the `done` SSE event
 - Background: #f4f4f5
 - Border: `1px solid #e4e4e7`
 - Border radius: 18px (fully rounded — pill shape)
-- Padding: 0 14px
+- Padding: 0 16px
 - Font: 14px, weight 400, line-height 1.4, color #09090b
 - Placeholder color: #71717a
 - Outline: none on focus (use border color change instead)
