@@ -43,8 +43,8 @@ See [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 ### Phases
 
 - [x] **Phase 1: Foundation** - Redis, Supabase schema, brand rename, and static widget asset — everything downstream phases require (completed 2026-04-04)
-- [x] **Phase 2: Chat API** - Public `/api/chat/[token]` route with token validation, session management, and conversation persistence (completed 2026-04-04)
-- [ ] **Phase 3: AI Conversation Engine** - Streaming responses via Vercel AI SDK, knowledge base retrieval, and action engine tool calls
+- [x] **Phase 2: Chat API** - Public `/api/chat/[token]` route with token validation, session management, and conversation persistence (completed 2026-04-04)
+- [ ] **Phase 3: AI Conversation Engine** - Streaming responses via plain JSON SSE, knowledge base pre-retrieval, and action engine tool calls
 - [ ] **Phase 4: Widget Embed Script** - Client-side JS widget loaded via `<script>` tag with floating bubble and chat panel UI
 - [ ] **Phase 5: Admin Configuration** - Widget config page with appearance settings, live preview, embed code generator, and token regen
 
@@ -93,8 +93,11 @@ Plans:
   1. A visitor message produces a streamed SSE response that begins arriving before the full answer is complete (not a single bulk response)
   2. When a visitor asks a question answerable from the org's knowledge base, the AI response accurately reflects that content
   3. When conversation context matches an org tool trigger, the action engine `executeAction` is called and its result is incorporated into the AI response
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 2 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — Wave 0: update test scaffolds to streaming shape and add RED streaming tests
+- [ ] 03-02-PLAN.md — Wave 1: stream.ts helper + route.ts step 7 replacement (full AI engine)
 
 ### Phase 4: Widget Embed Script
 **Goal**: Any third-party site can install the chat widget with a single script tag and visitors can converse without logging in
@@ -129,7 +132,7 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Foundation | 4/4 | Complete   | 2026-04-04 |
 | 2. Chat API | 3/3 | Complete   | 2026-04-04 |
-| 3. AI Conversation Engine | 0/? | Not started | - |
+| 3. AI Conversation Engine | 0/2 | Not started | - |
 | 4. Widget Embed Script | 0/? | Not started | - |
 | 5. Admin Configuration | 0/? | Not started | - |
 
@@ -165,4 +168,4 @@ Plans:
 
 ---
 
-*Last updated: 2026-04-04 — Phase 2 plans created (3 plans, 3 waves)*
+*Last updated: 2026-04-04 — Phase 3 plans created (2 plans, 2 waves)*
