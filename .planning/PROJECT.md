@@ -58,6 +58,9 @@ That business logic may differ by client. The invariant is the reliability of th
 - Redis short-term memory for active chat sessions - v1.2, Phase 2 (CHAT-04)
 - Supabase long-term memory for conversation history - v1.2, Phase 2 (CHAT-05)
 - Public chat API endpoint (POST /api/chat/[token]) with session management and message persistence - v1.2, Phase 2 (CHAT-06)
+- Streamed SSE AI responses (session/token/tool_call/done protocol) via ReadableStream - v1.2, Phase 3 (CHAT-01)
+- Knowledge base pre-retrieval context injection into system prompt before LLM call - v1.2, Phase 3 (CHAT-02)
+- Action engine tool invocation mid-stream (OpenRouter + Anthropic fallback, GHL credentials) - v1.2, Phase 3 (CHAT-03)
 
 ### Active
 
@@ -135,4 +138,4 @@ Renamed to Leaidear at v1.2 (2026-04-03).
 
 Update this file whenever deployment assumptions, validated requirements, or core constraints change.
 
-*Last updated: 2026-04-04 — Phase 2 chat-api complete: public chat API live with Redis sessions + Supabase persistence*
+*Last updated: 2026-04-04 — Phase 3 ai-conversation-engine complete: streamed AI responses with knowledge base retrieval and action engine tool calls*
