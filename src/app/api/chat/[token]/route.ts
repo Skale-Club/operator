@@ -12,6 +12,16 @@ import { createChatStream, type ToolWithCredentials } from '@/lib/chat/stream'
 
 export const runtime = 'nodejs'
 
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+}
+
+export async function OPTIONS() {
+  return new Response(null, { status: 204, headers: CORS_HEADERS })
+}
+
 const ChatRequestSchema = z.object({
   message: z.string().min(1, 'message is required'),
   sessionId: z.string().optional(),
@@ -30,12 +40,12 @@ export async function POST(
     try {
       rawBody = await request.json()
     } catch {
-      return Response.json({ error: 'Invalid JSON body' }, { status: 400 })
+      return Response.json({ error: 'Invalid JSON body' }, { status: 400, headers: CORS_HEADERS })
     }
 
     const parsed = ChatRequestSchema.safeParse(rawBody)
     if (!parsed.success) {
-      return Response.json({ error: parsed.error.errors[0]?.message ?? 'Invalid request' }, { status: 400 })
+      return Response.json({ error: parsed.error.errors[0]?.message ?? 'Invalid request' }, { status: 400, headers: CORS_HEADERS })
     }
     const { message, sessionId: incomingSessionId } = parsed.data
 
@@ -48,7 +58,7 @@ export async function POST(
       .single()
 
     if (orgError || !org || !org.is_active) {
-      return Response.json({ error: 'Invalid or inactive token' }, { status: 401 })
+      return Response.json({ error: 'Invalid or inactive token' }, { status: 401, headers: CORS_HEADERS })
     }
 
     // 4. Get or create session
@@ -182,10 +192,11 @@ export async function POST(
       headers: {
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
+        ...CORS_HEADERS,
       },
     })
   } catch (err) {
     console.error('[chat-api] unhandled error:', err)
-    return Response.json({ error: 'Internal server error' }, { status: 500 })
+    return Response.json({ error: 'Internal server error' }, { status: 500, headers: CORS_HEADERS })
   }
 }
