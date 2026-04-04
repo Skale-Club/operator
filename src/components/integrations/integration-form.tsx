@@ -7,7 +7,11 @@ import { z } from 'zod'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 import type { IntegrationForDisplay } from '@/app/(dashboard)/integrations/actions'
-import { createIntegration, updateIntegration } from '@/app/(dashboard)/integrations/actions'
+import {
+  createIntegration,
+  updateIntegration,
+  deleteIntegration,
+} from '@/app/(dashboard)/integrations/actions'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -18,15 +22,8 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 
-type Provider = 'gohighlevel' | 'twilio' | 'calcom' | 'custom_webhook' | 'openai' | 'anthropic' | 'openrouter' | 'vapi'
+type Provider = IntegrationForDisplay['provider']
 
 const PROVIDER_LABELS: Record<Provider, string> = {
   gohighlevel: 'GoHighLevel',
@@ -39,10 +36,7 @@ const PROVIDER_LABELS: Record<Provider, string> = {
   vapi: 'Vapi',
 }
 
-// Single schema used for both create and edit.
-// apiKey validation is enforced at submit time for create mode.
 const integrationSchema = z.object({
-  provider: z.enum(['gohighlevel', 'twilio', 'calcom', 'custom_webhook', 'openai', 'anthropic', 'openrouter', 'vapi'] as const),
   apiKey: z.string(),
   locationId: z.string().optional(),
   defaultModel: z.string().optional(),
@@ -51,29 +45,27 @@ const integrationSchema = z.object({
 type IntegrationFormValues = z.infer<typeof integrationSchema>
 
 interface IntegrationFormProps {
-  mode: 'create' | 'edit'
+  provider: Provider
   integration?: IntegrationForDisplay
   onSuccess: () => void
 }
 
-export function IntegrationForm({ mode, integration, onSuccess }: IntegrationFormProps) {
+export function IntegrationForm({ provider, integration, onSuccess }: IntegrationFormProps) {
   const [isPending, setIsPending] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const mode = integration ? 'edit' : 'create'
 
   const form = useForm<IntegrationFormValues>({
     resolver: zodResolver(integrationSchema),
     mode: 'onSubmit',
     defaultValues: {
-      provider: (integration?.provider ?? 'gohighlevel') as Provider,
-      apiKey: '', // Never pre-fill API key for security — not even in edit mode
+      apiKey: '',
       locationId: integration?.location_id ?? '',
       defaultModel: (integration?.config as Record<string, string> | null)?.model ?? '',
     },
   })
 
-  const selectedProvider = form.watch('provider')
-
   async function onSubmit(values: IntegrationFormValues) {
-    // Enforce apiKey required for create
     if (mode === 'create' && !values.apiKey.trim()) {
       form.setError('apiKey', { message: 'API key is required' })
       return
@@ -81,29 +73,27 @@ export function IntegrationForm({ mode, integration, onSuccess }: IntegrationFor
 
     setIsPending(true)
     try {
-      let result: { error?: string } | void = undefined
-
       const config: Record<string, string> = {}
       if (values.defaultModel?.trim()) {
         config.model = values.defaultModel.trim()
       }
 
-      const name = PROVIDER_LABELS[values.provider]
+      const name = PROVIDER_LABELS[provider]
+      let result: { error?: string } | void
 
       if (mode === 'create') {
         result = await createIntegration({
           name,
-          provider: values.provider,
+          provider,
           apiKey: values.apiKey,
           locationId: values.locationId ?? '',
           config,
         })
-      } else if (integration) {
-        result = await updateIntegration(integration.id, {
+      } else {
+        result = await updateIntegration(integration!.id, {
           name,
           locationId: values.locationId ?? '',
           config,
-          // Only pass apiKey if user entered a new one
           apiKey: values.apiKey.trim().length > 0 ? values.apiKey : undefined,
         })
       }
@@ -122,45 +112,37 @@ export function IntegrationForm({ mode, integration, onSuccess }: IntegrationFor
     }
   }
 
+  async function handleDisconnect() {
+    if (!integration) return
+    setIsDeleting(true)
+    try {
+      const result = await deleteIntegration(integration.id)
+      if (result && 'error' in result && result.error) {
+        toast.error('Failed to disconnect. Try again.')
+      } else {
+        toast.success('Integration disconnected.')
+        onSuccess()
+      }
+    } catch {
+      toast.error('Failed to disconnect. Try again.')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   return (
     <div className="flex flex-col gap-6 p-6">
       <div>
+        <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-1">
+          {PROVIDER_LABELS[provider]}
+        </p>
         <h2 className="text-xl font-semibold">
-          {mode === 'create' ? 'New Integration' : 'Edit Integration'}
+          {mode === 'create' ? 'Connect' : 'Update credentials'}
         </h2>
       </div>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
-          <FormField
-            control={form.control}
-            name="provider"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Provider</FormLabel>
-                <Select
-                  disabled={isPending || mode === 'edit'}
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a provider" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {(Object.keys(PROVIDER_LABELS) as Provider[]).map((p) => (
-                      <SelectItem key={p} value={p}>
-                        {PROVIDER_LABELS[p]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
           <FormField
             control={form.control}
             name="apiKey"
@@ -173,7 +155,7 @@ export function IntegrationForm({ mode, integration, onSuccess }: IntegrationFor
                   <Input
                     type="password"
                     placeholder={mode === 'edit' ? '••••••••••••••••' : 'Enter API key'}
-                    disabled={isPending}
+                    disabled={isPending || isDeleting}
                     autoComplete="new-password"
                     {...field}
                   />
@@ -183,7 +165,7 @@ export function IntegrationForm({ mode, integration, onSuccess }: IntegrationFor
             )}
           />
 
-          {selectedProvider === 'gohighlevel' && (
+          {provider === 'gohighlevel' && (
             <FormField
               control={form.control}
               name="locationId"
@@ -193,7 +175,7 @@ export function IntegrationForm({ mode, integration, onSuccess }: IntegrationFor
                   <FormControl>
                     <Input
                       placeholder="GHL Location ID"
-                      disabled={isPending}
+                      disabled={isPending || isDeleting}
                       {...field}
                     />
                   </FormControl>
@@ -203,7 +185,7 @@ export function IntegrationForm({ mode, integration, onSuccess }: IntegrationFor
             />
           )}
 
-          {selectedProvider === 'openrouter' && (
+          {provider === 'openrouter' && (
             <FormField
               control={form.control}
               name="defaultModel"
@@ -213,7 +195,7 @@ export function IntegrationForm({ mode, integration, onSuccess }: IntegrationFor
                   <FormControl>
                     <Input
                       placeholder="anthropic/claude-haiku-4-5"
-                      disabled={isPending}
+                      disabled={isPending || isDeleting}
                       {...field}
                     />
                   </FormControl>
@@ -224,14 +206,14 @@ export function IntegrationForm({ mode, integration, onSuccess }: IntegrationFor
           )}
 
           <div className="flex gap-3 pt-2">
-            <Button type="submit" disabled={isPending}>
+            <Button type="submit" disabled={isPending || isDeleting}>
               {isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Saving...
                 </>
               ) : mode === 'create' ? (
-                'Add Integration'
+                'Connect'
               ) : (
                 'Save Changes'
               )}
@@ -239,14 +221,34 @@ export function IntegrationForm({ mode, integration, onSuccess }: IntegrationFor
             <Button
               type="button"
               variant="outline"
-              disabled={isPending}
+              disabled={isPending || isDeleting}
               onClick={onSuccess}
             >
-              {mode === 'create' ? 'Back to Integrations' : 'Discard Changes'}
+              Cancel
             </Button>
           </div>
         </form>
       </Form>
+
+      {mode === 'edit' && (
+        <div className="border-t pt-6">
+          <Button
+            variant="ghost"
+            className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
+            disabled={isPending || isDeleting}
+            onClick={handleDisconnect}
+          >
+            {isDeleting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Disconnecting...
+              </>
+            ) : (
+              'Disconnect'
+            )}
+          </Button>
+        </div>
+      )}
     </div>
   )
 }

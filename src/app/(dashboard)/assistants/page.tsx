@@ -19,7 +19,7 @@ export default async function AssistantsPage() {
       <div>
         <h1 className="text-lg font-semibold">Assistants</h1>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Link Vapi assistant IDs to this organization to route webhooks correctly.
+          Link Vapi assistants to this organization and keep a friendly name your team can recognize.
         </p>
       </div>
       <AssistantMappingsTable mappings={mappings ?? []} />

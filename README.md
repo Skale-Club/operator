@@ -2,18 +2,31 @@
 
 VoiceOps is a multi-tenant operations layer for agencies running voice AI assistants with Vapi. It gives each client organization its own tools, integrations, knowledge base, outbound campaigns, and call observability inside one admin panel, with Supabase RLS enforcing tenant isolation at the data layer.
 
+The platform is intentionally designed as a configurable integration and orchestration layer, not as a single hardcoded voice workflow. In practice, each client organization can have its own assistant mappings, provider credentials, tool behaviors, outbound flows, and follow-up actions while still running on the same product foundation.
+
 The current codebase reflects a shipped `v1.0` MVP completed on `2026-04-03`. The product focus is simple: when Vapi triggers a tool during a live call, VoiceOps must resolve the right organization, execute the action, and return a result fast enough for production call flows.
+
+The canonical production origin for the app and all first-party webhooks is `https://voiceops.skale.club`.
 
 ## What It Does
 
 - Maps Vapi assistants to tenant organizations
 - Stores per-organization integration credentials with AES-256-GCM encryption
 - Executes tool-triggered business logic for live calls
+- Supports client-specific operational workflows built from shared primitives instead of one fixed universal call flow
 - Logs tool executions with timing, payloads, and outcomes
 - Ingests completed call data for observability
 - Provides dashboard metrics, call history, filters, and call detail views
 - Uploads and embeds knowledge documents for tenant-scoped semantic search
 - Runs outbound calling campaigns with CSV contact import and status tracking
+
+## Product Framing
+
+VoiceOps should be understood as the shared platform underneath many per-client automations.
+
+- The product owns tenant resolution, credential storage, tool execution, observability, and outbound infrastructure.
+- A concrete workflow such as "find appointments in 1 hour, call to confirm, then notify the owner by SMS" is a client-specific orchestration built on top of those primitives.
+- Not every customer will use the same sequence, providers, or post-call actions, so avoid documenting example workflows as if they are mandatory product-wide behavior.
 
 ## Stack
 
@@ -41,6 +54,19 @@ The current codebase reflects a shipped `v1.0` MVP completed on `2026-04-03`. Th
 4. The action executes and returns a result to Vapi.
 5. Execution logging is deferred asynchronously so the webhook still returns quickly.
 
+This hot path is the shared execution substrate for tenant-specific workflows. The platform is expected to support different action combinations and orchestration patterns per organization rather than enforce a single universal business flow.
+
+### Canonical public URLs
+
+Use `https://voiceops.skale.club` as the definitive public base URL for the product.
+
+- App origin: `https://voiceops.skale.club`
+- Vapi tool-call webhook: `https://voiceops.skale.club/api/vapi/tools`
+- Vapi end-of-call webhook: `https://voiceops.skale.club/api/vapi/calls`
+- Vapi campaign webhook: `https://voiceops.skale.club/api/vapi/campaigns`
+
+When configuring Vapi server URLs, external callbacks, or customer-specific integrations that call into VoiceOps, prefer these canonical URLs over temporary Vercel preview URLs or other legacy webhook hosts.
+
 ### Tenant model
 
 - Every tenant-facing table is protected with Supabase RLS.
@@ -53,9 +79,19 @@ The current codebase reflects a shipped `v1.0` MVP completed on `2026-04-03`. Th
 - `Campaigns`: outbound calling flows and contact status tracking
 - `Tools`: per-org action configuration used by Vapi tool calls
 - `Knowledge`: document upload, chunking, embeddings, semantic retrieval
-- `Assistants`: mapping Vapi assistants to organizations
+- `Assistants`: mapping Vapi assistants to organizations with a friendly internal display name
 - `Integrations`: encrypted credentials and provider configuration
 - `Organizations`: tenant management and org switching
+
+Across these areas, the design goal is composability: the same base capabilities should support many client-specific operational playbooks.
+
+## Integration Conventions
+
+- When linking a Vapi assistant into VoiceOps, always store a human-friendly assistant name alongside the Vapi assistant ID.
+- Prefer the same readable name your team already uses in Vapi.
+- Do not use raw UUIDs, timestamps, or generated test labels as the primary assistant label in VoiceOps.
+- Treat the Vapi assistant ID as a routing key, not as the user-facing identifier.
+- Assistant mappings should make it easy to jump back to the assistant in Vapi when debugging or reviewing configuration.
 
 ## Quick Start
 
@@ -110,6 +146,8 @@ The root route redirects to `/calls`.
 
 This repo is aligned to avoid depending on Vercel Edge Runtime or Vercel Cron for core product flows.
 
+Production traffic should terminate at `https://voiceops.skale.club`. Treat that host as the stable public address for app access, Vapi webhooks, and any first-party webhook construction.
+
 ## Useful Commands
 
 ```bash
@@ -153,9 +191,14 @@ src/
 supabase/
   migrations/          numbered SQL migrations
   functions/           Supabase Edge Functions
+skills/
+  vapi/                local skill for Vapi API usage and conventions
+  ghl/                 local skill for GoHighLevel integration patterns
 tests/                 Vitest test suite
 .planning/             roadmap, state, milestone archive, and phase artifacts
 ```
+
+The `skills/` folder is the repo-local library for reusable integration skills. Add new provider-specific skills there as VoiceOps gains more integrations.
 
 ## Planning Folder
 
@@ -189,6 +232,7 @@ The planning documents currently call out these notable follow-ups:
 - Do not store provider secrets in plaintext
 - Do not edit old Supabase migrations; add new numbered migrations instead
 - Keep Vercel-hosted routes Node.js-compatible; background work belongs in Supabase or GitHub automation
+- Build first-party webhook URLs against `https://voiceops.skale.club`, not against preview deployments, localhost, or legacy external webhook relays
 
 ## Additional Repo Guidance
 

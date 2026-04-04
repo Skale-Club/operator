@@ -29,7 +29,11 @@ type AssistantMapping = Database['public']['Tables']['assistant_mappings']['Row'
 
 const assistantMappingSchema = z.object({
   vapi_assistant_id: z.string().min(1, 'Vapi assistant ID is required.'),
-  name: z.string().optional(),
+  name: z
+    .string()
+    .trim()
+    .min(1, 'Assistant name is required.')
+    .max(100, 'Assistant name must be 100 characters or fewer.'),
 })
 
 type AssistantMappingFormValues = z.infer<typeof assistantMappingSchema>
@@ -79,6 +83,8 @@ export function AssistantMappingForm({
       if (result?.error) {
         if (result.error === 'This assistant ID is already mapped to an organization.') {
           toast.error('This assistant ID is already mapped to an organization.')
+        } else if (result.error === 'Assistant name is required.') {
+          toast.error('Assistant name is required.')
         } else {
           toast.error('Failed to save. Try again.')
         }
@@ -110,12 +116,12 @@ export function AssistantMappingForm({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Label</FormLabel>
+                  <FormLabel>Assistant Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Scheduling Bot" {...field} />
+                    <Input placeholder="e.g. Lead Capture Assistant" {...field} />
                   </FormControl>
                   <FormDescription>
-                    A friendly name to identify this assistant in the platform.
+                    Use the same human-friendly assistant name your team recognizes in Vapi. Avoid raw IDs, timestamps, or generated labels.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -130,6 +136,9 @@ export function AssistantMappingForm({
                   <FormControl>
                     <Input placeholder="paste assistant ID from Vapi dashboard" {...field} />
                   </FormControl>
+                  <FormDescription>
+                    This ID is used for routing. The assistant name above is what people should read in VoiceOps.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

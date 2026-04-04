@@ -1,0 +1,4 @@
+interface:
+  display_name: "GoHighLevel"
+  short_description: "GHL contacts, calendars, and actions"
+  default_prompt: "Use $ghl to work with GoHighLevel contacts, availability, appointments, or other GHL integration tasks."

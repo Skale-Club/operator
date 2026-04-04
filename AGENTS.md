@@ -13,6 +13,10 @@ VoiceOps is a multi-tenant operations platform for Vapi-based voice AI deploymen
 
 If you are unsure how to prioritize a change, protect that path first.
 
+VoiceOps should be treated as a shared integration and orchestration platform for many tenant-specific workflows. Example automations for one client should not be assumed to be universal product behavior unless the planning docs explicitly say so.
+
+The canonical production host is `https://voiceops.skale.club`. When documenting or wiring first-party webhooks, callbacks, or Vapi server URLs, use that origin unless the repository docs explicitly state a new production host.
+
 ## Read First
 
 Before making non-trivial changes, ground yourself in these files:
@@ -36,10 +40,9 @@ Before making non-trivial changes, ground yourself in these files:
 
 ### 1. Respect runtime boundaries
 
-- `src/app/api/vapi/*` runs on the Edge Runtime.
-- `src/middleware.ts` runs on the Edge Runtime.
+- `src/app/api/vapi/*` runs on the Node.js runtime in the current codebase.
 - `supabase/functions/process-embeddings/` runs on Deno.
-- Do not introduce Node-only APIs into code shared by those paths.
+- Do not introduce runtime-incompatible APIs into shared paths.
 
 ### 2. The Vapi webhook contract must stay stable
 
@@ -49,6 +52,7 @@ For Vapi-facing routes:
 - do not block on non-essential work
 - preserve the "always return HTTP 200" behavior unless product requirements explicitly change
 - prefer deferred side effects with the established async pattern
+- construct public webhook targets against `https://voiceops.skale.club`
 
 Start with [`src/app/api/vapi/tools/route.ts`](/c:/Users/Vanildo/Dev/voiceops/src/app/api/vapi/tools/route.ts) when reasoning about this area.
 
@@ -90,6 +94,7 @@ See [`src/lib/crypto.ts`](/c:/Users/Vanildo/Dev/voiceops/src/lib/crypto.ts).
 - Keep imports on the `@/` alias path.
 - Use server components by default unless interactivity requires a client component.
 - When touching user flows, match the existing admin-panel tone and structure.
+- Prefer reusable platform primitives over hardcoding a one-off client workflow into the product model when the behavior can remain tenant-specific.
 
 ## Planning Folder Expectations
 
@@ -126,7 +131,6 @@ Use narrower test selection when the change is localized, but favor `npm run bui
 ## Areas To Be Extra Careful With
 
 - [`src/app/api/vapi/tools/route.ts`](/c:/Users/Vanildo/Dev/voiceops/src/app/api/vapi/tools/route.ts): latency-sensitive live-call path
-- [`src/middleware.ts`](/c:/Users/Vanildo/Dev/voiceops/src/middleware.ts): auth gating
 - [`src/lib/crypto.ts`](/c:/Users/Vanildo/Dev/voiceops/src/lib/crypto.ts): encryption format compatibility
 - [`src/lib/supabase/server.ts`](/c:/Users/Vanildo/Dev/voiceops/src/lib/supabase/server.ts): cached auth and client creation
 - [`src/app/(dashboard)/outbound/actions.ts`](/c:/Users/Vanildo/Dev/voiceops/src/app/(dashboard)/outbound/actions.ts): service-role and campaign control paths

@@ -107,8 +107,8 @@ export function DashboardMetrics({ metrics }: DashboardMetricsProps) {
   const { callsToday, callsWeek, callsMonth, toolSuccessRate, recentCalls, recentFailures } =
     metrics
 
-  const weekData = generateSparklineData(callsWeek > 0 ? callsWeek : 50, 7)
-  const monthData = generateSparklineData(callsMonth > 0 ? callsMonth : 200, 30)
+  const weekData = generateSparklineData(callsWeek, 7)
+  const monthData = generateSparklineData(callsMonth, 30)
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">

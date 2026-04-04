@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import Link from 'next/link'
 import {
   useReactTable,
   getCoreRowModel,
@@ -105,7 +106,12 @@ export function ToolsTable({ toolConfigs: initialToolConfigs, integrations }: To
       accessorKey: 'tool_name',
       header: () => <span className="text-xs font-medium">Tool Name</span>,
       cell: ({ row }) => (
-        <span className="font-mono text-sm">{row.getValue('tool_name')}</span>
+        <Link
+          href={`/tools/${row.original.id}`}
+          className="font-mono text-sm underline-offset-4 hover:underline"
+        >
+          {row.getValue('tool_name')}
+        </Link>
       ),
     },
     {
@@ -161,6 +167,11 @@ export function ToolsTable({ toolConfigs: initialToolConfigs, integrations }: To
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link href={`/tools/${tool.id}`}>
+                  View Logs
+                </Link>
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => openEditSheet(tool)}>
                 Edit Tool Config
               </DropdownMenuItem>
@@ -204,7 +215,7 @@ export function ToolsTable({ toolConfigs: initialToolConfigs, integrations }: To
           <div>
             <h2 className="text-xl font-semibold">No tool configurations yet</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Add your first tool to map Vapi tool calls to GoHighLevel actions.
+              Add your first tool to route Vapi tool calls through VoiceOps actions.
             </p>
           </div>
           <Button onClick={openCreateSheet}>Add Tool</Button>

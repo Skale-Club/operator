@@ -1,13 +1,14 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import {
   useReactTable,
   getCoreRowModel,
   flexRender,
   type ColumnDef,
 } from '@tanstack/react-table'
-import { Bot, MoreHorizontal, Plus } from 'lucide-react'
+import { Bot, ExternalLink, MoreHorizontal, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -56,6 +57,10 @@ function formatDate(dateStr: string): string {
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
 }
 
+function getVapiAssistantUrl(assistantId: string) {
+  return `https://dashboard.vapi.ai/assistants/${assistantId}`
+}
+
 interface AssistantMappingsTableProps {
   mappings: AssistantMapping[]
 }
@@ -101,9 +106,9 @@ export function AssistantMappingsTable({ mappings: initialMappings }: AssistantM
   const columns: ColumnDef<AssistantMapping>[] = [
     {
       accessorKey: 'name',
-      header: 'Label',
+      header: 'Assistant Name',
       cell: ({ row }) => (
-        <span className="text-sm">{row.original.name ?? '—'}</span>
+        <span className="text-sm">{row.original.name ?? 'Unnamed assistant'}</span>
       ),
     },
     {
@@ -113,9 +118,21 @@ export function AssistantMappingsTable({ mappings: initialMappings }: AssistantM
         const value = row.original.vapi_assistant_id
         const truncated = value.slice(0, 20) + (value.length > 20 ? '...' : '')
         return (
-          <span className="font-mono text-xs" title={value}>
-            {truncated}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-xs" title={value}>
+              {truncated}
+            </span>
+            <a
+              href={getVapiAssistantUrl(value)}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-xs text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              aria-label={`Open assistant ${row.original.name ?? value} in Vapi`}
+            >
+              Open
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          </div>
         )
       },
     },
@@ -123,7 +140,8 @@ export function AssistantMappingsTable({ mappings: initialMappings }: AssistantM
       accessorKey: 'is_active',
       header: 'Status',
       cell: ({ row }) => {
-        const isActive = optimisticMappings.find(m => m.id === row.original.id)?.is_active ?? row.original.is_active
+        const isActive =
+          optimisticMappings.find(m => m.id === row.original.id)?.is_active ?? row.original.is_active
         const statusKey = isActive ? 'active' : 'inactive'
         const config = mappingStatusConfig[statusKey]
         return (
@@ -160,6 +178,11 @@ export function AssistantMappingsTable({ mappings: initialMappings }: AssistantM
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+              <Link href={getVapiAssistantUrl(row.original.vapi_assistant_id)} target="_blank" rel="noreferrer">
+                Open in Vapi
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setEditMapping(row.original)}>
               Edit Mapping
             </DropdownMenuItem>
@@ -206,7 +229,7 @@ export function AssistantMappingsTable({ mappings: initialMappings }: AssistantM
           <Bot className="h-12 w-12 text-muted-foreground mb-4" />
           <h3 className="text-base font-semibold mb-1">No assistants linked</h3>
           <p className="text-sm text-muted-foreground mb-4">
-            Add a Vapi assistant ID to route webhook calls to this organization.
+            Add a Vapi assistant with a friendly name so webhook routing stays clear inside VoiceOps.
           </p>
           <Button onClick={() => setAddDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />

@@ -44,6 +44,7 @@ export async function createIntegration(data: {
     provider: data.provider as Provider,
     name: data.name,
     encrypted_api_key: encryptedKey,
+    key_hint: maskApiKey(data.apiKey),
     location_id: data.locationId || null,
     config: data.config ?? {},
   })
@@ -69,6 +70,7 @@ export async function updateIntegration(
 
   if (data.apiKey && data.apiKey.trim().length > 0) {
     updateData.encrypted_api_key = await encrypt(data.apiKey)
+    updateData.key_hint = maskApiKey(data.apiKey)
   }
 
   const { error } = await supabase.from('integrations').update(updateData).eq('id', id)
@@ -83,30 +85,21 @@ export async function getIntegrations(): Promise<IntegrationForDisplay[]> {
 
   const { data, error } = await supabase
     .from('integrations')
-    .select('id, name, provider, encrypted_api_key, location_id, config, is_active, created_at, organization_id')
+    .select('id, name, provider, key_hint, location_id, config, is_active, created_at, organization_id')
     .order('created_at', { ascending: false })
 
   if (error || !data) return []
 
-  return Promise.all(data.map(async (row) => {
-    let masked_api_key = '••••••••'
-    try {
-      const plaintext = await decrypt(row.encrypted_api_key)
-      masked_api_key = maskApiKey(plaintext)
-    } catch {
-      // encrypted_api_key malformed — show placeholder
-    }
-    return {
-      id: row.id,
-      organization_id: row.organization_id,
-      provider: row.provider,
-      name: row.name,
-      masked_api_key,
-      location_id: row.location_id,
-      config: row.config,
-      is_active: row.is_active,
-      created_at: row.created_at,
-    }
+  return data.map((row) => ({
+    id: row.id,
+    organization_id: row.organization_id,
+    provider: row.provider,
+    name: row.name,
+    masked_api_key: row.key_hint ?? '••••••••',
+    location_id: row.location_id,
+    config: row.config,
+    is_active: row.is_active,
+    created_at: row.created_at,
   }))
 }
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Vapi"
+  short_description: "Assistants, calls, and Vapi ops"
+  default_prompt: "Use $vapi to work with assistants, calls, phone numbers, squads, workflows, or other Vapi API tasks."
