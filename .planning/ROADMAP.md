@@ -109,8 +109,12 @@ Plans:
   3. The widget appears as a floating bubble in the corner of the host page; clicking it expands a full chat panel
   4. The widget automatically connects to the correct org using the public token embedded in the script tag's attributes
   5. A visitor can send a message and receive a response without creating an account or completing any login flow
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 3 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Wave 1: CORS fix on chat route + RED test scaffolds (widget-asset + widget.test.ts)
+- [ ] 04-02-PLAN.md — Wave 2: src/widget/index.ts full implementation + esbuild pipeline + widget-test.html
+- [ ] 04-03-PLAN.md — Wave 3: smoke test page prep + human browser verification checkpoint
 
 ### Phase 5: Admin Configuration
 **Goal**: Admins can customize, preview, and deploy the chat widget for their org from the Leaidear dashboard
@@ -133,7 +137,7 @@ Plans:
 | 1. Foundation | 4/4 | Complete   | 2026-04-04 |
 | 2. Chat API | 3/3 | Complete   | 2026-04-04 |
 | 3. AI Conversation Engine | 0/2 | Not started | - |
-| 4. Widget Embed Script | 0/? | Not started | - |
+| 4. Widget Embed Script | 0/3 | Not started | - |
 | 5. Admin Configuration | 0/? | Not started | - |
 
 ---
@@ -168,4 +172,4 @@ Plans:
 
 ---
 
-*Last updated: 2026-04-04 — Phase 3 plans created (2 plans, 2 waves)*
+*Last updated: 2026-04-04 — Phase 4 plans created (3 plans, 3 waves)*
