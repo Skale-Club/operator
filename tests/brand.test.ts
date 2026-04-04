@@ -1,0 +1,19 @@
+import { vi } from 'vitest'
+
+// Next.js font functions do not run in vitest's node environment
+vi.mock('next/font/google', () => ({
+  Inter: () => ({ className: 'inter' }),
+}))
+
+// Import after mocking
+const { metadata } = await import('@/app/layout')
+
+describe('Brand rename — layout metadata', () => {
+  it('sets title to Leaidear', () => {
+    expect(metadata.title).toBe('Leaidear')
+  })
+
+  it('sets description to AI Operations Platform', () => {
+    expect(metadata.description).toBe('AI Operations Platform')
+  })
+})
