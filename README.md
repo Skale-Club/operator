@@ -103,7 +103,7 @@ npm install
 
 ### 2. Create local env
 
-Copy `.env.example` to `.env.local` and fill in the base app values.
+Copy `.env.local.example` to `.env.local` and fill in the base app values.
 
 Required app-level values used by the current code:
 

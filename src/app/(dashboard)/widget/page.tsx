@@ -107,8 +107,8 @@ export default async function WidgetPage() {
               </code>
             </div>
             <div className="rounded-lg border border-dashed p-4 text-muted-foreground">
-              Save changes here first, then Phase 5 Plan 03 will hydrate the live embed with this
-              config on public sites.
+              Saved changes are picked up by new widget loads on public sites through the token-based
+              config endpoint.
             </div>
           </CardContent>
         </Card>
