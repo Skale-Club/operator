@@ -420,77 +420,97 @@ export interface Database {
           }
         ]
       }
-      chat_sessions: {
+      conversations: {
         Row: {
           id: string
-          organization_id: string
+          org_id: string
           widget_token: string
           session_key: string | null
+          status: string
           last_active_at: string
           created_at: string
+          updated_at: string
+          last_message_at: string | null
+          first_page_url: string | null
+          visitor_name: string | null
+          visitor_phone: string | null
+          visitor_email: string | null
+          last_message: string | null
+          memory: Record<string, unknown>
         }
         Insert: {
           id?: string
-          organization_id: string
+          org_id: string
           widget_token: string
           session_key?: string | null
+          status?: string
           last_active_at?: string
           created_at?: string
+          updated_at?: string
+          last_message_at?: string | null
+          first_page_url?: string | null
+          visitor_name?: string | null
+          visitor_phone?: string | null
+          visitor_email?: string | null
+          last_message?: string | null
+          memory?: Record<string, unknown>
         }
         Update: {
-          id?: string
-          organization_id?: string
-          widget_token?: string
-          session_key?: string | null
+          status?: string
           last_active_at?: string
-          created_at?: string
+          updated_at?: string
+          last_message_at?: string | null
+          visitor_name?: string | null
+          visitor_phone?: string | null
+          visitor_email?: string | null
+          last_message?: string | null
+          memory?: Record<string, unknown>
         }
         Relationships: [
           {
-            foreignKeyName: 'chat_sessions_organization_id_fkey'
-            columns: ['organization_id']
+            foreignKeyName: 'conversations_org_id_fkey'
+            columns: ['org_id']
             isOneToOne: false
             referencedRelation: 'organizations'
             referencedColumns: ['id']
           }
         ]
       }
-      chat_messages: {
+      conversation_messages: {
         Row: {
           id: string
-          session_id: string
-          organization_id: string
-          role: 'user' | 'assistant' | 'tool'
+          conversation_id: string
+          org_id: string
+          role: string
           content: string
           created_at: string
+          metadata: Record<string, unknown> | null
         }
         Insert: {
           id?: string
-          session_id: string
-          organization_id: string
-          role: 'user' | 'assistant' | 'tool'
+          conversation_id: string
+          org_id: string
+          role: string
           content: string
           created_at?: string
+          metadata?: Record<string, unknown> | null
         }
         Update: {
-          id?: string
-          session_id?: string
-          organization_id?: string
-          role?: 'user' | 'assistant' | 'tool'
+          role?: string
           content?: string
-          created_at?: string
+          metadata?: Record<string, unknown> | null
         }
         Relationships: [
           {
-            foreignKeyName: 'chat_messages_session_id_fkey'
-            columns: ['session_id']
+            foreignKeyName: 'conversation_messages_conversation_id_fkey'
+            columns: ['conversation_id']
             isOneToOne: false
-            referencedRelation: 'chat_sessions'
+            referencedRelation: 'conversations'
             referencedColumns: ['id']
           },
           {
-            foreignKeyName: 'chat_messages_organization_id_fkey'
-            columns: ['organization_id']
+            foreignKeyName: 'conversation_messages_org_id_fkey'
+            columns: ['org_id']
             isOneToOne: false
             referencedRelation: 'organizations'
             referencedColumns: ['id']
