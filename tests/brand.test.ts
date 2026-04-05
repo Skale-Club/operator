@@ -9,8 +9,8 @@ vi.mock('next/font/google', () => ({
 const { metadata } = await import('@/app/layout')
 
 describe('Brand rename — layout metadata', () => {
-  it('sets title to Opps', () => {
-    expect(metadata.title).toBe('Opps')
+  it('sets title to Operator', () => {
+    expect(metadata.title).toBe('Operator')
   })
 
   it('sets description to AI Operations Platform', () => {
