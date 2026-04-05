@@ -101,7 +101,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
     <Sidebar>
       <SidebarHeader className="px-4 py-4">
         <div className="flex items-center gap-2">
-          <span className="text-[14px] font-semibold tracking-tight">Opps</span>
+          <span className="text-[14px] font-semibold tracking-tight">Operator</span>
           <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-primary/10 text-primary leading-tight">
             beta
           </span>
