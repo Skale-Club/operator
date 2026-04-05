@@ -1,5 +1,5 @@
 // src/app/api/chat/[token]/route.ts
-// Public POST endpoint for the Leaidear embedded chat widget.
+// Public POST endpoint for the Opps embedded chat widget.
 // Authentication: org token in URL path (not a user session).
 // Unlike /api/vapi/* routes, this returns 401 for invalid tokens (no Vapi retry concern).
 import { after } from 'next/server'

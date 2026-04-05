@@ -30,6 +30,7 @@ describe('GET /api/widget/[token]/config', () => {
         widget_display_name: 'Support Bot',
         widget_primary_color: '#0F172A',
         widget_welcome_message: 'How can we help today?',
+        widget_avatar_url: 'https://example.com/avatar.png',
       },
       error: null,
     })
@@ -44,9 +45,10 @@ describe('GET /api/widget/[token]/config', () => {
       displayName: 'Support Bot',
       primaryColor: '#0F172A',
       welcomeMessage: 'How can we help today?',
+      avatarUrl: 'https://example.com/avatar.png',
     })
     expect(mockSupabase.select).toHaveBeenCalledWith(
-      'is_active, widget_display_name, widget_primary_color, widget_welcome_message'
+      'is_active, widget_display_name, widget_primary_color, widget_welcome_message, widget_avatar_url'
     )
   })
 
@@ -69,6 +71,7 @@ describe('GET /api/widget/[token]/config', () => {
         widget_display_name: 'Support Bot',
         widget_primary_color: '#0F172A',
         widget_welcome_message: 'How can we help today?',
+        widget_avatar_url: null,
       },
       error: null,
     })
@@ -89,6 +92,7 @@ describe('GET /api/widget/[token]/config', () => {
         widget_display_name: '   ',
         widget_primary_color: null,
         widget_welcome_message: '',
+        widget_avatar_url: null,
       },
       error: null,
     })
@@ -103,6 +107,7 @@ describe('GET /api/widget/[token]/config', () => {
       displayName: 'AI Assistant',
       primaryColor: '#18181B',
       welcomeMessage: 'Hi! How can I help?',
+      avatarUrl: null,
     })
   })
 })

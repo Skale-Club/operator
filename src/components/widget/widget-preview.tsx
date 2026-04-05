@@ -16,10 +16,14 @@ export function WidgetPreview({
       <div className="overflow-hidden rounded-[22px] border bg-white">
         <div className="flex items-center gap-3 border-b bg-zinc-50 px-4 py-3">
           <div
-            className="flex h-10 w-10 items-center justify-center rounded-full text-xs font-semibold text-white"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-xs font-semibold text-white overflow-hidden"
             style={{ backgroundColor: primaryColor }}
           >
-            {initials}
+            {avatarUrl ? (
+              <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
+            ) : (
+              initials
+            )}
           </div>
           <div>
             <p className="text-sm font-semibold text-zinc-950">{displayName}</p>

@@ -1,4 +1,4 @@
-# Leaidear - Claude Code Instructions
+# Opps - Claude Code Instructions
 
 ## Commands
 
@@ -20,9 +20,9 @@ Always run `npm run build` after changes to catch type errors before finishing.
 - Deno - `supabase/functions/process-embeddings/` (Supabase Edge Function)
 - GitHub Actions - auxiliary scheduled automation such as Supabase keepalive
 
-**Product framing:** Leaidear is a tenant-aware integration and orchestration platform. Client workflows can differ significantly, so prefer reusable platform capabilities over hardcoding one client's playbook as product-wide behavior.
+**Product framing:** Opps is a tenant-aware integration and orchestration platform. Client workflows can differ significantly, so prefer reusable platform capabilities over hardcoding one client's playbook as product-wide behavior.
 
-**Canonical production origin:** `https://voiceops.skale.club`. Use this host for first-party webhook construction and documentation examples unless an updated production host is explicitly documented.
+**Canonical production origin:** `https://opps.skale.club`. Use this host for first-party webhook construction and documentation examples unless an updated production host is explicitly documented.
 
 **Multi-tenancy:** Every table has RLS. `get_current_org_id()` (SECURITY DEFINER) resolves the active org. All queries are automatically scoped - never manually filter by `org_id` in queries that already go through the authenticated client.
 
@@ -57,9 +57,9 @@ export async function POST(request: Request) {
 
 Production webhook endpoints:
 
-- `https://voiceops.skale.club/api/vapi/tools`
-- `https://voiceops.skale.club/api/vapi/calls`
-- `https://voiceops.skale.club/api/vapi/campaigns`
+- `https://opps.skale.club/api/vapi/tools`
+- `https://opps.skale.club/api/vapi/calls`
+- `https://opps.skale.club/api/vapi/campaigns`
 
 ### Components
 - Server components by default

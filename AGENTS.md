@@ -1,10 +1,10 @@
 # AGENTS.md
 
-This file is for AI coding agents and automation working inside the VoiceOps repository. Read this before making changes.
+This file is for AI coding agents and automation working inside the Opps repository. Read this before making changes.
 
 ## Mission
 
-VoiceOps is a multi-tenant operations platform for Vapi-based voice AI deployments. The most important invariant in the system is the Action Engine path:
+Opps is a multi-tenant operations platform for Vapi-based voice AI deployments. The most important invariant in the system is the Action Engine path:
 
 - receive a Vapi tool call
 - resolve the right organization
@@ -13,19 +13,19 @@ VoiceOps is a multi-tenant operations platform for Vapi-based voice AI deploymen
 
 If you are unsure how to prioritize a change, protect that path first.
 
-VoiceOps should be treated as a shared integration and orchestration platform for many tenant-specific workflows. Example automations for one client should not be assumed to be universal product behavior unless the planning docs explicitly say so.
+Opps should be treated as a shared integration and orchestration platform for many tenant-specific workflows. Example automations for one client should not be assumed to be universal product behavior unless the planning docs explicitly say so.
 
-The canonical production host is `https://voiceops.skale.club`. When documenting or wiring first-party webhooks, callbacks, or Vapi server URLs, use that origin unless the repository docs explicitly state a new production host.
+The canonical production host is `https://opps.skale.club`. When documenting or wiring first-party webhooks, callbacks, or Vapi server URLs, use that origin unless the repository docs explicitly state a new production host.
 
 ## Read First
 
 Before making non-trivial changes, ground yourself in these files:
 
-1. [`README.md`](/c:/Users/Vanildo/Dev/voiceops/README.md)
-2. [`CLAUDE.md`](/c:/Users/Vanildo/Dev/voiceops/CLAUDE.md)
-3. [`PROJECT.md`](/c:/Users/Vanildo/Dev/voiceops/.planning/PROJECT.md)
-4. [`STATE.md`](/c:/Users/Vanildo/Dev/voiceops/.planning/STATE.md)
-5. Relevant phase or milestone artifacts in [`.planning/milestones`](/c:/Users/Vanildo/Dev/voiceops/.planning/milestones)
+1. [`README.md`](/c:/Users/Vanildo/Dev/opps/README.md)
+2. [`CLAUDE.md`](/c:/Users/Vanildo/Dev/opps/CLAUDE.md)
+3. [`PROJECT.md`](/c:/Users/Vanildo/Dev/opps/.planning/PROJECT.md)
+4. [`STATE.md`](/c:/Users/Vanildo/Dev/opps/.planning/STATE.md)
+5. Relevant phase or milestone artifacts in [`.planning/milestones`](/c:/Users/Vanildo/Dev/opps/.planning/milestones)
 
 ## Repo Facts
 
@@ -52,9 +52,9 @@ For Vapi-facing routes:
 - do not block on non-essential work
 - preserve the "always return HTTP 200" behavior unless product requirements explicitly change
 - prefer deferred side effects with the established async pattern
-- construct public webhook targets against `https://voiceops.skale.club`
+- construct public webhook targets against `https://opps.skale.club`
 
-Start with [`src/app/api/vapi/tools/route.ts`](/c:/Users/Vanildo/Dev/voiceops/src/app/api/vapi/tools/route.ts) when reasoning about this area.
+Start with [`src/app/api/vapi/tools/route.ts`](/c:/Users/Vanildo/Dev/opps/src/app/api/vapi/tools/route.ts) when reasoning about this area.
 
 ### 3. Multi-tenancy is enforced with RLS first
 
@@ -65,7 +65,7 @@ Start with [`src/app/api/vapi/tools/route.ts`](/c:/Users/Vanildo/Dev/voiceops/sr
 
 ### 4. Use the cached auth helpers
 
-For server components and server actions, use helpers from [`src/lib/supabase/server.ts`](/c:/Users/Vanildo/Dev/voiceops/src/lib/supabase/server.ts):
+For server components and server actions, use helpers from [`src/lib/supabase/server.ts`](/c:/Users/Vanildo/Dev/opps/src/lib/supabase/server.ts):
 
 - `createClient()`
 - `getUser()`
@@ -79,13 +79,13 @@ Do not scatter direct `supabase.auth.getUser()` calls if the cached helper alrea
 - do not change encryption storage format casually
 - do not move secret storage back to plain env vars for tenant-managed providers
 
-See [`src/lib/crypto.ts`](/c:/Users/Vanildo/Dev/voiceops/src/lib/crypto.ts).
+See [`src/lib/crypto.ts`](/c:/Users/Vanildo/Dev/opps/src/lib/crypto.ts).
 
 ### 6. Never rewrite migration history
 
-- existing files in [`supabase/migrations`](/c:/Users/Vanildo/Dev/voiceops/supabase/migrations) are append-only
+- existing files in [`supabase/migrations`](/c:/Users/Vanildo/Dev/opps/supabase/migrations) are append-only
 - add a new numbered migration for schema changes
-- if schema changes affect TypeScript types, update [`src/types/database.ts`](/c:/Users/Vanildo/Dev/voiceops/src/types/database.ts)
+- if schema changes affect TypeScript types, update [`src/types/database.ts`](/c:/Users/Vanildo/Dev/opps/src/types/database.ts)
 
 ## Working Style Expectations
 
@@ -102,10 +102,10 @@ The `.planning` directory is part of the project source of truth, not background
 
 Use it to answer:
 
-- what the product is trying to do: [`PROJECT.md`](/c:/Users/Vanildo/Dev/voiceops/.planning/PROJECT.md)
-- what has already shipped: [`MILESTONES.md`](/c:/Users/Vanildo/Dev/voiceops/.planning/MILESTONES.md)
-- what the current state and next priorities are: [`STATE.md`](/c:/Users/Vanildo/Dev/voiceops/.planning/STATE.md)
-- how a feature was originally implemented: phase archives in [`.planning/milestones/v1.0-phases`](/c:/Users/Vanildo/Dev/voiceops/.planning/milestones/v1.0-phases)
+- what the product is trying to do: [`PROJECT.md`](/c:/Users/Vanildo/Dev/opps/.planning/PROJECT.md)
+- what has already shipped: [`MILESTONES.md`](/c:/Users/Vanildo/Dev/opps/.planning/MILESTONES.md)
+- what the current state and next priorities are: [`STATE.md`](/c:/Users/Vanildo/Dev/opps/.planning/STATE.md)
+- how a feature was originally implemented: phase archives in [`.planning/milestones/v1.0-phases`](/c:/Users/Vanildo/Dev/opps/.planning/milestones/v1.0-phases)
 
 When a code change materially alters product behavior, architecture, or milestone status, update the relevant planning docs as part of the same task when appropriate.
 
@@ -130,11 +130,11 @@ Use narrower test selection when the change is localized, but favor `npm run bui
 
 ## Areas To Be Extra Careful With
 
-- [`src/app/api/vapi/tools/route.ts`](/c:/Users/Vanildo/Dev/voiceops/src/app/api/vapi/tools/route.ts): latency-sensitive live-call path
-- [`src/lib/crypto.ts`](/c:/Users/Vanildo/Dev/voiceops/src/lib/crypto.ts): encryption format compatibility
-- [`src/lib/supabase/server.ts`](/c:/Users/Vanildo/Dev/voiceops/src/lib/supabase/server.ts): cached auth and client creation
-- [`src/app/(dashboard)/outbound/actions.ts`](/c:/Users/Vanildo/Dev/voiceops/src/app/(dashboard)/outbound/actions.ts): service-role and campaign control paths
-- [`supabase/migrations`](/c:/Users/Vanildo/Dev/voiceops/supabase/migrations): schema history
+- [`src/app/api/vapi/tools/route.ts`](/c:/Users/Vanildo/Dev/opps/src/app/api/vapi/tools/route.ts): latency-sensitive live-call path
+- [`src/lib/crypto.ts`](/c:/Users/Vanildo/Dev/opps/src/lib/crypto.ts): encryption format compatibility
+- [`src/lib/supabase/server.ts`](/c:/Users/Vanildo/Dev/opps/src/lib/supabase/server.ts): cached auth and client creation
+- [`src/app/(dashboard)/outbound/actions.ts`](/c:/Users/Vanildo/Dev/opps/src/app/(dashboard)/outbound/actions.ts): service-role and campaign control paths
+- [`supabase/migrations`](/c:/Users/Vanildo/Dev/opps/supabase/migrations): schema history
 
 ## Known Product Gaps
 

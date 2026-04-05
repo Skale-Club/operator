@@ -82,6 +82,7 @@ export async function saveWidgetSettings(
       widget_display_name: settings.displayName,
       widget_primary_color: settings.primaryColor,
       widget_welcome_message: settings.welcomeMessage,
+      widget_avatar_url: settings.avatarUrl || null,
     })
     .eq('id', orgId)
 

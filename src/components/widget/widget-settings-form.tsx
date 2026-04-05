@@ -81,7 +81,7 @@ export function WidgetSettingsForm({
 
   const previewValues = form.watch()
   const embedCode = useMemo(
-    () => `<script src="https://voiceops.skale.club/widget.js" data-token="${currentToken}"></script>`,
+    () => `<script src="https://opps.skale.club/widget.js" data-token="${currentToken}"></script>`,
     [currentToken]
   )
 
@@ -249,6 +249,7 @@ export function WidgetSettingsForm({
             displayName={previewValues.displayName}
             primaryColor={previewValues.primaryColor}
             welcomeMessage={previewValues.welcomeMessage}
+            avatarUrl={previewValues.avatarUrl}
           />
         </CardContent>
       </Card>
@@ -308,6 +309,25 @@ export function WidgetSettingsForm({
                     void handleRegenerateToken()
                   }}
                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {isRegenerating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Regenerating...
+                    </>
+                  ) : (
+                    'Regenerate token'
+                  )}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+sName="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 >
                   {isRegenerating ? (
                     <>

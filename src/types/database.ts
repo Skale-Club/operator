@@ -1,4 +1,4 @@
-// Database type definitions for Leaidear
+// Database type definitions for Opps
 // Auto-generated shape — replace with Supabase CLI output after applying migrations:
 //   npx supabase gen types typescript --local > src/types/database.ts
 //
@@ -28,6 +28,7 @@ export interface Database {
           is_active: boolean
           widget_token: string
           widget_display_name: string | null
+          widget_avatar_url: string | null
           widget_primary_color: string | null
           widget_welcome_message: string | null
           created_at: string

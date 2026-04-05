@@ -24,7 +24,7 @@ export async function GET(
   const supabase = createServiceRoleClient()
   const { data: org, error } = await supabase
     .from('organizations')
-    .select('is_active, widget_display_name, widget_primary_color, widget_welcome_message')
+    .select('is_active, widget_display_name, widget_primary_color, widget_welcome_message, widget_avatar_url')
     .eq('widget_token', token)
     .single()
 
@@ -36,5 +36,6 @@ export async function GET(
     displayName: normalizeWidgetValue(org.widget_display_name, DEFAULT_WIDGET_CONFIG.displayName),
     primaryColor: normalizeWidgetValue(org.widget_primary_color, DEFAULT_WIDGET_CONFIG.primaryColor),
     welcomeMessage: normalizeWidgetValue(org.widget_welcome_message, DEFAULT_WIDGET_CONFIG.welcomeMessage),
+    avatarUrl: org.widget_avatar_url || null,
   })
 }

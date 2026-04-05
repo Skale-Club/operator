@@ -1,21 +1,21 @@
 ---
 name: ghl
-description: Use when working with GoHighLevel integrations, including contact creation, calendar availability lookup, appointment booking, location-scoped credentials, or implementing and testing GHL actions inside VoiceOps. Prefer this skill whenever GHL API behavior, endpoints, or VoiceOps GHL executor patterns are involved.
+description: Use when working with GoHighLevel integrations, including contact creation, calendar availability lookup, appointment booking, location-scoped credentials, or implementing and testing GHL actions inside Opps. Prefer this skill whenever GHL API behavior, endpoints, or Opps GHL executor patterns are involved.
 ---
 
 # GHL
 
-Use GoHighLevel through the patterns already established in VoiceOps.
+Use GoHighLevel through the patterns already established in Opps.
 
 ## Quick Start
 
 - Use GHL API v2 base URL `https://services.leadconnectorhq.com`.
 - Send the `Authorization: Bearer <token>` header with the private integration token.
 - Send the `Version: 2021-07-28` header.
-- Treat `locationId` as required context for tenant-scoped operations in VoiceOps.
+- Treat `locationId` as required context for tenant-scoped operations in Opps.
 - Keep Action Engine responses short and single-line when they are returned back to Vapi.
 
-## VoiceOps Patterns
+## Opps Patterns
 
 The current project already supports these GHL-backed action types:
 
@@ -36,7 +36,7 @@ Reuse those patterns before inventing a new integration shape.
 
 1. Confirm whether the task is about contacts, availability, or appointments.
 2. Use the GHL v2 base URL and required headers.
-3. Preserve the VoiceOps credential model:
+3. Preserve the Opps credential model:
    - API key is stored encrypted per organization.
    - `locationId` comes from the integration record.
 4. Match the existing response style for Vapi-facing executions:
@@ -45,7 +45,7 @@ Reuse those patterns before inventing a new integration shape.
    - no unnecessary formatting
 5. If adding a new executor, keep it compatible with the Action Engine latency and error-handling model.
 
-## Current Endpoints Used In VoiceOps
+## Current Endpoints Used In Opps
 
 | Operation | Method | Path |
 |-----------|--------|------|
@@ -95,4 +95,4 @@ timezone=America/New_York
 - In this repo, GHL calls run through a hard timeout budget in `src/lib/ghl/client.ts` to protect the Vapi hot path.
 - Prefer `https://services.leadconnectorhq.com` over the legacy `rest.gohighlevel.com` host.
 - Do not log plaintext GHL tokens.
-- If the task is a client-specific workflow built on GHL, model it as tenant-specific orchestration on top of VoiceOps primitives rather than as a universal product flow.
+- If the task is a client-specific workflow built on GHL, model it as tenant-specific orchestration on top of Opps primitives rather than as a universal product flow.

@@ -97,6 +97,6 @@ Use Vapi as the system of record for assistants, calls, phone numbers, squads, a
 - For detailed API reference, use `/websites/vapi_ai_api-reference`.
 - Call status values include `queued`, `ringing`, `in-progress`, `forwarding`, and `ended`.
 - Pagination on list endpoints commonly uses `?limit=` and `?createdAtGt=` query params.
-- When wiring webhooks or server URLs that point back to VoiceOps production, use `https://voiceops.skale.club`.
-- When linking a Vapi assistant into VoiceOps, use a human-friendly assistant name as the VoiceOps label. The UUID is for routing only.
+- When wiring webhooks or server URLs that point back to Opps production, use `https://opps.skale.club`.
+- When linking a Vapi assistant into Opps, use a human-friendly assistant name as the Opps label. The UUID is for routing only.
 - The canonical dashboard URL for a specific assistant is `https://dashboard.vapi.ai/assistants/{assistantId}`.

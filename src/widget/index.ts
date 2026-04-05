@@ -1,5 +1,5 @@
 // src/widget/index.ts
-// Leaidear embeddable chat widget — standalone vanilla TypeScript, no React/Next.js imports
+// Opps embeddable chat widget — standalone vanilla TypeScript, no React/Next.js imports
 
 interface WidgetConfig {
   displayName: string
@@ -17,19 +17,19 @@ const DEFAULT_WIDGET_CONFIG: WidgetConfig = {
 const WIDGET_CSS = `
 /* Theme */
 :host {
-  --leaidear-primary-color: #18181B;
+  --opps-primary-color: #18181B;
 }
 
 /* Reset */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 /* Animations */
-@keyframes leaidear-pulse {
+@keyframes opps-pulse {
   0%   { box-shadow: 0 0 0 0 rgba(24,24,27,0.35); }
   70%  { box-shadow: 0 0 0 12px rgba(24,24,27,0); }
   100% { box-shadow: 0 0 0 0 rgba(24,24,27,0); }
 }
-@keyframes leaidear-dot-pulse {
+@keyframes opps-dot-pulse {
   0%, 60%, 100% { opacity: 0.25; transform: translateY(0); }
   30%            { opacity: 1;    transform: translateY(-4px); }
 }
@@ -38,7 +38,7 @@ const WIDGET_CSS = `
 }
 
 /* Bubble */
-.leaidear-bubble {
+.opps-bubble {
   position: fixed;
   bottom: 20px;
   right: 20px;
@@ -46,7 +46,7 @@ const WIDGET_CSS = `
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: var(--leaidear-primary-color);
+  background: var(--opps-primary-color);
   border: none;
   cursor: pointer;
   display: flex;
@@ -55,14 +55,14 @@ const WIDGET_CSS = `
   box-shadow: 0 4px 16px rgba(0,0,0,0.18);
   transition: transform 200ms ease;
 }
-.leaidear-bubble:hover { transform: scale(1.06); }
-.leaidear-bubble:active { transform: scale(0.96); }
-.leaidear-bubble.leaidear-pulse {
-  animation: leaidear-pulse 1.4s ease-out 1.2s 2 both;
+.opps-bubble:hover { transform: scale(1.06); }
+.opps-bubble:active { transform: scale(0.96); }
+.opps-bubble.opps-pulse {
+  animation: opps-pulse 1.4s ease-out 1.2s 2 both;
 }
 
 /* Panel */
-.leaidear-panel {
+.opps-panel {
   position: fixed;
   bottom: 88px;
   right: 20px;
@@ -78,26 +78,26 @@ const WIDGET_CSS = `
   flex-direction: column;
   transform-origin: bottom right;
 }
-.leaidear-panel[aria-hidden="true"] {
+.opps-panel[aria-hidden="true"] {
   display: none;
 }
-.leaidear-panel-opening {
-  animation: leaidear-panel-open 200ms ease forwards;
+.opps-panel-opening {
+  animation: opps-panel-open 200ms ease forwards;
 }
-.leaidear-panel-closing {
-  animation: leaidear-panel-close 160ms ease forwards;
+.opps-panel-closing {
+  animation: opps-panel-close 160ms ease forwards;
 }
-@keyframes leaidear-panel-open {
+@keyframes opps-panel-open {
   from { opacity: 0; transform: scale(0.95) translateY(8px); }
   to   { opacity: 1; transform: scale(1) translateY(0); }
 }
-@keyframes leaidear-panel-close {
+@keyframes opps-panel-close {
   from { opacity: 1; transform: scale(1) translateY(0); }
   to   { opacity: 0; transform: scale(0.95) translateY(8px); }
 }
 
 /* Header */
-.leaidear-header {
+.opps-header {
   height: 52px;
   min-height: 52px;
   background: #f4f4f5;
@@ -108,11 +108,11 @@ const WIDGET_CSS = `
   gap: 8px;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
-.leaidear-avatar {
+.opps-avatar {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: var(--leaidear-primary-color);
+  background: var(--opps-primary-color);
   color: #ffffff;
   display: flex;
   align-items: center;
@@ -121,7 +121,7 @@ const WIDGET_CSS = `
   font-weight: 600;
   flex-shrink: 0;
 }
-.leaidear-bot-name {
+.opps-bot-name {
   font-size: 14px;
   font-weight: 600;
   color: #09090b;
@@ -129,7 +129,7 @@ const WIDGET_CSS = `
 }
 
 /* Message list */
-.leaidear-messages {
+.opps-messages {
   flex: 1;
   overflow-y: auto;
   padding: 16px;
@@ -142,7 +142,7 @@ const WIDGET_CSS = `
 }
 
 /* Empty state */
-.leaidear-empty {
+.opps-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -152,11 +152,11 @@ const WIDGET_CSS = `
   text-align: center;
   padding: 16px;
 }
-.leaidear-empty-avatar {
+.opps-empty-avatar {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: var(--leaidear-primary-color);
+  background: var(--opps-primary-color);
   color: #ffffff;
   display: flex;
   align-items: center;
@@ -165,12 +165,12 @@ const WIDGET_CSS = `
   font-weight: 600;
   flex-shrink: 0;
 }
-.leaidear-empty-heading {
+.opps-empty-heading {
   font-size: 14px;
   font-weight: 600;
   color: #09090b;
 }
-.leaidear-empty-body {
+.opps-empty-body {
   font-size: 14px;
   font-weight: 400;
   color: #71717a;
@@ -178,24 +178,24 @@ const WIDGET_CSS = `
 }
 
 /* Message bubbles */
-.leaidear-msg {
+.opps-msg {
   display: flex;
   max-width: 75%;
   word-break: break-word;
 }
-.leaidear-msg-user {
+.opps-msg-user {
   align-self: flex-end;
   justify-content: flex-end;
   margin-top: 12px;
 }
-.leaidear-msg-user:first-of-type { margin-top: 0; }
-.leaidear-msg-assistant {
+.opps-msg-user:first-of-type { margin-top: 0; }
+.opps-msg-assistant {
   align-self: flex-start;
   justify-content: flex-start;
   margin-top: 4px;
 }
-.leaidear-bubble-user {
-  background: var(--leaidear-primary-color);
+.opps-bubble-user {
+  background: var(--opps-primary-color);
   color: #ffffff;
   padding: 8px 16px;
   border-radius: 16px 16px 4px 16px;
@@ -203,7 +203,7 @@ const WIDGET_CSS = `
   font-weight: 400;
   line-height: 1.5;
 }
-.leaidear-bubble-assistant {
+.opps-bubble-assistant {
   background: #f4f4f5;
   color: #09090b;
   padding: 8px 16px;
@@ -212,7 +212,7 @@ const WIDGET_CSS = `
   font-weight: 400;
   line-height: 1.5;
 }
-.leaidear-bubble-error {
+.opps-bubble-error {
   background: #f4f4f5;
   color: #ef4444;
   padding: 8px 16px;
@@ -223,7 +223,7 @@ const WIDGET_CSS = `
 }
 
 /* Typing indicator */
-.leaidear-typing {
+.opps-typing {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -233,18 +233,18 @@ const WIDGET_CSS = `
   align-self: flex-start;
   margin-top: 4px;
 }
-.leaidear-dot {
+.opps-dot {
   width: 7px;
   height: 7px;
   border-radius: 50%;
   background: #71717a;
 }
-.leaidear-dot:nth-child(1) { animation: leaidear-dot-pulse 1.2s ease-in-out infinite; animation-delay: 0s; }
-.leaidear-dot:nth-child(2) { animation: leaidear-dot-pulse 1.2s ease-in-out infinite; animation-delay: 0.2s; }
-.leaidear-dot:nth-child(3) { animation: leaidear-dot-pulse 1.2s ease-in-out infinite; animation-delay: 0.4s; }
+.opps-dot:nth-child(1) { animation: opps-dot-pulse 1.2s ease-in-out infinite; animation-delay: 0s; }
+.opps-dot:nth-child(2) { animation: opps-dot-pulse 1.2s ease-in-out infinite; animation-delay: 0.2s; }
+.opps-dot:nth-child(3) { animation: opps-dot-pulse 1.2s ease-in-out infinite; animation-delay: 0.4s; }
 
 /* Input area */
-.leaidear-input-area {
+.opps-input-area {
   height: 56px;
   min-height: 56px;
   background: #ffffff;
@@ -254,7 +254,7 @@ const WIDGET_CSS = `
   align-items: center;
   gap: 8px;
 }
-.leaidear-input {
+.opps-input {
   flex: 1;
   height: 36px;
   background: #f4f4f5;
@@ -268,10 +268,10 @@ const WIDGET_CSS = `
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   outline: none;
 }
-.leaidear-input::placeholder { color: #71717a; }
-.leaidear-input:focus { border-color: #a1a1aa; }
-.leaidear-input:disabled { opacity: 0.5; pointer-events: none; }
-.leaidear-send {
+.opps-input::placeholder { color: #71717a; }
+.opps-input:focus { border-color: #a1a1aa; }
+.opps-input:disabled { opacity: 0.5; pointer-events: none; }
+.opps-send {
   width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -284,9 +284,9 @@ const WIDGET_CSS = `
   transition: background 150ms ease;
   flex-shrink: 0;
 }
-.leaidear-send:hover:not(:disabled) { opacity: 0.92; }
-.leaidear-send:active:not(:disabled) { opacity: 0.84; }
-.leaidear-send:disabled { background: #d4d4d8; cursor: default; }
+.opps-send:hover:not(:disabled) { opacity: 0.92; }
+.opps-send:active:not(:disabled) { opacity: 0.84; }
+.opps-send:disabled { background: #d4d4d8; cursor: default; }
 `
 
 // --- SVG icon constants ---
@@ -302,13 +302,13 @@ const _token = _script?.dataset.token ?? ''
 const _apiBase = _script?.src ? new URL(_script.src).origin : location.origin
 
 // --- Double-init guard and entry point ---
-if (_token && !document.getElementById('leaidear-root')) {
+if (_token && !document.getElementById('opps-root')) {
   initWidget(_token, _apiBase)
 }
 
 // --- Session storage helpers (D-12, D-13, Pattern 5) ---
 function getStorageKey(token: string): string {
-  return `leaidear_${token}_sessionId`
+  return `opps_${token}_sessionId`
 }
 
 function readSession(token: string): string | null {
@@ -449,39 +449,39 @@ function buildPanel(
   _bubble: HTMLButtonElement
 ): { panel: HTMLDivElement; applyConfig: (config: WidgetConfig) => void } {
   const panel = document.createElement('div')
-  panel.className = 'leaidear-panel'
+  panel.className = 'opps-panel'
   panel.setAttribute('role', 'dialog')
   panel.setAttribute('aria-label', 'Chat')
   panel.setAttribute('aria-hidden', 'true')
 
   // Header
   const header = document.createElement('div')
-  header.className = 'leaidear-header'
+  header.className = 'opps-header'
   const avatar = document.createElement('div')
-  avatar.className = 'leaidear-avatar'
+  avatar.className = 'opps-avatar'
   avatar.textContent = getDisplayInitial(DEFAULT_WIDGET_CONFIG.displayName)
   const botName = document.createElement('span')
-  botName.className = 'leaidear-bot-name'
+  botName.className = 'opps-bot-name'
   botName.textContent = DEFAULT_WIDGET_CONFIG.displayName
   header.appendChild(avatar)
   header.appendChild(botName)
 
   // Message list
   const msgList = document.createElement('div')
-  msgList.className = 'leaidear-messages'
+  msgList.className = 'opps-messages'
   msgList.setAttribute('aria-live', 'polite')
 
   // Empty state
   const emptyState = document.createElement('div')
-  emptyState.className = 'leaidear-empty'
+  emptyState.className = 'opps-empty'
   const emptyAvatar = document.createElement('div')
-  emptyAvatar.className = 'leaidear-empty-avatar'
+  emptyAvatar.className = 'opps-empty-avatar'
   emptyAvatar.textContent = getDisplayInitial(DEFAULT_WIDGET_CONFIG.displayName)
   const emptyHeading = document.createElement('p')
-  emptyHeading.className = 'leaidear-empty-heading'
+  emptyHeading.className = 'opps-empty-heading'
   emptyHeading.textContent = DEFAULT_WIDGET_CONFIG.welcomeMessage
   const emptyBody = document.createElement('p')
-  emptyBody.className = 'leaidear-empty-body'
+  emptyBody.className = 'opps-empty-body'
   emptyBody.textContent = 'Ask me anything \u2014 I\u2019m here to help.'
   emptyState.appendChild(emptyAvatar)
   emptyState.appendChild(emptyHeading)
@@ -490,14 +490,14 @@ function buildPanel(
 
   // Input area
   const inputArea = document.createElement('div')
-  inputArea.className = 'leaidear-input-area'
+  inputArea.className = 'opps-input-area'
   const input = document.createElement('input')
   input.type = 'text'
-  input.className = 'leaidear-input'
+  input.className = 'opps-input'
   input.placeholder = 'Type a message\u2026'
   input.setAttribute('aria-label', 'Message input')
   const sendBtn = document.createElement('button')
-  sendBtn.className = 'leaidear-send'
+  sendBtn.className = 'opps-send'
   sendBtn.setAttribute('aria-label', 'Send message')
   sendBtn.setAttribute('aria-disabled', 'true')
   sendBtn.disabled = true
@@ -521,9 +521,9 @@ function buildPanel(
       hasMessages = true
     }
     const wrapper = document.createElement('div')
-    wrapper.className = `leaidear-msg leaidear-msg-${role === 'user' ? 'user' : 'assistant'}`
+    wrapper.className = `opps-msg opps-msg-${role === 'user' ? 'user' : 'assistant'}`
     const bubble = document.createElement('div')
-    bubble.className = role === 'error' ? 'leaidear-bubble-error' : `leaidear-bubble-${role}`
+    bubble.className = role === 'error' ? 'opps-bubble-error' : `opps-bubble-${role}`
     bubble.textContent = text
     wrapper.appendChild(bubble)
     msgList.appendChild(wrapper)
@@ -532,11 +532,11 @@ function buildPanel(
 
   function showTyping(): HTMLDivElement {
     const typing = document.createElement('div')
-    typing.className = 'leaidear-typing'
+    typing.className = 'opps-typing'
     typing.setAttribute('aria-label', 'AI is typing')
     for (let i = 0; i < 3; i++) {
       const dot = document.createElement('div')
-      dot.className = 'leaidear-dot'
+      dot.className = 'opps-dot'
       typing.appendChild(dot)
     }
     msgList.appendChild(typing)
@@ -653,7 +653,7 @@ function buildPanel(
 function initWidget(token: string, apiBase: string): void {
   // Shadow host (must be unstyled — no transform/filter or position:fixed breaks)
   const host = document.createElement('div')
-  host.id = 'leaidear-root'
+  host.id = 'opps-root'
   document.body.appendChild(host)
 
   const shadow = host.attachShadow({ mode: 'open' })
@@ -665,14 +665,14 @@ function initWidget(token: string, apiBase: string): void {
 
   // Build bubble
   const bubble = document.createElement('button')
-  bubble.className = 'leaidear-bubble'
+  bubble.className = 'opps-bubble'
   bubble.setAttribute('aria-label', 'Open chat')
   bubble.setAttribute('tabindex', '0')
   bubble.innerHTML = ICON_CHAT
 
   // Show welcome pulse on first load (no stored session)
   if (!readSession(token)) {
-    bubble.classList.add('leaidear-pulse')
+    bubble.classList.add('opps-pulse')
   }
 
   // Build panel
@@ -681,7 +681,7 @@ function initWidget(token: string, apiBase: string): void {
   shadow.appendChild(panel)
 
   void fetchWidgetConfig(apiBase, token).then((config) => {
-    host.style.setProperty('--leaidear-primary-color', config.primaryColor)
+    host.style.setProperty('--opps-primary-color', config.primaryColor)
     applyConfig(config)
   })
 
@@ -691,25 +691,25 @@ function initWidget(token: string, apiBase: string): void {
   function openPanel(): void {
     isOpen = true
     panel.setAttribute('aria-hidden', 'false')
-    panel.classList.remove('leaidear-panel-closing')
-    panel.classList.add('leaidear-panel-opening')
+    panel.classList.remove('opps-panel-closing')
+    panel.classList.add('opps-panel-opening')
     bubble.setAttribute('aria-label', 'Close chat')
     bubble.innerHTML = ICON_CLOSE
     // Focus the input inside the panel
-    const input = panel.querySelector<HTMLInputElement>('.leaidear-input')
+    const input = panel.querySelector<HTMLInputElement>('.opps-input')
     setTimeout(() => input?.focus(), 210) // after open animation
   }
 
   function closePanel(): void {
     isOpen = false
-    panel.classList.remove('leaidear-panel-opening')
-    panel.classList.add('leaidear-panel-closing')
+    panel.classList.remove('opps-panel-opening')
+    panel.classList.add('opps-panel-closing')
     bubble.setAttribute('aria-label', 'Open chat')
     bubble.innerHTML = ICON_CHAT
     // Hide after animation completes
     setTimeout(() => {
       panel.setAttribute('aria-hidden', 'true')
-      panel.classList.remove('leaidear-panel-closing')
+      panel.classList.remove('opps-panel-closing')
     }, 160)
   }
 

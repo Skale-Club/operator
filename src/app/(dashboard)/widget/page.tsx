@@ -84,6 +84,7 @@ export default async function WidgetPage() {
               organization.widget_welcome_message,
               DEFAULT_WIDGET_SETTINGS.welcomeMessage
             ),
+            avatarUrl: organization.widget_avatar_url || '',
           }}
           widgetToken={organization.widget_token}
         />

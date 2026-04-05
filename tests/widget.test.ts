@@ -65,7 +65,7 @@ async function flushAsyncWork(): Promise<void> {
 }
 
 function getShadowRoot(): ShadowRoot {
-  const host = document.getElementById('leaidear-root')
+  const host = document.getElementById('opps-root')
   expect(host).not.toBeNull()
   expect(host!.shadowRoot).not.toBeNull()
   return host!.shadowRoot!
@@ -83,13 +83,13 @@ describe('Widget — token extraction and init guard (WIDGET-02, WIDGET-04)', ()
     document.body.innerHTML = ''
     clearLocalStorage()
     fetchMock.mockReset()
-    // Remove any existing leaidear-root
-    document.getElementById('leaidear-root')?.remove()
+    // Remove any existing opps-root
+    document.getElementById('opps-root')?.remove()
   })
 
   afterEach(() => {
     vi.restoreAllMocks()
-    document.getElementById('leaidear-root')?.remove()
+    document.getElementById('opps-root')?.remove()
   })
 
   it('reads data-token from the script element before any async boundary', () => {
@@ -97,15 +97,15 @@ describe('Widget — token extraction and init guard (WIDGET-02, WIDGET-04)', ()
     expect(() => loadWidget('test-token-123', 'https://example.com/widget.js')).not.toThrow()
   })
 
-  it('creates div#leaidear-root in document.body on init', () => {
+  it('creates div#opps-root in document.body on init', () => {
     loadWidget('test-token-123', 'https://example.com/widget.js')
-    expect(document.getElementById('leaidear-root')).not.toBeNull()
+    expect(document.getElementById('opps-root')).not.toBeNull()
   })
 
-  it('does not create a second leaidear-root if already initialized (double-init guard)', () => {
+  it('does not create a second opps-root if already initialized (double-init guard)', () => {
     loadWidget('test-token-123', 'https://example.com/widget.js')
     loadWidget('test-token-123', 'https://example.com/widget.js')
-    const roots = document.querySelectorAll('#leaidear-root')
+    const roots = document.querySelectorAll('#opps-root')
     expect(roots.length).toBe(1)
   })
 
@@ -123,7 +123,7 @@ describe('Widget — token extraction and init guard (WIDGET-02, WIDGET-04)', ()
     const code = readFileSync(WIDGET_PATH, 'utf-8')
     // eslint-disable-next-line no-eval
     eval(code)
-    expect(document.getElementById('leaidear-root')).toBeNull()
+    expect(document.getElementById('opps-root')).toBeNull()
   })
 })
 
@@ -132,17 +132,17 @@ describe('Widget — session localStorage (WIDGET-05, D-12, D-13)', () => {
     document.body.innerHTML = ''
     clearLocalStorage()
     fetchMock.mockReset()
-    document.getElementById('leaidear-root')?.remove()
+    document.getElementById('opps-root')?.remove()
   })
 
   afterEach(() => {
     vi.restoreAllMocks()
-    document.getElementById('leaidear-root')?.remove()
+    document.getElementById('opps-root')?.remove()
   })
 
-  it('reads existing sessionId from localStorage using leaidear_{token}_sessionId key', () => {
+  it('reads existing sessionId from localStorage using opps_{token}_sessionId key', () => {
     const token = 'test-token-abc'
-    const storageKey = `leaidear_${token}_sessionId`
+    const storageKey = `opps_${token}_sessionId`
     localStorage.setItem(storageKey, 'existing-session-uuid')
 
     // Widget init should not throw even when sessionId exists in localStorage
@@ -165,23 +165,23 @@ describe('Widget — Shadow DOM isolation (WIDGET-03, D-01, D-02)', () => {
     document.body.innerHTML = ''
     clearLocalStorage()
     fetchMock.mockReset()
-    document.getElementById('leaidear-root')?.remove()
+    document.getElementById('opps-root')?.remove()
   })
 
   afterEach(() => {
-    document.getElementById('leaidear-root')?.remove()
+    document.getElementById('opps-root')?.remove()
   })
 
-  it('attaches a shadow root to div#leaidear-root', () => {
+  it('attaches a shadow root to div#opps-root', () => {
     loadWidget('test-token-123', 'https://example.com/widget.js')
-    const host = document.getElementById('leaidear-root')
+    const host = document.getElementById('opps-root')
     expect(host).not.toBeNull()
     expect(host!.shadowRoot).not.toBeNull()
   })
 
   it('renders a style element inside the shadow root (inline CSS, no external sheet)', () => {
     loadWidget('test-token-123', 'https://example.com/widget.js')
-    const host = document.getElementById('leaidear-root')!
+    const host = document.getElementById('opps-root')!
     const shadow = host.shadowRoot!
     const styles = shadow.querySelectorAll('style')
     expect(styles.length).toBeGreaterThan(0)
@@ -193,12 +193,12 @@ describe('Widget — runtime config hydration and fallback (ADMIN-01)', () => {
     document.body.innerHTML = ''
     clearLocalStorage()
     fetchMock.mockReset()
-    document.getElementById('leaidear-root')?.remove()
+    document.getElementById('opps-root')?.remove()
   })
 
   afterEach(() => {
     vi.restoreAllMocks()
-    document.getElementById('leaidear-root')?.remove()
+    document.getElementById('opps-root')?.remove()
   })
 
   it('hydrates display name, primary color, and welcome message from the public config endpoint', async () => {
@@ -213,18 +213,18 @@ describe('Widget — runtime config hydration and fallback (ADMIN-01)', () => {
     loadWidget('config-token', 'https://example.com/widget.js')
     await flushAsyncWork()
 
-    const host = document.getElementById('leaidear-root') as HTMLDivElement
+    const host = document.getElementById('opps-root') as HTMLDivElement
     const shadow = getShadowRoot()
 
     expect(fetchMock).toHaveBeenCalledWith('https://example.com/api/widget/config-token/config', {
       method: 'GET',
       headers: { Accept: 'application/json' },
     })
-    expect(host.style.getPropertyValue('--leaidear-primary-color')).toBe('#22C55E')
-    expect(shadow.querySelector('.leaidear-bot-name')?.textContent).toBe('Skale Concierge')
-    expect(shadow.querySelector('.leaidear-avatar')?.textContent).toBe('S')
-    expect(shadow.querySelector('.leaidear-empty-avatar')?.textContent).toBe('S')
-    expect(shadow.querySelector('.leaidear-empty-heading')?.textContent).toBe('Welcome to Skale!')
+    expect(host.style.getPropertyValue('--opps-primary-color')).toBe('#22C55E')
+    expect(shadow.querySelector('.opps-bot-name')?.textContent).toBe('Skale Concierge')
+    expect(shadow.querySelector('.opps-avatar')?.textContent).toBe('S')
+    expect(shadow.querySelector('.opps-empty-avatar')?.textContent).toBe('S')
+    expect(shadow.querySelector('.opps-empty-heading')?.textContent).toBe('Welcome to Skale!')
   })
 
   it('falls back to Phase 4 defaults when the config request fails', async () => {
@@ -233,12 +233,12 @@ describe('Widget — runtime config hydration and fallback (ADMIN-01)', () => {
     loadWidget('fallback-token', 'https://example.com/widget.js')
     await flushAsyncWork()
 
-    const host = document.getElementById('leaidear-root') as HTMLDivElement
+    const host = document.getElementById('opps-root') as HTMLDivElement
     const shadow = getShadowRoot()
 
-    expect(host.style.getPropertyValue('--leaidear-primary-color')).toBe(DEFAULT_WIDGET_CONFIG.primaryColor)
-    expect(shadow.querySelector('.leaidear-bot-name')?.textContent).toBe(DEFAULT_WIDGET_CONFIG.displayName)
-    expect(shadow.querySelector('.leaidear-empty-heading')?.textContent).toBe(DEFAULT_WIDGET_CONFIG.welcomeMessage)
+    expect(host.style.getPropertyValue('--opps-primary-color')).toBe(DEFAULT_WIDGET_CONFIG.primaryColor)
+    expect(shadow.querySelector('.opps-bot-name')?.textContent).toBe(DEFAULT_WIDGET_CONFIG.displayName)
+    expect(shadow.querySelector('.opps-empty-heading')?.textContent).toBe(DEFAULT_WIDGET_CONFIG.welcomeMessage)
   })
 
   it('still shows the unavailable message when chat send returns 401 after config hydration', async () => {
@@ -250,17 +250,17 @@ describe('Widget — runtime config hydration and fallback (ADMIN-01)', () => {
     await flushAsyncWork()
 
     const shadow = getShadowRoot()
-    const bubble = shadow.querySelector('.leaidear-bubble') as HTMLButtonElement
+    const bubble = shadow.querySelector('.opps-bubble') as HTMLButtonElement
     bubble.click()
 
-    const input = shadow.querySelector('.leaidear-input') as HTMLInputElement
-    const sendBtn = shadow.querySelector('.leaidear-send') as HTMLButtonElement
+    const input = shadow.querySelector('.opps-input') as HTMLInputElement
+    const sendBtn = shadow.querySelector('.opps-send') as HTMLButtonElement
     input.value = 'Hello there'
     input.dispatchEvent(new Event('input', { bubbles: true }))
     sendBtn.click()
     await flushAsyncWork()
 
-    const errorBubble = shadow.querySelector('.leaidear-bubble-error')
+    const errorBubble = shadow.querySelector('.opps-bubble-error')
     expect(errorBubble?.textContent).toBe('This chat is unavailable right now.')
     expect(fetchMock).toHaveBeenNthCalledWith(2, 'https://example.com/api/chat/invalid-token', {
       method: 'POST',

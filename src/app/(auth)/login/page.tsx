@@ -85,7 +85,7 @@ export default function LoginPage() {
             className="text-[28px] font-semibold leading-[1.1] tracking-tight"
             style={{ lineHeight: '1.1' }}
           >
-            Leaidear
+            Opps
           </h1>
           <p className="text-[14px] font-normal text-muted-foreground mt-1">
             AI Operations Platform

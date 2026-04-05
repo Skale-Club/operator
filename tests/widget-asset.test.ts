@@ -14,12 +14,12 @@ describe('Widget asset — public/widget.js', () => {
     expect(stat.size).toBeGreaterThan(100)
   })
 
-  it('contains the leaidear namespace string (survives esbuild minification)', () => {
+  it('contains the opps namespace string (survives esbuild minification)', () => {
     expect(existsSync(WIDGET_PATH)).toBe(true)
     const content = readFileSync(WIDGET_PATH, 'utf-8')
-    // 'leaidear_' appears in the localStorage key: `leaidear_${token}_sessionId`
-    // 'leaidear-root' appears as the Shadow DOM host element ID
+    // 'opps_' appears in the localStorage key: `opps_${token}_sessionId`
+    // 'opps-root' appears as the Shadow DOM host element ID
     // Both survive --minify because esbuild only minifies identifiers, not string literals
-    expect(content).toMatch(/leaidear[_-]/)
+    expect(content).toMatch(/opps[_-]/)
   })
 })
