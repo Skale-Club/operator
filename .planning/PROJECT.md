@@ -67,11 +67,15 @@ That business logic may differ by client. The invariant is the reliability of th
 - Embeddable chat widget (public/widget.js) installable via single script tag or GTM — Shadow DOM isolation, floating bubble, SSE chat panel, localStorage session persistence - v1.2, Phase 4 (WIDGET-01..05)
 - Cross-origin widget calls supported — CORS headers + OPTIONS preflight on POST /api/chat/[token] - v1.2, Phase 4 (WIDGET-04)
 
-### Active
+### Validated
 
-- Widget conversations backed by knowledge base and action engine
-- Per-org widget configuration (name, color, welcome message)
-- Admin page to configure, preview, and get embed code for the widget
+- Widget conversations backed by knowledge base and action engine - v1.2, Phase 5 (ADMIN-01..04)
+- Per-org widget configuration (name, color, welcome message) - v1.2, Phase 5 (ADMIN-01)
+- Admin page to configure, preview, and get embed code for the widget - v1.2, Phase 5 (ADMIN-02)
+- Token regeneration for widget auth invalidation - v1.2, Phase 5 (ADMIN-03)
+- Runtime widget config hydration from public config endpoint - v1.2, Phase 5 (ADMIN-04)
+
+### Active
 - Vapi webhook HMAC/secret validation on `/api/vapi/*` routes
 - `send_sms` action type (Twilio executor)
 - `custom_webhook` action type (configurable URL, method, headers, body)
@@ -142,4 +146,4 @@ Renamed to Leaidear at v1.2 (2026-04-03). Phase 4 complete (2026-04-04) — embe
 
 Update this file whenever deployment assumptions, validated requirements, or core constraints change.
 
-*Last updated: 2026-04-04 — Phase 3 ai-conversation-engine complete: streamed AI responses with knowledge base retrieval and action engine tool calls*
+*Last updated: 2026-04-05
