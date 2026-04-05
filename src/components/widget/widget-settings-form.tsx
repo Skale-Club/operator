@@ -82,7 +82,7 @@ export function WidgetSettingsForm({
 
   const previewValues = form.watch()
   const embedCode = useMemo(
-    () => `<script src="https://opps.skale.club/widget.js" data-token="${currentToken}"></script>`,
+    () => `<script src="https://operator.skale.club/widget.js" data-token="${currentToken}"></script>`,
     [currentToken]
   )
 

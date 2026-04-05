@@ -41,6 +41,7 @@ export interface Database {
           is_active?: boolean
           widget_token?: string
           widget_display_name?: string | null
+          widget_avatar_url?: string | null
           widget_primary_color?: string | null
           widget_welcome_message?: string | null
           created_at?: string
@@ -53,6 +54,7 @@ export interface Database {
           is_active?: boolean
           widget_token?: string
           widget_display_name?: string | null
+          widget_avatar_url?: string | null
           widget_primary_color?: string | null
           widget_welcome_message?: string | null
           updated_at?: string
