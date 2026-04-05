@@ -1,10 +1,10 @@
-# Leaidear Roadmap
+# Operator Roadmap
 
 ## Milestones
 
 - ✅ **v1.0 MVP** — 6 phases, 30 plans (shipped 2026-04-03)
 - ✅ **v1.1 Knowledge Base** — LangChain vector pipeline (shipped 2026-04-03)
-- 🚧 **v1.2 Leaidear + Embedded Chatbot** — active (6 phases)
+- ✅ **v1.2 Operator + Embedded Chatbot** — shipped 2026-04-05 (6 phases)
 
 ## Shipped
 
@@ -36,9 +36,9 @@ See [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 
 ---
 
-## v1.2 — Leaidear + Embedded Chatbot
+## v1.2 — Operator + Embedded Chatbot
 
-**Goal:** Rename the platform to Leaidear and ship an embeddable chat widget for third-party sites, backed by the existing knowledge base and action engine.
+**Goal:** Establish the Operator brand and ship an embeddable chat widget for third-party sites, backed by the existing knowledge base and action engine.
 
 ### Phases
 
@@ -46,8 +46,8 @@ See [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 - [x] **Phase 2: Chat API** - Public `/api/chat/[token]` route with token validation, session management, and conversation persistence (completed 2026-04-04)
 - [x] **Phase 3: AI Conversation Engine** - Streaming responses via plain JSON SSE, knowledge base pre-retrieval, and action engine tool calls (completed 2026-04-04)
 - [x] **Phase 4: Widget Embed Script** - Client-side JS widget loaded via `<script>` tag with floating bubble and chat panel UI (completed 2026-04-04)
-- [ ] **Phase 5: Admin Configuration** - Widget config page with appearance settings, live preview, embed code generator, and token regen
-- [ ] **Phase 6: Chat Inbox** - Admin inbox to view, filter, and reply to widget conversations; widget settings relocated under Chat in sidebar
+- [x] **Phase 5: Admin Configuration** - Widget config page with appearance settings, live preview, embed code generator, and token regen (completed 2026-04-05)
+- [x] **Phase 6: Chat Inbox** - Admin inbox to view, filter, and reply to widget conversations; widget settings relocated under Chat in sidebar (completed 2026-04-05)
 
 ---
 
@@ -133,7 +133,7 @@ Plans:
 - [x] 05-01-PLAN.md — Wave 1: organization widget config migration + public config endpoint + route tests
 - [x] 05-02-PLAN.md — Wave 2: `/widget` dashboard page + sidebar nav + save/token actions + live preview
 - [x] 05-03-PLAN.md — Wave 3: widget runtime config fetch + rebuilt asset + widget tests
-- [ ] 05-04-PLAN.md — Wave 4: human browser verification of admin config + token rotation flow
+- [x] 05-04-PLAN.md — Wave 4: human browser verification of admin config + token rotation flow
 
 ### Phase 6: Chat Inbox
 **Goal**: Admins can view, filter, and reply to widget conversations from the dashboard; widget settings move under the Chat section in the sidebar
@@ -146,7 +146,7 @@ Plans:
 - [x] 06-02-PLAN.md — Wave 2: TypeScript types (ConversationSummary, ConversationMessage) + all admin API endpoints
 - [x] 06-03-PLAN.md — Wave 3: ConversationList + ChatArea + AdminChatLayout components
 - [x] 06-04-PLAN.md — Wave 4: /chat page + sidebar Chat group (Inbox + Settings)
-- [ ] 06-05-PLAN.md — Wave 5: human browser verification checkpoint
+- [x] 06-05-PLAN.md — Wave 5: human browser verification checkpoint
 
 ---
 
@@ -158,8 +158,8 @@ Plans:
 | 2. Chat API | 3/3 | Complete   | 2026-04-04 |
 | 3. AI Conversation Engine | 2/2 | Complete   | 2026-04-04 |
 | 4. Widget Embed Script | 3/3 | Complete   | 2026-04-04 |
-| 5. Admin Configuration | 3/4 | In Progress | - |
-| 6. Chat Inbox | 4/5 | In Progress|  |
+| 5. Admin Configuration | 4/4 | Complete   | 2026-04-05 |
+| 6. Chat Inbox | 5/5 | Complete   | 2026-04-05 |
 
 ---
 
@@ -200,4 +200,4 @@ Plans:
 
 ---
 
-*Last updated: 2026-04-05 — Phase 6 Chat Inbox planned (5 plans, 5 waves)*
+*Last updated: 2026-04-05 — v1.2 shipped; all 6 phases complete*

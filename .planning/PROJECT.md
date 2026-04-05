@@ -1,10 +1,10 @@
-# Leaidear
+# Operator
 
 ## What This Is
 
 A multi-tenant SaaS platform that serves as the operational layer for agencies running AI assistants. It centralizes action execution, knowledge base workflows, outbound campaigns, call observability, and embeddable chat widgets in one admin panel so agencies can scale beyond a single-client setup.
 
-Leaidear is not meant to encode one universal agency workflow. It is the shared integration and orchestration substrate that lets each client organization run its own operational flow on top of common primitives such as assistant mappings, provider credentials, tool execution, outbound calling, observability, and customer-facing chat.
+Operator is not meant to encode one universal agency workflow. It is the shared integration and orchestration substrate that lets each client organization run its own operational flow on top of common primitives such as assistant mappings, provider credentials, tool execution, outbound calling, observability, and customer-facing chat.
 
 ## Core Value
 
@@ -12,12 +12,12 @@ Leaidear is not meant to encode one universal agency workflow. It is the shared 
 
 That business logic may differ by client. The invariant is the reliability of the execution path, not that every tenant follows the same pattern.
 
-## Current Milestone: v1.2 Leaidear + Embedded Chatbot
+## Last Shipped: v1.2 Operator + Embedded Chatbot ✅ (2026-04-05)
 
-**Goal:** Rename the platform to Leaidear and add an embeddable chatbot widget installable on third-party sites via script tag or GTM, backed by the existing knowledge base and action engine.
+**Goal:** Establish the Operator brand and add an embeddable chatbot widget installable on third-party sites via script tag or GTM, backed by the existing knowledge base and action engine.
 
-**Target features:**
-- Platform rename: VoiceOps → Leaidear (UI labels, branding, navigation)
+**Shipped features:**
+- Platform name: Operator (UI labels, branding, navigation)
 - Embeddable chat widget (script tag / GTM installable)
 - Streaming conversation engine (Vercel AI SDK, SSE)
 - Short-term memory: Redis (active session context)
