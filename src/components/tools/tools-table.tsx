@@ -28,7 +28,7 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { Wrench, MoreHorizontal, FolderPlus, GripVertical } from 'lucide-react'
+import { Wrench, MoreHorizontal, FolderPlus, GripVertical, ScrollText } from 'lucide-react'
 import { toast } from 'sonner'
 import type { ToolConfigWithIntegration } from '@/app/(dashboard)/tools/actions'
 import type { IntegrationForDisplay } from '@/app/(dashboard)/integrations/actions'
@@ -429,6 +429,12 @@ export function ToolsTable({
               <FolderPlus className="h-4 w-4" />
             </Button>
           )}
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/tools/logs">
+              <ScrollText className="h-4 w-4 mr-1.5" />
+              Logs
+            </Link>
+          </Button>
           <Button onClick={openCreateSheet}>Add Tool</Button>
         </div>
       </div>

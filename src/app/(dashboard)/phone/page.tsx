@@ -55,7 +55,7 @@ export default async function PhonePage({
   let assistantMappings: AssistantMapping[] | null = null
 
   if (activeTab === 'calls') {
-    const page = Number(params.page ?? '1')
+    const page = Math.max(1, Number(params.page ?? '1') || 1)
     const from = params.from as string | undefined
     const to = params.to as string | undefined
     const status = params.status as string | undefined

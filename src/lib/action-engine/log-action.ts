@@ -24,9 +24,12 @@ export async function logAction(
 ): Promise<void> {
   try {
     await supabase.from('action_logs').insert(payload)
-  } catch {
+  } catch (err) {
     // Swallow all errors — log failure must never crash the caller or block Vapi response
-    // In production, consider console.error here for observability
-    console.error('[logAction] Failed to write action_logs row')
+    console.error('[logAction] Failed to write action_logs row:', {
+      error: err instanceof Error ? err.message : String(err),
+      vapi_call_id: payload.vapi_call_id,
+      tool_name: payload.tool_name,
+    })
   }
 }

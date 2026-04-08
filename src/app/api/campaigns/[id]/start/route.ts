@@ -56,10 +56,13 @@ export async function POST(
   const vapiApiKey = await getProviderKey('vapi', updated.organization_id, serviceClient)
   if (!vapiApiKey) {
     // Roll back status since we cannot fire calls without the key
-    await serviceClient
+    const { error: rollbackErr } = await serviceClient
       .from('campaigns')
       .update({ status: 'draft', updated_at: new Date().toISOString() })
       .eq('id', campaignId)
+    if (rollbackErr) {
+      console.error('[start] Rollback failed — campaign may be stuck in_progress:', rollbackErr.message)
+    }
 
     return Response.json(
       { error: 'No Vapi integration configured. Add a Vapi integration in Settings.' },

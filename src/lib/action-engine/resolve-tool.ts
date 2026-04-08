@@ -38,6 +38,6 @@ export async function resolveTool(
     .eq('is_active', true)
     .single()
 
-  if (error || !data) return null
+  if (error || !data || !data.integrations) return null
   return data as unknown as ToolConfigWithIntegration
 }

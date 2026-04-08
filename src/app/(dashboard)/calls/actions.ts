@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getUser } from '@/lib/supabase/server'
 import type { Database } from '@/types/database'
 
 type CallRow = Database['public']['Tables']['calls']['Row']
@@ -24,6 +24,8 @@ export async function getCalls({
   callType?: string
   q?: string
 }): Promise<{ calls: CallRow[]; total: number }> {
+  const user = await getUser()
+  if (!user) return { calls: [], total: 0 }
   const supabase = await createClient()
   let query = supabase
     .from('calls')

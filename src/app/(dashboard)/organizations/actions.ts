@@ -91,6 +91,8 @@ export async function updateOrganization(
   id: string,
   data: { name: string; is_active: boolean }
 ): Promise<{ error?: string } | void> {
+  const user = await getUser()
+  if (!user) return { error: 'Not authenticated.' }
   const supabase = await createClient()
   const slug = generateSlug(data.name)
   const { error } = await supabase
@@ -105,6 +107,8 @@ export async function toggleOrganizationStatus(
   id: string,
   is_active: boolean
 ): Promise<{ error?: string } | void> {
+  const user = await getUser()
+  if (!user) return { error: 'Not authenticated.' }
   const supabase = await createClient()
   const { error } = await supabase
     .from('organizations')

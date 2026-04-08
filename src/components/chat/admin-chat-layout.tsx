@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 
 import { ConversationSummary, ConversationMessage } from '@/types/chat'
 import {
@@ -17,6 +17,8 @@ export function AdminChatLayout() {
   const [messages, setMessages] = useState<ConversationMessage[]>([])
   const [isMessagesLoading, setIsMessagesLoading] = useState(false)
   const [isMobileListVisible, setIsMobileListVisible] = useState(true)
+  // Tracks the current conversation ID synchronously to guard stale fetch responses
+  const selectedConversationIdRef = useRef<string | null>(null)
 
   // Fetch conversations
   const fetchConversations = useCallback(async () => {
@@ -30,7 +32,7 @@ export function AdminChatLayout() {
     }
   }, [])
 
-  // Fetch messages for a conversation
+  // Fetch messages for a conversation — guards against stale responses when switching conversations
   const fetchMessages = useCallback(async (id: string) => {
     setIsMessagesLoading(true)
     try {
@@ -39,7 +41,10 @@ export function AdminChatLayout() {
       )
       if (!res.ok) return
       const data = await res.json()
-      setMessages(data.messages ?? [])
+      // Discard if user switched away before this response arrived
+      if (selectedConversationIdRef.current === id) {
+        setMessages(data.messages ?? [])
+      }
     } catch {
       // silently fail
     } finally {
@@ -56,6 +61,11 @@ export function AdminChatLayout() {
     )
     return () => clearInterval(interval)
   }, [selectedConversationId, fetchConversations])
+
+  // Keep ref in sync with state so fetchMessages can read current value without stale closure
+  useEffect(() => {
+    selectedConversationIdRef.current = selectedConversationId
+  }, [selectedConversationId])
 
   // Poll messages for the selected conversation
   useEffect(() => {
@@ -77,7 +87,7 @@ export function AdminChatLayout() {
     if (!selectedConversationId) return
 
     // Optimistic append
-    const tempId = `temp-${Date.now()}`
+    const tempId = `temp-${crypto.randomUUID()}`
     const tempMsg: ConversationMessage = {
       id: tempId,
       conversationId: selectedConversationId,

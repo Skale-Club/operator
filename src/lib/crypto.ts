@@ -10,6 +10,9 @@ async function getKey(): Promise<CryptoKey> {
   if (!secret || secret.length !== 64) {
     throw new Error('ENCRYPTION_SECRET must be a 64-character hex string (32 bytes)')
   }
+  if (!/^[0-9a-fA-F]{64}$/.test(secret)) {
+    throw new Error('ENCRYPTION_SECRET contains non-hex characters')
+  }
   // Decode 64-char hex string to 32 bytes manually — never use Buffer (Node.js only)
   const keyBytes = new Uint8Array(32)
   for (let i = 0; i < 32; i++) {

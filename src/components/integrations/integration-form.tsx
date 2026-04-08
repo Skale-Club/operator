@@ -90,7 +90,8 @@ export function IntegrationForm({ provider, integration, onSuccess }: Integratio
           config,
         })
       } else {
-        result = await updateIntegration(integration!.id, {
+        if (!integration) return
+        result = await updateIntegration(integration.id, {
           name,
           locationId: values.locationId ?? '',
           config,

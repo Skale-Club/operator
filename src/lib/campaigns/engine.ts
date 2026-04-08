@@ -63,7 +63,7 @@ export async function startCampaignBatch(
   // Fire calls concurrently (Promise.allSettled — partial failure is acceptable)
   const results = await Promise.allSettled(
     contacts.map((contact) =>
-      fireContactCall(contact as CampaignContactRow, campaign, supabase, vapiApiKey)
+      fireContactCall(contact, campaign, supabase, vapiApiKey)
     )
   )
 
@@ -95,7 +95,7 @@ async function fireContactCall(
       customData: (contact.custom_data as Record<string, string>) ?? {},
     })
 
-    await supabase
+    const { error: updateErr } = await supabase
       .from('campaign_contacts')
       .update({
         status: 'calling',
@@ -104,6 +104,7 @@ async function fireContactCall(
         updated_at: new Date().toISOString(),
       })
       .eq('id', contact.id)
+    if (updateErr) throw new Error(`Contact status update failed: ${updateErr.message}`)
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unknown error'
     console.error('[engine] Call failed for contact', contact.id, ':', msg)

@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { format } from 'date-fns'
 import { ChevronLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
+import { getLogs, getLogStats } from '@/app/(dashboard)/tools/logs/actions'
 import type { Database } from '@/types/database'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -12,10 +13,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { LogsTable } from '@/components/tools/logs-table'
+import { LogsFilters } from '@/components/tools/logs-filters'
+import type { LogStatus } from '@/app/(dashboard)/tools/logs/actions'
 
 type ToolConfigRow = Database['public']['Tables']['tool_configs']['Row']
-type ActionLogRow = Database['public']['Tables']['action_logs']['Row']
-type CallRow = Database['public']['Tables']['calls']['Row']
 
 type ToolConfigDetail = ToolConfigRow & {
   integrations: {
@@ -34,31 +36,36 @@ const ACTION_TYPE_LABELS: Record<ToolConfigRow['action_type'], string> = {
   custom_webhook: 'Custom Webhook',
 }
 
-function formatJson(value: Database['public']['Tables']['action_logs']['Row']['request_payload']) {
-  return JSON.stringify(value ?? {}, null, 2)
-}
-
-function StatusBadge({ status }: { status: ActionLogRow['status'] }) {
-  const className =
-    status === 'success'
-      ? 'bg-emerald-500/15 text-emerald-400'
-      : status === 'timeout'
-      ? 'bg-yellow-500/15 text-yellow-400'
-      : 'bg-red-500/15 text-red-400'
-
-  return (
-    <Badge variant="outline" className={className}>
-      {status}
-    </Badge>
-  )
+function buildPageUrl(
+  toolConfigId: string,
+  page: number,
+  params: { status?: string; from?: string; to?: string; q?: string }
+): string {
+  const p = new URLSearchParams()
+  if (params.status && params.status !== 'all') p.set('status', params.status)
+  if (params.from) p.set('from', params.from)
+  if (params.to) p.set('to', params.to)
+  if (params.q) p.set('q', params.q)
+  p.set('page', String(page))
+  return `/tools/${toolConfigId}?${p.toString()}`
 }
 
 export default async function ToolDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ toolConfigId: string }>
+  searchParams: Promise<Record<string, string | undefined>>
 }) {
   const { toolConfigId } = await params
+  const sp = await searchParams
+
+  const page = Math.max(1, Number(sp.page ?? '1') || 1)
+  const status = sp.status as string | undefined
+  const from = sp.from as string | undefined
+  const to = sp.to as string | undefined
+  const q = sp.q as string | undefined
+
   const supabase = await createClient()
 
   const { data: toolConfig, error: toolError } = await supabase
@@ -70,36 +77,23 @@ export default async function ToolDetailPage({
   if (toolError || !toolConfig) notFound()
 
   const typedToolConfig = toolConfig as ToolConfigDetail
+  const basePath = `/tools/${toolConfigId}`
 
-  const { data: actionLogs } = await supabase
-    .from('action_logs')
-    .select('*')
-    .eq('tool_config_id', toolConfigId)
-    .order('created_at', { ascending: false })
-    .limit(20)
+  const [{ logs, total, pageCount }, stats] = await Promise.all([
+    getLogs({
+      toolConfigId,
+      status: status as LogStatus | 'all' | undefined,
+      from,
+      to,
+      q,
+      page,
+    }),
+    getLogStats(toolConfigId),
+  ])
 
-  const logs = (actionLogs ?? []) as ActionLogRow[]
-  const callIds = Array.from(new Set(logs.map((log) => log.vapi_call_id)))
-
-  let callsByVapiCallId = new Map<string, Pick<CallRow, 'id' | 'vapi_call_id' | 'customer_name' | 'customer_number'>>()
-  if (callIds.length > 0) {
-    const { data: calls } = await supabase
-      .from('calls')
-      .select('id, vapi_call_id, customer_name, customer_number')
-      .in('vapi_call_id', callIds)
-
-    callsByVapiCallId = new Map(
-      ((calls ?? []) as Pick<CallRow, 'id' | 'vapi_call_id' | 'customer_name' | 'customer_number'>[])
-        .map((call) => [call.vapi_call_id, call])
-    )
-  }
-
-  const latestLog = logs[0] ?? null
-  const successCount = logs.filter((log) => log.status === 'success').length
-  const averageExecutionMs =
-    logs.length > 0
-      ? Math.round(logs.reduce((sum, log) => sum + log.execution_ms, 0) / logs.length)
-      : null
+  const filterParams = { status, from, to, q }
+  const prevHref = page > 1 ? buildPageUrl(toolConfigId, page - 1, filterParams) : null
+  const nextHref = page < pageCount ? buildPageUrl(toolConfigId, page + 1, filterParams) : null
 
   return (
     <div className="p-6 space-y-5 max-w-5xl">
@@ -114,7 +108,7 @@ export default async function ToolDetailPage({
       <div className="space-y-1">
         <h1 className="text-lg font-semibold">{typedToolConfig.tool_name}</h1>
         <p className="text-sm text-muted-foreground">
-          View this tool configuration and its recent execution logs.
+          View this tool configuration and its execution logs.
         </p>
       </div>
 
@@ -174,116 +168,47 @@ export default async function ToolDetailPage({
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Recent Runs</CardDescription>
-            <CardTitle className="text-2xl">{logs.length}</CardTitle>
+            <CardDescription>Total Runs</CardDescription>
+            <CardTitle className="text-2xl">{stats.total}</CardTitle>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Recent Successes</CardDescription>
-            <CardTitle className="text-2xl">{successCount}</CardTitle>
+            <CardDescription>Successes</CardDescription>
+            <CardTitle className="text-2xl">{stats.successCount}</CardTitle>
           </CardHeader>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Average Execution</CardDescription>
             <CardTitle className="text-2xl">
-              {averageExecutionMs != null ? `${averageExecutionMs}ms` : '—'}
+              {stats.averageMs != null ? `${stats.averageMs}ms` : '—'}
             </CardTitle>
           </CardHeader>
         </Card>
       </div>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Recent Execution Logs</CardTitle>
-          <CardDescription>
-            Latest 20 runs for this tool configuration.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {latestLog && (
-            <div className="rounded-lg border bg-muted/30 px-4 py-3 text-sm">
-              <span className="text-muted-foreground">Latest run:</span>{' '}
-              <StatusBadge status={latestLog.status} />{' '}
-              <span className="ml-2 font-mono">{latestLog.execution_ms}ms</span>{' '}
-              <span className="ml-2 text-muted-foreground">
-                {format(new Date(latestLog.created_at), 'MMM d, yyyy HH:mm:ss')}
-              </span>
-            </div>
-          )}
-
-          {logs.length === 0 ? (
-            <div className="text-sm text-muted-foreground">
-              No execution logs yet for this tool.
-            </div>
-          ) : (
-            logs.map((log) => {
-              const call = callsByVapiCallId.get(log.vapi_call_id)
-
-              return (
-                <div key={log.id} className="rounded-lg border p-4 space-y-4">
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <StatusBadge status={log.status} />
-                        <span className="font-mono text-sm">{log.execution_ms}ms</span>
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {format(new Date(log.created_at), 'MMM d, yyyy HH:mm:ss')}
-                      </div>
-                      <div className="text-sm">
-                        <span className="text-muted-foreground">Vapi Call ID:</span>{' '}
-                        <span className="font-mono break-all">{log.vapi_call_id}</span>
-                      </div>
-                      {call && (
-                        <div className="text-sm">
-                          <Link
-                            href={`/calls/${call.id}`}
-                            className="underline-offset-4 hover:underline"
-                          >
-                            Open related call
-                          </Link>
-                          {(call.customer_name || call.customer_number) && (
-                            <span className="text-muted-foreground">
-                              {' '}· {call.customer_name ?? call.customer_number}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    {log.error_detail && (
-                      <div className="max-w-xl text-sm text-red-400">
-                        {log.error_detail}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="grid gap-4 xl:grid-cols-2">
-                    <details className="rounded-md border bg-muted/20 p-3">
-                      <summary className="cursor-pointer text-sm font-medium">
-                        Request Payload
-                      </summary>
-                      <pre className="mt-3 overflow-x-auto whitespace-pre-wrap break-words text-xs text-muted-foreground">
-                        {formatJson(log.request_payload)}
-                      </pre>
-                    </details>
-
-                    <details className="rounded-md border bg-muted/20 p-3">
-                      <summary className="cursor-pointer text-sm font-medium">
-                        Response Payload
-                      </summary>
-                      <pre className="mt-3 overflow-x-auto whitespace-pre-wrap break-words text-xs text-muted-foreground">
-                        {formatJson(log.response_payload)}
-                      </pre>
-                    </details>
-                  </div>
-                </div>
-              )
-            })
-          )}
-        </CardContent>
-      </Card>
+      <div className="space-y-3">
+        <h2 className="text-sm font-semibold">Execution Logs</h2>
+        <LogsFilters
+          toolOptions={[]}
+          showToolFilter={false}
+          basePath={basePath}
+          status={status}
+          from={from}
+          to={to}
+          q={q}
+        />
+        <LogsTable
+          logs={logs}
+          total={total}
+          page={page}
+          pageCount={pageCount}
+          showToolColumn={false}
+          prevHref={prevHref}
+          nextHref={nextHref}
+        />
+      </div>
     </div>
   )
 }

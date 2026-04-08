@@ -153,6 +153,8 @@ Deno.serve(async (req: Request) => {
       metadata: { ...doc.metadata, knowledge_source_id: documentId },
     }))
 
+    if (docsWithSourceId.length === 0) throw new Error('Text splitting produced no chunks')
+
     // Step 3: Embed + store via LangChain SupabaseVectorStore
     const embeddings = new OpenAIEmbeddings({
       apiKey: openaiApiKey,

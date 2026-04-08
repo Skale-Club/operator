@@ -15,7 +15,8 @@ export async function GET(
 
   const { id } = await params
   const { searchParams } = new URL(request.url)
-  const limit = Math.min(parseInt(searchParams.get('limit') ?? '50', 10), 200)
+  const limitRaw = parseInt(searchParams.get('limit') ?? '50', 10)
+  const limit = Math.min(Number.isNaN(limitRaw) ? 50 : limitRaw, 200)
   const before = searchParams.get('before')
   const includeInternal = searchParams.get('includeInternal') === 'true'
 

@@ -24,7 +24,7 @@ async function updateContactStatus(
   const status = mapEndedReasonToStatus(call.endedReason)
   const isTerminal = status !== 'calling' && status !== 'pending'
 
-  const { data: contact } = await supabase
+  const { data: contact, error: updateErr } = await supabase
     .from('campaign_contacts')
     .update({
       status,
@@ -37,6 +37,10 @@ async function updateContactStatus(
     .select('campaign_id')
     .single()
 
+  if (updateErr) {
+    console.error('[vapi/campaigns] Failed to update contact status:', updateErr.message, { campaignContactId })
+    return
+  }
   if (!contact?.campaign_id) return
 
   // Check if all contacts are done — auto-complete campaign
