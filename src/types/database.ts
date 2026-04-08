@@ -212,6 +212,8 @@ export interface Database {
           config: Json
           fallback_message: string
           is_active: boolean
+          folder: string | null
+          labels: string[]
           created_at: string
           updated_at: string
         }
@@ -224,6 +226,8 @@ export interface Database {
           config?: Json
           fallback_message: string
           is_active?: boolean
+          folder?: string | null
+          labels?: string[]
           created_at?: string
           updated_at?: string
         }
@@ -234,6 +238,8 @@ export interface Database {
           config?: Json
           fallback_message?: string
           is_active?: boolean
+          folder?: string | null
+          labels?: string[]
           updated_at?: string
         }
         Relationships: [

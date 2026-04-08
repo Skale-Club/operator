@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
-import { Loader2 } from 'lucide-react'
+import { Loader2, X } from 'lucide-react'
 import type { ToolConfigWithIntegration } from '@/app/(dashboard)/tools/actions'
 import type { IntegrationForDisplay } from '@/app/(dashboard)/integrations/actions'
 import { createToolConfig, updateToolConfig } from '@/app/(dashboard)/tools/actions'
@@ -47,6 +47,8 @@ const toolConfigSchema = z.object({
     .string()
     .min(1, 'Fallback message is required')
     .max(500, 'Fallback message must be 500 characters or fewer'),
+  folder: z.string().optional().nullable(),
+  labels: z.array(z.string()),
 })
 
 type ToolConfigFormValues = z.infer<typeof toolConfigSchema>
@@ -64,11 +66,13 @@ interface ToolConfigFormProps {
   mode: 'create' | 'edit'
   toolConfig?: ToolConfigWithIntegration
   integrations: IntegrationForDisplay[]
+  existingFolders?: string[]
   onSuccess: () => void
 }
 
-export function ToolConfigForm({ mode, toolConfig, integrations, onSuccess }: ToolConfigFormProps) {
+export function ToolConfigForm({ mode, toolConfig, integrations, existingFolders, onSuccess }: ToolConfigFormProps) {
   const [isPending, setIsPending] = useState(false)
+  const [labelsInput, setLabelsInput] = useState('')
 
   const form = useForm<ToolConfigFormValues>({
     resolver: zodResolver(toolConfigSchema),
@@ -78,28 +82,44 @@ export function ToolConfigForm({ mode, toolConfig, integrations, onSuccess }: To
       actionType: toolConfig?.action_type ?? 'create_contact',
       integrationId: toolConfig?.integration_id ?? '',
       fallbackMessage: toolConfig?.fallback_message ?? '',
+      folder: toolConfig?.folder ?? '',
+      labels: toolConfig?.labels ?? [],
     },
   })
 
+  const currentLabels: string[] = form.watch('labels') ?? []
+
+  function addLabel(value: string) {
+    const trimmed = value.trim().replace(/,$/, '')
+    if (!trimmed || currentLabels.includes(trimmed)) return
+    form.setValue('labels', [...currentLabels, trimmed])
+    setLabelsInput('')
+  }
+
+  function removeLabel(label: string) {
+    form.setValue('labels', currentLabels.filter((l) => l !== label))
+  }
+
   async function onSubmit(values: ToolConfigFormValues) {
+    // Flush any pending label input
+    if (labelsInput.trim()) addLabel(labelsInput)
+
     setIsPending(true)
     try {
-      let result: { error?: string } | void = undefined
+      const payload = {
+        toolName: values.toolName,
+        actionType: values.actionType,
+        integrationId: values.integrationId,
+        fallbackMessage: values.fallbackMessage,
+        folder: values.folder || null,
+        labels: values.labels,
+      }
 
+      let result: { error?: string } | void = undefined
       if (mode === 'create') {
-        result = await createToolConfig({
-          toolName: values.toolName,
-          actionType: values.actionType,
-          integrationId: values.integrationId,
-          fallbackMessage: values.fallbackMessage,
-        })
+        result = await createToolConfig(payload)
       } else if (toolConfig) {
-        result = await updateToolConfig(toolConfig.id, {
-          toolName: values.toolName,
-          actionType: values.actionType,
-          integrationId: values.integrationId,
-          fallbackMessage: values.fallbackMessage,
-        })
+        result = await updateToolConfig(toolConfig.id, payload)
       }
 
       if (result && 'error' in result && result.error) {
@@ -236,6 +256,80 @@ export function ToolConfigForm({ mode, toolConfig, integrations, onSuccess }: To
               </FormItem>
             )}
           />
+
+          <FormField
+            control={form.control}
+            name="folder"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>
+                  Folder{' '}
+                  <span className="text-muted-foreground font-normal">(optional)</span>
+                </FormLabel>
+                <FormControl>
+                  <>
+                    <Input
+                      list="folder-suggestions"
+                      placeholder="e.g. CRM, Scheduling"
+                      disabled={isPending}
+                      {...field}
+                      value={field.value ?? ''}
+                    />
+                    {existingFolders && existingFolders.length > 0 && (
+                      <datalist id="folder-suggestions">
+                        {existingFolders.map((f) => (
+                          <option key={f} value={f} />
+                        ))}
+                      </datalist>
+                    )}
+                  </>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormItem>
+            <FormLabel>
+              Labels{' '}
+              <span className="text-muted-foreground font-normal">(optional)</span>
+            </FormLabel>
+            {currentLabels.length > 0 && (
+              <div className="flex flex-wrap gap-1 mb-1">
+                {currentLabels.map((label) => (
+                  <span
+                    key={label}
+                    className="inline-flex items-center gap-1 text-xs bg-secondary text-secondary-foreground px-2 py-0.5 rounded-full"
+                  >
+                    {label}
+                    <button
+                      type="button"
+                      onClick={() => removeLabel(label)}
+                      className="hover:text-destructive leading-none"
+                      aria-label={`Remove label ${label}`}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <Input
+              placeholder="Type label, press Enter or comma"
+              disabled={isPending}
+              value={labelsInput}
+              onChange={(e) => setLabelsInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ',') {
+                  e.preventDefault()
+                  addLabel(labelsInput)
+                }
+              }}
+              onBlur={() => {
+                if (labelsInput.trim()) addLabel(labelsInput)
+              }}
+            />
+          </FormItem>
 
           <div className="flex gap-3 pt-2">
             <Button type="submit" disabled={isPending}>

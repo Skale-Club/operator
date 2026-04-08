@@ -12,6 +12,8 @@ export type ToolConfigWithIntegration = {
   config: unknown
   fallback_message: string
   is_active: boolean
+  folder: string | null
+  labels: string[]
   created_at: string
   integrations: {
     id: string
@@ -26,6 +28,8 @@ export async function createToolConfig(data: {
   integrationId: string
   fallbackMessage: string
   config?: Record<string, unknown>
+  folder?: string | null
+  labels?: string[]
 }): Promise<{ error?: string } | void> {
   const user = await getUser()
   if (!user) return { error: 'Not authenticated.' }
@@ -46,6 +50,8 @@ export async function createToolConfig(data: {
     integration_id: data.integrationId,
     fallback_message: data.fallbackMessage,
     config: (data.config ?? {}) as Json,
+    folder: data.folder ?? null,
+    labels: data.labels ?? [],
   })
 
   if (error) {
@@ -66,6 +72,8 @@ export async function updateToolConfig(
     integrationId: string
     fallbackMessage: string
     config?: Record<string, unknown>
+    folder?: string | null
+    labels?: string[]
   }
 ): Promise<{ error?: string } | void> {
   const user = await getUser()
@@ -80,6 +88,8 @@ export async function updateToolConfig(
       integration_id: data.integrationId,
       fallback_message: data.fallbackMessage,
       config: (data.config ?? {}) as Json,
+      folder: data.folder ?? null,
+      labels: data.labels ?? [],
     })
     .eq('id', id)
 

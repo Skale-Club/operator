@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useMemo } from 'react'
 import Link from 'next/link'
 import {
   useReactTable,
@@ -71,6 +71,28 @@ export function ToolsTable({ toolConfigs: initialToolConfigs, integrations, chil
   const [deleteTarget, setDeleteTarget] = useState<ToolConfigWithIntegration | null>(null)
   const [isPending, startTransition] = useTransition()
 
+  const existingFolders = useMemo(
+    () => [...new Set(toolConfigs.map((t) => t.folder).filter((f): f is string => !!f))],
+    [toolConfigs]
+  )
+
+  // Group tools by folder; null folder → '__other__' at bottom
+  const grouped = useMemo(() => {
+    const map = new Map<string, ToolConfigWithIntegration[]>()
+    for (const tool of toolConfigs) {
+      const key = tool.folder ?? '__other__'
+      if (!map.has(key)) map.set(key, [])
+      map.get(key)!.push(tool)
+    }
+    return [...map.entries()].sort(([a], [b]) => {
+      if (a === '__other__') return 1
+      if (b === '__other__') return -1
+      return a.localeCompare(b)
+    })
+  }, [toolConfigs])
+
+  const multipleGroups = grouped.length > 1 || (grouped.length === 1 && grouped[0][0] !== '__other__')
+
   function openCreateSheet() {
     setEditingTool(null)
     setIsSheetOpen(true)
@@ -124,6 +146,23 @@ export function ToolsTable({ toolConfigs: initialToolConfigs, integrations, chil
       },
     },
     {
+      id: 'labels',
+      header: () => <span className="text-xs font-medium">Labels</span>,
+      cell: ({ row }) => {
+        const labels = row.original.labels ?? []
+        if (labels.length === 0) return <span className="text-muted-foreground text-sm">—</span>
+        return (
+          <div className="flex flex-wrap gap-1">
+            {labels.map((label) => (
+              <Badge key={label} variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+                {label}
+              </Badge>
+            ))}
+          </div>
+        )
+      },
+    },
+    {
       id: 'integration',
       header: () => <span className="text-xs font-medium">Integration</span>,
       cell: ({ row }) => {
@@ -169,9 +208,7 @@ export function ToolsTable({ toolConfigs: initialToolConfigs, integrations, chil
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
-                <Link href={`/tools/${tool.id}`}>
-                  View Logs
-                </Link>
+                <Link href={`/tools/${tool.id}`}>View Logs</Link>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => openEditSheet(tool)}>
                 Edit Tool Config
@@ -239,17 +276,34 @@ export function ToolsTable({ toolConfigs: initialToolConfigs, integrations, chil
               ))}
             </TableHeader>
             <TableBody>
-              {table.getRowModel().rows.length > 0 ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow key={row.id}>
-                    {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+              {grouped.map(([folderKey, tools]) => (
+                <>
+                  {multipleGroups && (
+                    <TableRow key={`group-${folderKey}`} className="bg-muted/30 hover:bg-muted/30">
+                      <TableCell colSpan={columns.length} className="py-1.5 px-4">
+                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                          {folderKey === '__other__' ? 'Other' : folderKey}
+                        </span>
+                        <span className="ml-2 text-xs text-muted-foreground">({tools.length})</span>
                       </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : (
+                    </TableRow>
+                  )}
+                  {tools.map((tool) => {
+                    const row = table.getRowModel().rows.find((r) => r.original.id === tool.id)
+                    if (!row) return null
+                    return (
+                      <TableRow key={row.id}>
+                        {row.getVisibleCells().map((cell) => (
+                          <TableCell key={cell.id}>
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    )
+                  })}
+                </>
+              ))}
+              {table.getRowModel().rows.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={columns.length} className="h-24 text-center">
                     No results.
@@ -267,6 +321,7 @@ export function ToolsTable({ toolConfigs: initialToolConfigs, integrations, chil
             mode={editingTool ? 'edit' : 'create'}
             toolConfig={editingTool ?? undefined}
             integrations={integrations}
+            existingFolders={existingFolders}
             onSuccess={handleSheetSuccess}
           />
         </SheetContent>
