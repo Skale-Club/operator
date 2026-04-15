@@ -52,7 +52,7 @@ export function CallsFilters({ assistants }: CallsFiltersProps) {
         defaultValue={searchParams.get('status') ?? 'all'}
         onValueChange={(value) => updateParam('status', value)}
       >
-        <SelectTrigger className="w-[180px]">
+        <SelectTrigger className="w-[180px] text-foreground [&_svg]:text-foreground">
           <SelectValue placeholder="All statuses" />
         </SelectTrigger>
         <SelectContent>
@@ -68,7 +68,7 @@ export function CallsFilters({ assistants }: CallsFiltersProps) {
         defaultValue={searchParams.get('type') ?? 'all'}
         onValueChange={(value) => updateParam('type', value)}
       >
-        <SelectTrigger className="w-[160px]">
+        <SelectTrigger className="w-[160px] text-foreground [&_svg]:text-foreground">
           <SelectValue placeholder="All types" />
         </SelectTrigger>
         <SelectContent>
@@ -84,7 +84,7 @@ export function CallsFilters({ assistants }: CallsFiltersProps) {
           defaultValue={searchParams.get('assistant') ?? 'all'}
           onValueChange={(value) => updateParam('assistant', value)}
         >
-          <SelectTrigger className="w-[180px]">
+          <SelectTrigger className="w-[180px] text-foreground [&_svg]:text-foreground">
             <SelectValue placeholder="All assistants" />
           </SelectTrigger>
           <SelectContent>
@@ -104,7 +104,7 @@ export function CallsFilters({ assistants }: CallsFiltersProps) {
           type="date"
           defaultValue={searchParams.get('from') ?? ''}
           onChange={(e) => updateParam('from', e.target.value || null)}
-          className="w-[148px]"
+          className="w-[148px] text-foreground [color-scheme:dark]"
         />
       </div>
 
@@ -114,7 +114,7 @@ export function CallsFilters({ assistants }: CallsFiltersProps) {
           type="date"
           defaultValue={searchParams.get('to') ?? ''}
           onChange={(e) => updateParam('to', e.target.value || null)}
-          className="w-[148px]"
+          className="w-[148px] text-foreground [color-scheme:dark]"
         />
       </div>
     </div>
