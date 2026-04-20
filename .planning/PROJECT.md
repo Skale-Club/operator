@@ -97,12 +97,12 @@ That business logic may differ by client. The invariant is the reliability of th
 
 ## Context
 
-Shipped v1.0 MVP on 2026-04-03. Shipped v1.1 Knowledge Base on 2026-04-03.
-Renamed to Leaidear at v1.2 (2026-04-03). Phase 4 complete (2026-04-04) — embeddable widget delivered.
+Shipped v1.0 MVP on 2026-04-03. Shipped v1.1 Knowledge Base on 2026-04-03. Shipped v1.2 Operator + Embedded Chatbot on 2026-04-05.
+Platform renamed VoiceOps → Leaidear → **Operator** during v1.2; canonical origin is now `https://operator.skale.club`.
 
 - Tech stack: Next.js 15, Supabase, Vercel Hobby, shadcn/ui, LangChain, Vercel AI SDK
 - Deployment split: Vercel Hobby for the app, Supabase for data/auth/background work, GitHub Actions for auxiliary cron
-- Canonical production origin: `https://voiceops.skale.club` (to be updated to leaidear domain when ready)
+- Canonical production origin: `https://operator.skale.club`
 - Vapi webhook routes now run in Node.js route handlers instead of depending on Vercel Edge Runtime
 - Supabase Edge Functions remain the place for background processing such as embeddings
 - Knowledge base uses LangChain `SupabaseVectorStore` — `documents` table with `content/metadata/embedding`, `match_documents` RPC, `knowledge_sources` for source tracking
@@ -121,7 +121,7 @@ Renamed to Leaidear at v1.2 (2026-04-03). Phase 4 complete (2026-04-04) — embe
 - Widget auth: per-org public token only — no visitor login, no cookies on host site
 - Redis: short-term session only — Supabase is the system of record for conversations
 - Do not overfit the product model around a single client playbook when the same outcome can be represented as tenant-specific configuration or orchestration
-- First-party webhook construction must use `https://voiceops.skale.club` as the public base URL unless planning explicitly documents a different production host
+- First-party webhook construction must use `https://operator.skale.club` as the public base URL unless planning explicitly documents a different production host
 
 ## Key Decisions
 
@@ -142,8 +142,20 @@ Renamed to Leaidear at v1.2 (2026-04-03). Phase 4 complete (2026-04-04) — embe
 | Redis for chat session memory (v1.2) | Fast in-session context without hitting Supabase on every message | Validated in Phase 2 |
 | Public org token for widget auth (v1.2) | Visitors don't need accounts; org isolation maintained server-side | Validated in Phase 2 |
 
+## Next Milestone
+
+No active milestone. Run `/gsd:new-milestone` to scope v1.3.
+
+Candidate directions carried in from v1.2:
+- Widget analytics (message volume, session count, resolution rate)
+- Visitor identity (optional name/email capture before chat)
+- Conversation handoff to human agent
+- Widget multi-language support
+- Vapi webhook HMAC validation (v1.0 carry-over)
+- `send_sms` / `custom_webhook` action executors (v1.0 carry-over)
+
 ## Evolution
 
 Update this file whenever deployment assumptions, validated requirements, or core constraints change.
 
-*Last updated: 2026-04-05
+*Last updated: 2026-04-19 — v1.2 archived.*

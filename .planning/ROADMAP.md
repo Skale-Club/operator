@@ -4,7 +4,7 @@
 
 - ✅ **v1.0 MVP** — 6 phases, 30 plans (shipped 2026-04-03)
 - ✅ **v1.1 Knowledge Base** — LangChain vector pipeline (shipped 2026-04-03)
-- ✅ **v1.2 Operator + Embedded Chatbot** — shipped 2026-04-05 (6 phases)
+- ✅ **v1.2 Operator + Embedded Chatbot** — 6 phases, 21 plans (shipped 2026-04-05)
 
 ## Shipped
 
@@ -34,170 +34,26 @@ See [milestones/v1.1-ROADMAP.md](milestones/v1.1-ROADMAP.md)
 
 </details>
 
----
+<details>
+<summary>✅ v1.2 Operator + Embedded Chatbot — SHIPPED 2026-04-05</summary>
 
-## v1.2 — Operator + Embedded Chatbot
+See [milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md)
 
-**Goal:** Establish the Operator brand and ship an embeddable chat widget for third-party sites, backed by the existing knowledge base and action engine.
+- [x] Phase 1: Foundation — Redis, chat schema, brand rename, widget asset
+- [x] Phase 2: Chat API — POST /api/chat/[token] with token validation, session, persistence
+- [x] Phase 3: AI Conversation Engine — SSE streaming, KB pre-retrieval, tool calls
+- [x] Phase 4: Widget Embed Script — Shadow DOM bubble, GTM-compatible
+- [x] Phase 5: Admin Configuration — widget config page, live preview, token rotation
+- [x] Phase 6: Chat Inbox — admin conversation list + reply UI
 
-### Phases
-
-- [x] **Phase 1: Foundation** - Redis, Supabase schema, brand rename, and static widget asset — everything downstream phases require (completed 2026-04-04)
-- [x] **Phase 2: Chat API** - Public `/api/chat/[token]` route with token validation, session management, and conversation persistence (completed 2026-04-04)
-- [x] **Phase 3: AI Conversation Engine** - Streaming responses via plain JSON SSE, knowledge base pre-retrieval, and action engine tool calls (completed 2026-04-04)
-- [x] **Phase 4: Widget Embed Script** - Client-side JS widget loaded via `<script>` tag with floating bubble and chat panel UI (completed 2026-04-04)
-- [x] **Phase 5: Admin Configuration** - Widget config page with appearance settings, live preview, embed code generator, and token regen (completed 2026-04-05)
-- [x] **Phase 6: Chat Inbox** - Admin inbox to view, filter, and reply to widget conversations; widget settings relocated under Chat in sidebar (completed 2026-04-05)
-
----
-
-## Phase Details
-
-### Phase 1: Foundation
-**Goal**: Infrastructure and branding prerequisites are in place so all downstream phases can build without blockers
-**Depends on**: Nothing
-**Requirements**: BRAND-01, BRAND-02, INFRA-01, INFRA-02, INFRA-04
-**Success Criteria** (what must be TRUE):
-  1. Every page, nav element, login screen, and page title displays "Leaidear" — no "VoiceOps" string is visible in the running app
-  2. A Redis connection is live and accessible to server-side code in the Next.js app
-  3. `chat_sessions` and `chat_messages` tables exist in Supabase with RLS policies that scope reads and writes to the owning org
-  4. A static JS asset for the widget is served from the platform's own domain (route or public file), confirming no external CDN is required
-**Plans**: 4 plans
-
-Plans:
-- [x] 01-01-PLAN.md — Wave 0 test scaffolds (brand, redis, widget tests)
-- [x] 01-02-PLAN.md — Brand rename: VoiceOps → Leaidear across all src/ and doc files
-- [x] 01-03-PLAN.md — Redis singleton client module and widget placeholder
-- [x] 01-04-PLAN.md — Supabase chat schema migration (chat_sessions, chat_messages)
-
-### Phase 2: Chat API
-**Goal**: The public chat API is live, authenticates requests via org token, and persists conversation state
-**Depends on**: Phase 1
-**Requirements**: CHAT-04, CHAT-05, CHAT-06, INFRA-03
-**Success Criteria** (what must be TRUE):
-  1. A POST request to `/api/chat/[token]` with a valid org token is accepted and scoped to that org; an invalid or missing token returns a 401
-  2. Each conversation receives a unique anonymous session ID that persists across messages within the same session
-  3. Active session context is read from and written to Redis on every message exchange within a session
-  4. Completed conversation turns are stored in `chat_messages` in Supabase and are queryable by org and session ID
-**Plans**: 3 plans
-
-Plans:
-- [x] 02-01-PLAN.md — Wave 0: migration 012 (widget_token + session_key) and RED test scaffolds
-- [x] 02-02-PLAN.md — Wave 1: session.ts and persist.ts helper implementations
-- [x] 02-03-PLAN.md — Wave 2: POST /api/chat/[token] route handler
-
-### Phase 3: AI Conversation Engine
-**Goal**: The chat API returns streamed AI responses that draw from the org's knowledge base and can invoke the action engine during conversation
-**Depends on**: Phase 2
-**Requirements**: CHAT-01, CHAT-02, CHAT-03
-**Success Criteria** (what must be TRUE):
-  1. A visitor message produces a streamed SSE response that begins arriving before the full answer is complete (not a single bulk response)
-  2. When a visitor asks a question answerable from the org's knowledge base, the AI response accurately reflects that content
-  3. When conversation context matches an org tool trigger, the action engine `executeAction` is called and its result is incorporated into the AI response
-**Plans**: 2 plans
-
-Plans:
-- [x] 03-01-PLAN.md — Wave 0: update test scaffolds to streaming shape and add RED streaming tests
-- [x] 03-02-PLAN.md — Wave 1: stream.ts helper + route.ts step 7 replacement (full AI engine)
-
-### Phase 4: Widget Embed Script
-**Goal**: Any third-party site can install the chat widget with a single script tag and visitors can converse without logging in
-**Depends on**: Phase 3
-**Requirements**: WIDGET-01, WIDGET-02, WIDGET-03, WIDGET-04, WIDGET-05
-**Success Criteria** (what must be TRUE):
-  1. Pasting a single `<script>` tag into any HTML page (no framework, no build step) causes the chat widget to appear on that page
-  2. The script loads asynchronously and does not block page rendering — the tag can be added via Google Tag Manager
-  3. The widget appears as a floating bubble in the corner of the host page; clicking it expands a full chat panel
-  4. The widget automatically connects to the correct org using the public token embedded in the script tag's attributes
-  5. A visitor can send a message and receive a response without creating an account or completing any login flow
-**Plans**: 3 plans
-
-Plans:
-- [x] 04-01-PLAN.md — Wave 1: CORS fix on chat route + RED test scaffolds (widget-asset + widget.test.ts)
-- [x] 04-02-PLAN.md — Wave 2: src/widget/index.ts full implementation + esbuild pipeline + widget-test.html
-- [x] 04-03-PLAN.md — Wave 3: smoke test page prep + human browser verification checkpoint
-
-### Phase 5: Admin Configuration
-**Goal**: Admins can customize, preview, and deploy the chat widget for their org from the Leaidear dashboard
-**Depends on**: Phase 4
-**Requirements**: ADMIN-01, ADMIN-02, ADMIN-03, ADMIN-04
-**Success Criteria** (what must be TRUE):
-  1. An admin can set the widget display name, primary color, and welcome message for their org and save the configuration
-  2. The admin page shows a live preview of the widget that visually reflects any unsaved configuration changes
-  3. The admin page shows a ready-to-copy embed `<script>` tag containing the org's public token
-  4. An admin can regenerate the org's public token; the previously issued embed script stops working and a new one with the updated token must be installed
-**Plans**: 4 plans
-**UI hint**: yes
-
-Plans:
-- [x] 05-01-PLAN.md — Wave 1: organization widget config migration + public config endpoint + route tests
-- [x] 05-02-PLAN.md — Wave 2: `/widget` dashboard page + sidebar nav + save/token actions + live preview
-- [x] 05-03-PLAN.md — Wave 3: widget runtime config fetch + rebuilt asset + widget tests
-- [x] 05-04-PLAN.md — Wave 4: human browser verification of admin config + token rotation flow
-
-### Phase 6: Chat Inbox
-**Goal**: Admins can view, filter, and reply to widget conversations from the dashboard; widget settings move under the Chat section in the sidebar
-**Depends on**: Phase 5
-**Requirements**: INBOX-01, INBOX-02, INBOX-03, INBOX-04, INBOX-05, INBOX-06, INBOX-07
-**Plans**: 5 plans
-
-Plans:
-- [x] 06-01-PLAN.md — Wave 1: migration 015 (rename chat_sessions/messages to conversations/conversation_messages), update persist.ts and types
-- [x] 06-02-PLAN.md — Wave 2: TypeScript types (ConversationSummary, ConversationMessage) + all admin API endpoints
-- [x] 06-03-PLAN.md — Wave 3: ConversationList + ChatArea + AdminChatLayout components
-- [x] 06-04-PLAN.md — Wave 4: /chat page + sidebar Chat group (Inbox + Settings)
-- [x] 06-05-PLAN.md — Wave 5: human browser verification checkpoint
+</details>
 
 ---
 
-## Progress
+## Next Milestone
 
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 1. Foundation | 4/4 | Complete   | 2026-04-04 |
-| 2. Chat API | 3/3 | Complete   | 2026-04-04 |
-| 3. AI Conversation Engine | 2/2 | Complete   | 2026-04-04 |
-| 4. Widget Embed Script | 3/3 | Complete   | 2026-04-04 |
-| 5. Admin Configuration | 4/4 | Complete   | 2026-04-05 |
-| 6. Chat Inbox | 5/5 | Complete   | 2026-04-05 |
+No active milestone. Run `/gsd:new-milestone` to scope and plan the next version.
 
 ---
 
-## Coverage
-
-| REQ-ID | Phase |
-|--------|-------|
-| BRAND-01 | Phase 1 |
-| BRAND-02 | Phase 1 |
-| INFRA-01 | Phase 1 |
-| INFRA-02 | Phase 1 |
-| INFRA-04 | Phase 1 |
-| CHAT-04 | Phase 2 |
-| CHAT-05 | Phase 2 |
-| CHAT-06 | Phase 2 |
-| INFRA-03 | Phase 2 |
-| CHAT-01 | Phase 3 |
-| CHAT-02 | Phase 3 |
-| CHAT-03 | Phase 3 |
-| WIDGET-01 | Phase 4 |
-| WIDGET-02 | Phase 4 |
-| WIDGET-03 | Phase 4 |
-| WIDGET-04 | Phase 4 |
-| WIDGET-05 | Phase 4 |
-| ADMIN-01 | Phase 5 |
-| ADMIN-02 | Phase 5 |
-| ADMIN-03 | Phase 5 |
-| ADMIN-04 | Phase 5 |
-| INBOX-01 | Phase 6 |
-| INBOX-02 | Phase 6 |
-| INBOX-03 | Phase 6 |
-| INBOX-04 | Phase 6 |
-| INBOX-05 | Phase 6 |
-| INBOX-06 | Phase 6 |
-| INBOX-07 | Phase 6 |
-
-**Total: 28/28 requirements mapped.**
-
----
-
-*Last updated: 2026-04-05 — v1.2 shipped; all 6 phases complete*
+*Last updated: 2026-04-19 — v1.2 archived.*

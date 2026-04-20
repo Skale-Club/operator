@@ -1,5 +1,32 @@
 # Milestones
 
+## v1.2 Operator + Embedded Chatbot (Shipped: 2026-04-05)
+
+**Stats:** 6 phases, 21 plans, 31 commits, 63 files, +5,206 / −324 lines
+**Timeline:** 2026-04-04 → 2026-04-05 (2 days)
+**Stack:** Next.js 15, TypeScript, Supabase (renamed chat tables), Redis, Vercel AI SDK, LangChain, esbuild (widget bundle), Shadow DOM, shadcn/ui + react-resizable-panels v4
+
+**Key accomplishments:**
+
+1. **Brand rename** — VoiceOps → Leaidear → **Operator** (final); canonical origin landed as `https://operator.skale.club`. Deployment host and `vo_active_org` cookie name preserved to avoid breakage.
+2. **Embeddable chat widget** — `public/widget.js` bundled via esbuild, Shadow DOM isolation, floating bubble + SSE chat panel, GTM-compatible async load, localStorage session persistence, CORS + OPTIONS preflight on chat route.
+3. **Chat API with dual-memory** — POST `/api/chat/[token]` validates per-org `widget_token`, Redis short-term context per session, Supabase long-term history (`conversations` / `conversation_messages`) via service-role client with denormalized `organization_id`.
+4. **AI conversation engine** — Plain JSON SSE protocol (`session`/`token`/`tool_call`/`done`), LangChain `SupabaseVectorStore` pre-retrieval with `{ org_id }` filter, mid-stream `executeAction` calls (OpenRouter primary, Anthropic fallback).
+5. **Admin widget config** — `/widget` dashboard page, live local preview, normalized `#RRGGBB` color validation, embed code generator, token regeneration with explicit invalidation copy; runtime config hydration via token-scoped public GET endpoint.
+6. **Chat Inbox** — Admin dashboard to view/filter/search/reply to widget conversations; tabbed `ConversationList` + `ChatArea` with debug toggle; dual-polling (conversations + messages) via native fetch + setInterval; responsive with ResizablePanelGroup on desktop and CSS-transform slide on mobile.
+
+**UAT:** All 28 requirements validated; human browser verification passed at Plans 04-03, 05-04, and 06-05.
+
+**Known gaps (accepted as tech debt):**
+
+- v1.0 carry-overs still open: HMAC validation on Vapi webhooks, `send_sms` / `custom_webhook` stubs, campaign calls not auto-appearing in Observability
+- Widget analytics dashboard deferred to v1.3+
+- No visitor identity capture, no human-agent handoff, no multi-language widget (v1.3+)
+
+**Archives:** [v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md) | [v1.2-REQUIREMENTS.md](milestones/v1.2-REQUIREMENTS.md)
+
+---
+
 ## v1.1 Knowledge Base (Shipped: 2026-04-03)
 
 **Stats:** 1 commit, 18 files, +2191 / -334 lines
