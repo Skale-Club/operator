@@ -80,7 +80,7 @@ See [milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md)
 Plans:
 - [x] 07-01-PLAN.md — migrations 018 + 019 (google_locations, google_reviews, meta_channels tables)
 - [x] 07-02-PLAN.md — migration 020 (add channel columns to conversations)
-- [ ] 07-03-PLAN.md — update TypeScript types in src/types/database.ts
+- [x] 07-03-PLAN.md — update TypeScript types in src/types/database.ts
 
 ### Phase 8: Reviews Admin
 **Goal**: Admin can register Google locations and see up to 5 live reviews pulled from the Google Places API, with sync status visible from the dashboard
