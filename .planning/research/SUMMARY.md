@@ -1,183 +1,274 @@
-# Project Research Summary
+# Research Summary: v1.3 Google Reviews Widget + Meta Messaging
 
-**Project:** VoiceOps
-**Domain:** Multi-tenant SaaS operations platform for Vapi.ai voice AI assistants
-**Researched:** 2026-03-30
-**Confidence:** HIGH
+**Synthesized:** 2026-05-04
+**Sources:** STACK.md, FEATURES.md, ARCHITECTURE.md, PITFALLS.md, PROJECT.md
 
-## Executive Summary
+---
 
-VoiceOps is a multi-tenant operations layer for agencies managing voice AI assistants via Vapi.ai. Unlike competitors (ChatDash, Vapify, Voicerr, VoiceAIWrapper) which are single-tenant white-label dashboards, VoiceOps differentiates through its **Action Engine** — a per-tenant tool execution system that receives Vapi webhooks during live calls, routes to the correct organization, executes business logic (create CRM contact, check calendar, book appointment, send SMS), and returns results within 500ms. No competitor offers multi-tenant tool execution with per-org credential isolation. This is the core moat.
+## Critical Decisions (must be made before planning)
 
-The recommended approach is a **Next.js 15 + Supabase monolith** deployed on Vercel. Supabase provides PostgreSQL with Row Level Security (RLS) as the multi-tenant isolation guarantee — even code bugs cannot leak cross-tenant data when RLS is configured correctly. Vapi webhook routes use Edge Runtime (`export const runtime = 'edge'`) for ~5ms cold starts to meet the sub-500ms response budget. The Action Engine uses a pluggable executor registry pattern: adding a new integration (GHL, Cal.com, Twilio, custom webhook) means creating one file and registering it. shadcn/ui + TanStack Table + React Hook Form provide the admin dashboard UI. pgvector handles tenant-scoped RAG knowledge base queries co-located with application data.
+**1. Google Reviews caching strategy**
+The project plan says "store in DB." Google Places API ToS prohibits durable storage of review content beyond place IDs. Safe approach: design `google_reviews` rows as an ephemeral cache with a mandatory `fetched_at` column and a daily refresh job. The schema must encode this from day one. Decision needed: what is the maximum cache age before a widget refuses to serve stale reviews? 30 days is the ToS-safe boundary.
 
-Key risks are (1) **Vapi webhook latency** — the 500ms response budget is tight when it includes DB lookups + external API calls + encryption/decryption, requiring fire-and-forget logging and single-synchronous-action patterns; (2) **RLS correctness** — multi-tenant data isolation must be perfect from day one, with `(select auth.uid())` wrapping in all policies and automated cross-org isolation tests; (3) **Edge Runtime constraints** — Vapi webhook routes must avoid Node.js APIs and use Web Crypto for credential encryption, with the 2MB bundle limit forbidding heavy SDK imports.
+**2. Meta App Review timeline**
+All three permissions required for the inbox (`instagram_manage_messages`, `pages_messaging`, `pages_manage_metadata`) require Advanced Access = Business Verification (2-5 days) + App Review (2-7 days, often longer on first submission). Until approved, only Developer/Tester-role accounts can connect. Decision needed: is there a client-facing launch date commitment? If yes, App Review submission must happen before Phase 1 code, not after.
 
-## Key Findings
+**3. Human Agent mode timing**
+The `HUMAN_AGENT` message tag is the only remaining way to reply after the 24-hour window (all other Messenger Message Tags deprecated February 9, 2026). Meta requires a working human escalation path in the App Review screencast. Decision needed: build the human agent toggle in Phase 1 (required for App Review) or Phase 2 (natural UX order)?
 
-### Recommended Stack
+**4. Outbound reply route modification scope**
+The existing `POST /api/chat/conversations/[id]/messages` is in production. Decision needed: modify it with a channel branch (simpler), or create a new parallel route (zero risk to existing widget chat but near-duplicate routes)?
 
-The stack is a deliberately simple monolith: **Next.js 15 (App Router) + Supabase + Vercel**. Every technology choice prioritizes reducing operational surface area. Supabase replaces what would otherwise be 5+ services (Postgres, Auth, RLS, pgvector, Edge Functions, Storage, Realtime). No ORM is needed — Supabase generated types + RLS policies are SQL-first. No global state management — server state comes from Supabase queries, URL state via `nuqs`, form state via React Hook Form.
+**5. Webhook async processing pattern**
+Two valid patterns: (a) verify HMAC, return 200, use `after()` from `next/server` to process asynchronously - simpler, no new table; or (b) write raw payload to a `meta_webhook_queue` table, return 200, process via Supabase cron - idempotent deduplication on Meta retries by `mid`. Decision needed before migration 019 is written.
 
-**Core technologies:**
-- **Next.js 15 (App Router):** Frontend + API routes + Edge Runtime for Vapi webhooks. Skip Next.js 16 — too new with breaking changes. React 19 Server Components reduce client bundle for dashboard-heavy app.
-- **Supabase (hosted):** PostgreSQL + Auth + RLS + pgvector + Storage + Realtime in one platform. RLS is the #1 reason — it's the multi-tenant isolation guarantee. No separate vector DB needed.
-- **Vercel:** Zero-config Next.js deployment. Edge Functions for webhook routes. Preview deployments.
-- **shadcn/ui + TanStack Table + React Hook Form + Zod:** Admin UI stack. shadcn/ui is open-code (you own components). Official Data Table guide uses TanStack. React Hook Form integration ships with `<Field />` component.
-- **Vapi Server SDK (`@vapi-ai/server-sdk` 0.11.x):** TypeScript SDK for managing assistants, calls, campaigns. Works in Edge Runtime via `npm:` import.
-- **OpenAI (`openai` 4.x):** `text-embedding-3-small` for RAG document embeddings. Used in both Edge Functions and serverless routes.
+---
 
-**What NOT to use:** n8n (project exists to replace it), Prisma/Drizzle (adds ORM complexity on Supabase), Redux/Zustand (server-rendered admin, no global state needed), CSS-in-JS (incompatible with Server Components), Vapi built-in GHL tools (single-action, no multi-tenant).
+## Stack Additions
 
-### Expected Features
+| Package | Version | Purpose | Why not X |
+|---------|---------|---------|-----------|
+| `@googlemaps/places` | `^2.4.0` | Official Node.js client for Places API (New) v1 - handles `X-Goog-FieldMask` header and TypeScript types | `@googlemaps/google-maps-services-js` wraps Legacy API only, which is deprecated |
+| *(none)* | - | Meta Graph API calls via `fetch` | No maintained official Meta npm SDK; only 3 endpoints needed |
+| *(none)* | - | Meta webhook HMAC via `node:crypto` (built-in) | 5-line implementation; no package justified |
+| *(none)* | - | Facebook OAuth via manual `fetch` flow | NextAuth conflicts with Supabase Auth; this is integration OAuth not user auth |
+| *(none)* | - | Reviews widget IIFE via existing esbuild pipeline | New `build:reviews-widget` script added to `package.json`; no new tooling |
 
-**Must have (MVP — table stakes):**
-- Multi-tenant org management (CRUD) with RLS on every table
-- User authentication (Supabase Auth, admin + client roles)
-- Assistant-to-org mapping (link Vapi assistant IDs to tenants)
-- Tool-call webhook receiver (Edge Function, sub-500ms)
-- Integration credential management (encrypted per-org GHL credentials)
-- GoHighLevel integration (create contact, check availability, book, send SMS)
-- Configurable trigger-action rules ("n8n Lite" sequential action config)
-- Tool execution with status/timing logging
-- End-of-call webhook ingestion (transcripts, summaries, metadata)
-- Call list with filters (searchable, paginated, org-scoped)
-- Call detail with inline tool badges (chat transcript + execution markers)
-- Dashboard with aggregated metrics (total calls, tool success rate, alerts)
+**Net new npm installs: 1**
 
-**Should have (Phase 2 — differentiators):**
-- Tenant-scoped RAG knowledge base (pgvector + OpenAI embeddings)
-- Campaign management with contact import and cadence
-- Post-call analysis and scoring
-- Failure alerting (email/webhook on tool failures)
-- Custom webhook action type (generic HTTP request)
+---
 
-**Defer (v2+):**
-- Client-facing read-only panel, Stripe billing, real-time call monitoring
-- White-label branding, multi-integration support (Cal.com, HubSpot)
-- A/B testing for actions, multi-language UI (PT/EN), mobile app
+## Module 1: Google Reviews Widget
 
-### Architecture Approach
+### Table Stakes
 
-The architecture follows an **Edge/Serverless split**: Vapi webhook routes use Edge Runtime for low-latency response; all admin CRUD routes use Node.js runtime for full npm ecosystem access. The Action Engine is a self-contained module with a **pluggable executor registry** — adding integrations requires one file. Data flows through five main paths: tool-call (live execution), end-of-call (observability ingestion), knowledge-base (RAG query), campaign (outbound dialing), and document processing (upload → chunk → embed → pgvector).
+- Display up to 5 reviews per location (hard API ceiling, no workaround)
+- Star rating, review text, author name, relative date, author photo (with initials fallback when photoUri absent)
+- Overall place rating and total review count (`rating` + `userRatingCount`)
+- Four embed layouts: carousel, grid, list, compact
+- Single `<script>` tag embed, Shadow DOM isolation, same pattern as existing `widget.js`
+- Admin location registration: search by name, confirm Place ID, save
+- Unique `review_token` per location (same model as `widget_token`)
+- Admin embed code generation page
+- "Powered by Google" attribution footer - mandatory per ToS, not a configurable option
+- Per-review attribution: author name adjacent to review text - mandatory per ToS
 
-**Major components:**
-1. **Edge Function: Tool Router** (`/api/vapi/tools`) — Receives Vapi `tool-calls` webhooks, resolves org via assistant mapping, dispatches to executor, returns result in <500ms
-2. **Edge Function: Call Logger** (`/api/vapi/end-of-call`) — Receives `end-of-call-report`, stores transcript + metadata in `call_logs` scoped to org
-3. **Action Executors** (`lib/actions/`) — Pluggable handlers: GHL (create contact, check availability, book appointment), future: Twilio, Cal.com, custom webhook, knowledge base
-4. **Supabase PostgreSQL + RLS** — All persistent storage with `organization_id` on every table. `security definer` helper in `private` schema resolves current user's org. RLS policies use `(select auth.uid())` wrapping.
-5. **Knowledge Pipeline** — Document upload → text extraction → chunking (~500 tokens) → OpenAI embeddings → pgvector with tenant-scoped HNSW index
-6. **Dashboard UI** — shadcn/ui sidebar layout with TanStack Table data views, React Hook Form configuration panels, nuqs URL state for filters
+### Differentiators
 
-### Critical Pitfalls
+- Visual customization (brand color, card background, font size) via CSS custom properties in Shadow DOM
+- Layout preview in admin dashboard before embed
+- Manual refresh trigger with "last refreshed" timestamp
+- Locale toggle: `originalText` (reviewer original language) vs `text` (translated)
 
-1. **Vapi tool-call timeout** — Responding too slowly kills live calls. Budget: 5ms validation + 50ms DB lookup + 50ms config fetch + 300ms external API = ~400ms. Use `EdgeRuntime.waitUntil()` for fire-and-forget logging. Only the data-returning action should be synchronous.
-2. **Multi-tenant data leakage** — Missing or incorrect RLS policies expose cross-tenant data. Every table needs RLS enabled with `(select auth.uid())`-wrapped policies. Auto-enable RLS on new tables via event trigger. Write automated cross-org isolation tests.
-3. **Credential storage in plain text** — GHL API keys, Twilio tokens stored unencrypted. Use AES-256-GCM via Web Crypto API. Encryption key in Edge Function secrets, never in DB or frontend.
-4. **Edge Runtime limitations** — Code using `fs`, Node `crypto`, `require()` fails at runtime. Use Web Crypto API, ES module imports only, `fetch` for external APIs (no heavy SDKs). Test in actual Edge Runtime early.
-5. **RLS performance degradation** — Unwrapped `auth.uid()` called per-row causes 20x slower queries. Missing `organization_id` indexes cause sequential scans. Wrap in `(select ...)`, index every `organization_id` column, add explicit filters in application queries.
+### API Reality Check
 
-## Implications for Roadmap
+| Constraint | Detail |
+|-----------|--------|
+| Hard review limit | 5 reviews per location - no pagination, no offset, no workaround in the official Places API |
+| Review selection | Google relevance algorithm picks which 5; the caller has no control over ordering or selection |
+| Billing SKU | Place Details Enterprise + Atmosphere - 1,000 requests/month free, then $25/1,000. Each location sync = 1 billable event |
+| Caching ToS | ToS prohibits storing API content beyond place IDs. Safe approach: time-bounded cache with `fetched_at`, refresh within 30 days, preserve all attribution fields exactly as returned |
+| Attribution required | Author name adjacent to review text, author photo and profile link when available, "Powered by Google" logo, link to Google Maps listing - all required by policy |
+| Sorting/filtering | Not possible - Google returns reviews ranked by relevance only; the caller cannot sort |
+| More than 5 reviews | Requires Google Business Profile API: 2-4 week approval, ownership verification - out of scope for v1.3 |
+| New review alerts | Places API has no webhook for new reviews - scheduled refresh only |
+| Field format (New API) | `authorAttribution.displayName`, `authorAttribution.uri`, `authorAttribution.photoUri` - different from legacy field names |
 
-Based on combined research, the following phase structure is recommended. The ordering follows the critical dependency chain identified in FEATURES.md: org management → assistant mapping → webhook receiver → credential management → tool execution → logging → call ingestion → dashboard.
+---
 
-### Phase 1: Foundation
-**Rationale:** Everything depends on multi-tenant isolation, auth, and org management. Without RLS and org scoping, no other feature is safe to build.
-**Delivers:** Working Next.js app with Supabase connection, complete database schema with RLS policies on all tables, auth with middleware, org CRUD, and dashboard layout shell.
-**Addresses:** Multi-tenant org management, user authentication, role-based access control, Supabase RLS on all tables
-**Avoids:** Pitfalls #2 (RLS data leakage), #5 (RLS performance) — correct patterns established from day one
-**Needs research:** No — well-documented patterns (Supabase Auth SSR, RLS policies, Next.js App Router)
+## Module 2: Meta Messaging
 
-### Phase 2: Action Engine
-**Rationale:** This is the core value proposition per PROJECT.md ("The Action Engine must work"). It must be built before observability because observability shows the results of tool executions. The 500ms latency budget is the critical constraint.
-**Delivers:** Assistant-to-org mapping, encrypted credential management, trigger-action configuration UI, Vapi tool-call webhook Edge Function, GHL executor (create contact, check availability, book appointment), action logging, end-to-end test with real Vapi webhook.
-**Addresses:** Assistant-to-org mapping, tool-call webhook receiver, integration credential management, GoHighLevel integration, configurable trigger-action rules, tool execution with logging
-**Avoids:** Pitfalls #1 (Vapi timeout — fire-and-forget pattern), #3 (credential encryption — AES-256-GCM from day one), #4 (Edge Runtime — tested in actual runtime), #6 (service_role + manual org filtering pattern)
-**Needs research:** Yes — Vapi Custom Tools webhook payload format and response shape need hands-on validation during implementation. GHL API endpoints for contact creation, availability checking, and appointment booking need API documentation review.
+### Table Stakes
 
-### Phase 3: Observability
-**Rationale:** Once the Action Engine executes tools, agencies need to see what happened. Call logs + transcripts + inline tool badges are the highest perceived-value features for proving the system works to clients. Dashboard metrics are the landing page.
-**Delivers:** End-of-call webhook ingestion, call list page with filters, call detail with chat-format transcript, inline tool execution badges (merged from `call_logs` + `action_logs` by call_id/timestamp), dashboard with KPI cards.
-**Addresses:** End-of-call webhook ingestion, call list with filters, call detail with inline tool badges, dashboard with aggregated metrics
-**Avoids:** Pitfall #8 (data volume explosion — selective event storage, cursor pagination, time-based indexes from schema design)
-**Needs research:** No — standard data table + detail view patterns with shadcn/ui and TanStack Table
+- Receive inbound Instagram DMs in existing chat inbox
+- Receive inbound Facebook Messenger messages in existing chat inbox
+- Admin reply to both channel types from the inbox
+- Meta OAuth connect flow: Facebook Login, page selection, Instagram account link
+- Channel type labels in inbox (instagram / messenger / webchat) with icons
+- Inbox filter by channel
+- Token expiry detection + re-auth prompt
+- 24-hour messaging window enforcement on the send UI - disable or warn after 24h from last inbound
+- Webhook HMAC signature verification (`X-Hub-Signature-256`) on all incoming Meta payloads
+- Webhook GET challenge handshake
+- Org-scoped encrypted channel credentials (`meta_channels` table, AES-256-GCM)
 
-### Phase 4: Knowledge Base / RAG
-**Rationale:** Tenant-scoped RAG is a key differentiator that no competitor offers. It depends on the Action Engine (knowledge queries execute through the executor registry) and org-scoped data (pgvector with `organization_id`). Document processing is a self-contained pipeline.
-**Delivers:** Document upload (PDF, URL, text, CSV) → Supabase Storage, text extraction → chunking → OpenAI embeddings → pgvector, pgvector match function with HNSW index, knowledge executor in Action Engine, document management UI with status tracking.
-**Addresses:** Knowledge Base / RAG, document upload + processing, semantic search during tool execution
-**Avoids:** Pitfall #7 (pgvector performance — HNSW index from day one, `organization_id` filter in match function, order by distance operator)
-**Needs research:** Yes — document chunking strategy (chunk size, overlap) and embedding model configuration may need experimentation
+### Differentiators
 
-### Phase 5: Outbound Campaigns
-**Rationale:** Campaign management is the most self-contained feature. It doesn't depend on knowledge base or advanced observability. It wraps Vapi's outbound API with multi-tenant campaign tracking.
-**Delivers:** Campaign CRUD, CSV contact import, Vapi outbound API integration, sequential batch dialing with cadence, real-time contact status tracking via status webhook, campaign monitoring dashboard.
-**Addresses:** Campaign management with contact import and cadence
-**Avoids:** Pitfall #9 (race conditions — `SELECT FOR UPDATE SKIP LOCKED`, idempotency keys, unique constraints on campaign+contact+attempt)
-**Needs research:** Yes — Vapi Outbound Campaigns API details for batch dialing, scheduling, and dynamic variables
+- Automation binding per Meta channel - existing `executeAction()` reused from new trigger source
+- Story reply identification - `message.reply_to.story` check, story reply badge in thread
+- `messaging_seen` read receipt display
+- Human agent mode toggle - marks conversation as human-handled, enables `HUMAN_AGENT` tag for 7-day reply window
+- Referral source on conversation - `messaging_referral` events reveal which ig.me link or ad drove the message
 
-### Phase 6: Polish & Extensions
-**Rationale:** Additional executors, failure alerting, and performance optimizations extend the platform after the core loop is working end-to-end.
-**Delivers:** Twilio SMS executor, custom webhook executor, failure alerting (email/webhook), pre-aggregated dashboard metrics, additional polish.
-**Addresses:** Custom webhook action type, failure alerting, multi-integration support foundation
-**Needs research:** Partial — each new integration (Twilio, Cal.com) needs API research
+### API Reality Check
 
-### Phase Ordering Rationale
+| Constraint | Detail |
+|-----------|--------|
+| "New follower" event | Does not exist. Deprecated by Meta in 2018. Cannot be approximated by polling. Any plan referencing this trigger must be removed before planning begins |
+| 24-hour window | After last inbound message, automated replies allowed for 24 hours. After 24h, only `HUMAN_AGENT`-tagged messages within a 7-day window. After 7 days, no outbound of any type |
+| Message Tags deprecation | All Message Tags except `HUMAN_AGENT` deprecated on Messenger since February 9, 2026. Do not build any tag-based workarounds |
+| App Review gate | `instagram_manage_messages`, `pages_messaging`, `pages_manage_metadata` all require Advanced Access = Business Verification + App Review. Without approval, only Developer/Tester-role accounts can connect |
+| Development Mode restriction | Real client Pages and Instagram accounts cannot connect until App Review is approved |
+| Instagram architecture | Instagram DMs use Messenger Platform infrastructure - no standalone Instagram API. Requires a Facebook Page linked to an Instagram Business or Creator account |
+| Token model | OAuth produces short-lived User token (1h) -> exchange for long-lived User token (60 days) -> fetch Page Access Token (non-expiring unless revoked). Only Page Access Token is stored, encrypted |
+| Token invalidation | Page tokens invalidated by: password change, permission revocation, account deactivation. Detect via Graph API error code 190 |
+| Rate limits | ~200 DMs/hour per Instagram account (community-reported; not precisely documented by Meta) |
+| Webhook payload | Messenger and Instagram events arrive on the same endpoint. Distinguish by `object` field ("page" vs "instagram") |
+| Historical messages | Meta does not expose historical conversations via API. Only conversations started after webhook activation appear in the inbox |
+| Instagram not marked read | Sending a reply via API does not mark the thread as read in the native Instagram app. Platform limitation, not fixable |
 
-- **Foundation → Action Engine:** RLS and org scoping are hard prerequisites for tool routing. Without org resolution from assistant mapping, webhooks can't identify which tenant's credentials to use.
-- **Action Engine → Observability:** You need tool executions before you can observe them. Inline tool badges merge `call_logs` + `action_logs`, requiring both data sources.
-- **Observability → Knowledge Base:** Call list and transcript views prove the system works to stakeholders. RAG adds capability but doesn't prove value the way a working dashboard does.
-- **Knowledge Base → Campaigns:** Campaigns are self-contained and can technically be built in parallel with Knowledge Base. However, campaign calls generate call logs that benefit from the observability UI already being built.
-- **All features before Polish:** Performance optimizations (pre-aggregation, caching) and additional integrations add the most value when there's real data flowing through the system.
+---
 
-### Research Flags
+## Architecture Summary
 
-**Phases needing deeper research during planning:**
-- **Phase 2 (Action Engine):** Vapi Custom Tools webhook payload format needs hands-on validation. GHL REST API endpoints (contact CRUD, calendar availability, appointment booking) need endpoint documentation. Credential encryption/decryption cycle with Web Crypto in Edge Runtime needs a spike.
-- **Phase 4 (Knowledge Base):** Chunking strategy (optimal chunk size for voice AI context, overlap ratio). Embedding model selection (1536 vs reduced dimensions). Document processing pipeline for PDF text extraction in Edge/Serverless constraints.
-- **Phase 5 (Campaigns):** Vapi Outbound Campaigns API for batch dialing, cadence configuration, and dynamic variables. Campaign state machine (pending → dialing → completed/failed) with concurrent access patterns.
+### DB Migrations Needed
 
-**Phases with standard patterns (skip deep research):**
-- **Phase 1 (Foundation):** Supabase Auth SSR + Next.js 15, RLS policy patterns, shadcn/ui dashboard layout — all well-documented with official guides.
-- **Phase 3 (Observability):** Data table with TanStack Table + shadcn/ui, chat transcript UI, KPI dashboard cards — standard admin panel patterns.
-- **Phase 6 (Polish):** Integration adapters follow the executor pattern established in Phase 2.
+Three migrations must land as Phase 1, before any feature code:
+
+**Migration 018 - google_locations + google_reviews**
+- `google_locations`: org-scoped, stores `place_id`, `review_token` (public embed token), `last_synced_at`
+- `google_reviews`: up to 5 rows per location, stores all attribution fields (`author_name`, `author_photo_url`, `author_uri`), `google_review_id` as dedup key, `display_order`, `fetched_at`
+- Both tables: RLS enabled with `get_current_org_id()` policy, indexed on `org_id`
+
+**Migration 019 - meta_channels**
+- One row per connected Facebook Page per channel type per org
+- Columns: `channel_type` (messenger | instagram), `page_id`, `ig_account_id`, `encrypted_page_access_token`, `token_expires_at`, `webhook_verified`, `is_active`
+- RLS enabled, indexed on `org_id` and `page_id`
+
+**Migration 020 - conversations column additions**
+- `channel TEXT NOT NULL DEFAULT 'widget' CHECK (channel IN ('widget', 'messenger', 'instagram'))`
+- `channel_metadata JSONB NOT NULL DEFAULT '{}'` - carries psid/igsid/page_id for reply routing
+- `external_sender_id TEXT` - stores Meta IGSID or PSID for future deduplication
+- `last_user_message_at TIMESTAMPTZ` - drives 24-hour window enforcement
+- Default 'widget' ensures zero data migration for existing rows
+
+### New API Routes
+
+| Route | Method | Purpose |
+|-------|--------|---------|
+| /api/reviews/[token] | GET + OPTIONS | Public CORS-open endpoint; returns cached reviews for embed widget |
+| /api/meta/webhook | GET | Meta hub.challenge verification handshake |
+| /api/meta/webhook | POST | Receive Messenger + Instagram message events |
+| /api/meta/callback | GET | Facebook OAuth authorization code callback |
+
+All Meta routes: `export const runtime = 'nodejs'`
+
+### Component Changes
+
+- `ConversationSummary` type: add optional `channel`, `channelMetadata`, `lastUserMessageAt`
+- `ConversationList`: add channel filter pill; add per-row channel icon
+- `ChatArea`: add channel origin badge; add 24h window warning banner when channel is not widget and last inbound is older than 23h
+- `/api/chat/conversations` GET route: add `channel` and `channel_metadata` to SELECT - additive, no breaking change
+- Reply route: branch on `channel` to route to Messenger or Instagram Send API (see Decision 4)
+
+### New Dashboard Pages
+
+- `src/app/(dashboard)/reviews/` - list locations, trigger sync, preview reviews, generate embed code
+- `src/app/(dashboard)/integrations/meta/` - list connected channels, connect/disconnect, token status, re-auth prompt
+
+### Widget Build Pipeline Addition
+
+Add to package.json scripts:
+
+```
+"build:reviews-widget": "esbuild src/reviews-widget/index.ts --bundle --minify --platform=browser --format=iife --target=es2017 --outfile=public/reviews-widget.js"
+```
+
+### Build Order
+
+| Phase | Deliverable | Hard Dependency |
+|-------|-------------|-----------------|
+| 1 | Migrations 018 + 019 + 020 | None - must ship first |
+| 2 | Reviews admin page + Places API sync server action | Migration 018 |
+| 3 | Reviews embed widget + /api/reviews/[token] | Migration 018 |
+| 4 | Meta OAuth flow (callback, CSRF, meta_channels write) | Migration 019 |
+| 5 | Meta webhook receiver + inbound conversation creation | Migrations 019 + 020, Phase 4 tokens |
+| 6 | Multi-channel inbox UI (icons, filter, 24h warning) | Migration 020, Phase 5 |
+| 7 | Outbound reply routing to Meta Send API | Phases 4 + 5 + 6 |
+
+Phases 2-3 and Phase 4 can be built in parallel after Phase 1. Phase 7 is highest-risk (touches the production reply route) and must be last.
+
+---
+
+## Watch Out For (Top 5 Pitfalls)
+
+**1. Meta App Review is a phase blocker, not a launch detail (M1 + M2 - CRITICAL)**
+Without Advanced Access approval, zero real clients can connect their Pages. Business Verification must be submitted on day one of the milestone - it has no engineering dependency and takes 2-5 days. App Review must be submitted as soon as a working end-to-end screencast can be recorded, ideally after Phase 4. Any client-facing launch date must account for 2-10 weeks of review time. The human agent toggle may need to be built in Phase 1 to satisfy the App Review screencast human escalation requirement.
+
+**2. Raw body consumed before HMAC verification (M4 - HIGH)**
+In Next.js App Router, `request.json()` consumes the body stream. If called before HMAC verification, the raw bytes for signature computation are gone and all webhook verification fails permanently. Correct pattern: `await request.text()` first, verify HMAC with `crypto.timingSafeEqual`, then `JSON.parse(rawBody)`. Must be correct from the first commit of the webhook handler.
+
+**3. Google reviews caching without fetched_at violates ToS (G1 - CRITICAL)**
+The `google_reviews` table must include `fetched_at` from migration 018. A daily refresh mechanism must be part of Phase 1 planning, not a later enhancement. Serving data older than 30 days without re-fetching violates Google Places API ToS. Schema and refresh strategy must be settled before the table is created.
+
+**4. Channel routing collision in the reply path (I1 - CRITICAL)**
+Extending the reply route to branch on `channel` creates a path where a typo or missing case sends a reply to the wrong platform or drops it silently. Use a TypeScript discriminated union with an exhaustive switch on `Channel = 'widget' | 'messenger' | 'instagram'`. The `conversations.channel` column must have a database-level CHECK constraint. Phase 7 must include a unit test per channel that verifies the correct send function is invoked.
+
+**5. Wrong token stored in the Meta OAuth flow (M5 - HIGH)**
+The OAuth flow produces a short-lived User Access Token (expires ~1 hour). This must be exchanged for a long-lived User Access Token (60 days), then used to fetch Page Access Tokens (non-expiring). Storing the short-lived token directly will work during development and silently fail in production. The full three-step token chain must be implemented in Phase 4. Detect token invalidation via Graph API error code 190 in every outbound call and surface a re-auth prompt.
+
+---
+
+## Pre-Development Checklist
+
+Items with no engineering dependency that must be complete before Phase 1 code starts:
+
+- [ ] Submit Meta Business Verification - required before App Review for Advanced Access; takes 2-5 business days; start immediately
+- [ ] Create dedicated test Facebook Page and Instagram Business account for development testing; real client accounts cannot be used in Development Mode
+- [ ] Add test FB/IG accounts as Developers/Testers on the Meta app
+- [ ] Configure Google Cloud billing alerts at $50 and $150; set a daily quota cap in Google Cloud Console
+- [ ] Set environment variables in Vercel production: GOOGLE_PLACES_API_KEY, META_APP_ID, META_APP_SECRET, META_VERIFY_TOKEN
+- [ ] Plan the App Review submission - prepare privacy policy URL, document use case, plan screencast of end-to-end OAuth + messaging flow; submit after Phase 4 is functional
+- [ ] Confirm ENCRYPTION_SECRET is set in Vercel production - Meta Page Access Tokens use the same AES-256-GCM key as existing integration credentials
+
+---
+
+## Open Questions
+
+1. **Maximum cache age for Google reviews** - 30 days is the ToS-safe boundary; a shorter default (e.g., 7 days) may be better UX. What is the agreed TTL?
+
+2. **Async webhook processing pattern** - `after()` from `next/server` (simpler, no new table) vs. `meta_webhook_queue` table + Supabase cron (idempotent, deduplicates by mid)? This affects whether migration 019 includes a queue table.
+
+3. **Modify existing reply route vs. new route** - extend `POST /api/chat/conversations/[id]/messages` with a channel branch (simpler) or create a parallel route (safer, zero risk to existing widget chat)?
+
+4. **Human agent toggle in Phase 1 or Phase 2?** - App Review screencast may require demonstrating a human escalation path before the inbox UX is built.
+
+5. **Scheduled review refresh mechanism** - Supabase Edge Function cron vs. GitHub Actions scheduled workflow?
+
+6. **Multi-location support scope in v1.3** - schema supports many locations per org; is the MVP one location per org, or do agencies need multiple from day one?
+
+7. **Token invalidation UX for Meta** - when error code 190 is detected: silent dashboard warning, or immediate inline re-auth prompt in the affected conversation?
+
+---
 
 ## Confidence Assessment
 
-| Area | Confidence | Notes |
-|------|------------|-------|
-| Stack | HIGH | All technologies verified against official docs within last 6 months. Next.js 15 stable since Oct 2024. Supabase RLS, pgvector, Edge Functions all production-ready. |
-| Features | HIGH | Direct competitor analysis (ChatDash, Vapify, Voicerr, VoiceAIWrapper, Sympana) confirms feature differentiation. Vapi docs provide webhook event types and campaign API details. |
-| Architecture | HIGH | Edge/Serverless split, pluggable executor registry, RLS with security definer helpers — all battle-tested patterns. Vapi webhook payload shapes verified from official docs. |
-| Pitfalls | HIGH | All pitfalls sourced from official documentation (Supabase RLS benchmarks, Vercel Edge Runtime limits, Vapi server events). Performance benchmarks from Supabase's own published data. |
-
-**Overall confidence:** HIGH
-
-### Gaps to Address
-
-- **Edge Function deployment strategy:** STACK.md recommends Supabase Edge Functions (Deno, co-located with DB) while ARCHITECTURE.md uses Next.js Route Handlers with `runtime = 'edge'` (Vercel Edge, single deployment). Both are viable. The Next.js approach is simpler (single codebase) and should be the default unless latency testing shows DB round-trips exceeding the budget. Resolve during Phase 1 by measuring actual latency from Vercel Edge to Supabase in the same region.
-- **Vapi webhook payload shape:** Research is based on documentation. The actual payload structure for `tool-calls` and `end-of-call-report` should be validated with a test webhook during Phase 2 before building the full Action Engine.
-- **GHL API rate limits and error handling:** GoHighLevel's rate limiting behavior and error response formats need exploration during Phase 2 to implement proper backoff and retry logic.
-- **Document processing constraints:** PDF text extraction in Edge/Serverless environments has file size and processing time limits that need testing during Phase 4.
-
-## Sources
-
-### Primary (HIGH confidence)
-- **Vapi Official Docs** (docs.vapi.ai) — Server events, Custom Tools, Server Authentication, Outbound Campaigns, GoHighLevel integration, Knowledge Base
-- **Supabase Official Docs** (supabase.com/docs) — RLS policies, Auth SSR for Next.js, pgvector, Edge Functions, connection pooling
-- **Next.js Blog/Docs** (nextjs.org) — Next.js 15 features, Route Handlers, Edge Runtime
-- **shadcn/ui Docs** (ui.shadcn.com) — Data Table, React Hook Form integration, component library
-- **Vercel Edge Runtime Docs** (vercel.com/docs) — Limits, bundle size, cold start times
-
-### Secondary (MEDIUM confidence)
-- **Competitor analysis** (ChatDash, Vapify, Voicerr AI, VoiceAIWrapper, Sympana) — Feature differentiation, market positioning
-- **Retell AI / Bland AI** — Adjacent voice AI platform feature comparison
-- **Supabase RLS benchmarks** (GaryAustin1 / Supabase community) — `auth.uid()` wrapping performance data
-
-### Tertiary (LOW confidence)
-- **GHL REST API specifics** — Endpoint documentation needs direct verification during implementation
-- **Chunking/embedding optimization** — Optimal parameters need experimentation with real documents
+| Area | Level | Basis |
+|------|-------|-------|
+| Google Places API constraints (5-review limit, billing SKU, field names) | HIGH | Official REST reference + official pricing table |
+| Google ToS on caching review content | MEDIUM | Policy docs confirm general prohibition; 30-day boundary is a practical interpretation, not an explicit documented exception |
+| Meta webhook events (full list, absence of new follower) | HIGH | Official Meta developer docs |
+| Meta 24-hour window + HUMAN_AGENT tag | HIGH | Official policy docs + multiple secondary sources |
+| Meta App Review requirements (Advanced Access, Business Verification) | HIGH | Official App Review docs |
+| Meta token lifecycle (short-lived to long-lived to Page token) | HIGH | Official token reference docs |
+| Message Tags deprecation (Feb 2026) | MEDIUM | Community source consistent with Meta policy direction; not from official changelog |
+| Instagram rate limits (~200 DM/hr) | MEDIUM | Community-reported; not precisely documented by Meta |
+| Architecture fit with existing codebase | HIGH | Based on direct codebase inspection in ARCHITECTURE.md |
 
 ---
-*Research completed: 2026-03-30*
-*Ready for roadmap: yes*
+
+## Sources (aggregated)
+
+- Google Places API (New) REST Reference - developers.google.com/maps/documentation/places/web-service/reference/rest/v1/places
+- Google Maps Platform billing post-March 2025 - developers.google.com/maps/billing-and-pricing/march-2025
+- Google Places API policies - developers.google.com/maps/documentation/places/web-service/policies
+- @googlemaps/places v2.4.0 - npmjs.com/package/@googlemaps/places
+- Meta Graph API v25.0 changelog - developers.facebook.com/blog/post/2026/02/18/introducing-graph-api-v25-and-marketing-api-v25/
+- Meta Instagram Platform Webhooks - developers.facebook.com/docs/instagram-platform/webhooks/
+- Meta Messenger Platform Webhook Events - developers.facebook.com/docs/messenger-platform/reference/webhook-events/
+- Meta App Review (Instagram Platform) - developers.facebook.com/docs/instagram-platform/app-review/
+- Meta Permissions Reference - developers.facebook.com/docs/permissions/
+- Meta Access Token Lifecycle - developers.facebook.com/docs/facebook-login/guides/access-tokens/get-long-lived/
+- Meta Send API (Messenger) - developers.facebook.com/docs/messenger-platform/reference/send-api/
+- Meta 24-hour messaging window policy - developers.facebook.com/docs/messenger-platform/policy/policy-overview/
+- Vercel Hobby plan function limits - vercel.com/docs/functions/limitations

@@ -1,289 +1,227 @@
-# Stack Research
+# Technology Stack
 
-**Domain:** Multi-tenant SaaS operations platform for Vapi.ai voice AI management
-**Researched:** 2026-03-30
-**Overall Confidence:** HIGH
+**Project:** Operator v1.3 — Google Reviews Widget + Meta Messaging
+**Researched:** 2026-05-04
+**Scope:** Additions only. Base stack (Next.js 15, TypeScript, Supabase, Tailwind 4, shadcn/ui, Redis, LangChain, esbuild) is validated and unchanged.
 
-## Recommended Stack
+---
 
-### Core Technologies
+## Summary Table — New Packages
 
-| Technology | Version | Purpose | Why Recommended | Confidence |
-|------------|---------|---------|-----------------|------------|
-| Next.js | 15.x (App Router) | Frontend framework + SSR | Stable, mature App Router; React 19; extensive Vercel optimization. Skip 16.x — too new with breaking async params/cache model changes that add risk without benefit for this project. | HIGH |
-| TypeScript | 5.x (strict) | Type safety | Non-negotiable per PROJECT.md. Strict mode catches tenant isolation bugs at compile time. | HIGH |
-| React | 19.x | UI runtime | Ships with Next.js 15. Server Components reduce client bundle; critical for dashboard-heavy app. | HIGH |
-| Supabase | Latest (hosted) | Backend platform | PostgreSQL + Auth + RLS + pgvector + Edge Functions + Storage + Realtime — single platform replaces 5+ services. RLS is the multi-tenant isolation guarantee. | HIGH |
-| Vercel | Latest | Hosting | Zero-config Next.js deployment; Edge Functions for API routes; preview deployments for testing. | HIGH |
-| shadcn/ui | Latest | Component library | Open-code model (you own the components). Official Data Table guide uses TanStack Table. Ships with `<Field />` + React Hook Form integration. Sidebar, Dialog, Sheet, Tabs — all the building blocks for an admin panel. | HIGH |
+| Package | Version | Module | Add? | Rationale |
+|---------|---------|--------|------|-----------|
+| `@googlemaps/places` | `^2.4.0` | Reviews | YES | Official Google Places API (New) client for Node.js — v1 REST API, supports `getPlace` with reviews field |
+| *(no new package)* | — | Reviews widget | NO | esbuild IIFE pipeline already exists; widget is vanilla JS like `public/widget.js` |
+| *(no new package)* | — | Meta Graph API | NO | Use `fetch` directly — no official npm SDK exists; Graph API is pure HTTP |
+| *(no new package)* | — | Meta webhook verification | NO | Node.js built-in `crypto.createHmac('sha256', secret)` is sufficient |
+| *(no new package)* | — | Facebook OAuth | NO | Manual authorization-code flow via `fetch` — no library needed for a single OAuth integration |
 
-### Database Layer
+**Net new npm installs: 1** (`@googlemaps/places`)
 
-| Technology | Version | Purpose | Why Recommended | Confidence |
-|------------|---------|---------|-----------------|------------|
-| PostgreSQL (Supabase) | 15+ | Primary database | Supabase-managed. All multi-tenant tables use `organization_id` column with RLS policies. | HIGH |
-| pgvector | Latest | Vector embeddings for RAG | Supabase-native extension. Stores OpenAI embeddings; cosine similarity search via SQL functions. No external vector DB needed — keeps stack simple. | HIGH |
-| Supabase RLS | — | Multi-tenant data isolation | `organization_id` on every table + RLS policies = impossible for tenant A to see tenant B's data, even with code bugs. This is the #1 reason Supabase was chosen. | HIGH |
-| Supabase Edge Functions | Latest (Deno) | Vapi webhook receivers | **All `/api/vapi/*` routes MUST be Edge Functions** — globally distributed, no cold start on Vercel, sub-500ms response to Vapi. Deno runtime with `npm:` imports. | HIGH |
+---
 
-### Integration SDKs
+## Module 1: Google Reviews Widget
 
-| Library | Version | Purpose | Why Recommended | Confidence |
-|---------|---------|---------|-----------------|------------|
-| `@vapi-ai/server-sdk` | 0.11.x | Vapi API client | Official TypeScript SDK for managing assistants, calls, campaigns, tools. Full type coverage. | HIGH |
-| `@supabase/supabase-js` | 2.x | Supabase client (browser + server) | Standard client for all Supabase operations. Works in both Next.js and Edge Functions via `npm:` import. | HIGH |
-| `@supabase/ssr` | Latest | Cookie-based SSR auth | Handles session refresh in Next.js middleware. `createServerClient` + `createBrowserClient` pattern. | HIGH |
-| `openai` | 4.x | Embeddings for RAG knowledge base | `text-embedding-3-small` for document chunking. Used in Edge Functions for processing uploaded docs. | HIGH |
+### What needs to be built
 
-### Supporting Libraries
+1. **Server-side fetcher** — Next.js server action or API route calls Google Places API (New), stores up to 5 reviews per location in Supabase
+2. **Admin UI** — Register location by Place ID or name search, trigger refresh, view stored reviews
+3. **Embed script** — `public/reviews-widget.js` (new IIFE bundle via existing esbuild pipeline), reads config from `GET /api/widget/reviews/[token]`, renders reviews in Shadow DOM
 
-| Library | Version | Purpose | When to Use |
-|---------|---------|---------|-------------|
-| `@tanstack/react-table` | 8.x | Headless data table engine | All list views: calls, campaigns, contacts, action logs, knowledge base docs. shadcn/ui has official Data Table guide using this. |
-| `react-hook-form` | 7.x | Form state management | All forms: org settings, tool configuration, campaign creation, credential management. Ships with shadcn/ui `<Field />` integration. |
-| `@hookform/resolvers` | Latest | Zod resolver for RHF | Bridges Zod schemas into React Hook Form validation. |
-| `zod` | 3.x | Schema validation | Shared schemas between client and server. Validates Vapi webhook payloads, form inputs, API responses. |
-| `lucide-react` | Latest | Icon library | Default icon set for shadcn/ui. Tree-shakeable. |
-| `sonner` | Latest | Toast notifications | shadcn/ui ships with Sonner integration. Use for action feedback, error alerts. |
-| `date-fns` | 3.x | Date formatting and manipulation | Call timestamps, campaign scheduling, log filters. Tree-shakeable alternative to moment/dayjs. |
-| `papaparse` | 5.x | CSV parsing | Campaign contact list imports. Browser + server compatible. |
-| `nuqs` | Latest | URL search params state | Table filters, pagination state persisted in URL. Works with Next.js App Router. |
+### Package decision: `@googlemaps/places` v2.4.0
 
-### Supabase Edge Function Dependencies
-
-These run in the **Deno runtime** (not Node.js). Specify via `import_map.json`.
-
-| Library | Import | Purpose |
-|---------|--------|---------|
-| `@supabase/supabase-js` | `npm:@supabase/supabase-js@2` | DB access in Edge Functions |
-| `openai` | `npm:openai@4` | Embeddings generation |
-| `zod` | `npm:zod@3` | Payload validation |
-
-### Development Tools
-
-| Tool | Purpose | Notes |
-|------|---------|-------|
-| Supabase CLI | Local dev, migrations, edge functions | `supabase init`, `supabase functions serve`, `supabase db push` |
-| `supabase` npm package | Type generation | `supabase gen types typescript` — generate DB types from schema |
-| Vapi CLI | Webhook testing, tool management | `vapi listen --forward-to localhost:4267/webhook` for local dev |
-| ngrok | Local tunnel for Vapi webhooks | Required for `vapi listen` to forward to local server |
-| ESLint + Prettier | Code quality | Standard Next.js config. Strict TypeScript rules. |
-
-## Installation
+**Use this.** The older `@googlemaps/google-maps-services-js` (v3.4.2) explicitly states it only supports the Legacy Places API. The new Places API v1 (`places.googleapis.com/v1`) is covered by the separate `@googlemaps/places` package, currently at **v2.4.0** (published June 2025, preview status but stable enough for production use).
 
 ```bash
-# Create Next.js project
-npx create-next-app@15 voiceops --typescript --tailwind --eslint --app --src-dir
-
-# Core dependencies
-npm install @supabase/supabase-js @supabase/ssr @vapi-ai/server-sdk openai
-
-# UI and forms
-npm install @tanstack/react-table react-hook-form @hookform/resolvers zod
-npm install lucide-react sonner date-fns papaparse nuqs
-
-# shadcn/ui (initializes config + adds components)
-npx shadcn@latest init
-npx shadcn@latest add table button card dialog sheet sidebar tabs input select textarea badge dropdown-menu command popover checkbox switch separator skeleton avatar toast form field
-
-# Dev dependencies
-npm install -D @types/papaparse
+npm install @googlemaps/places
 ```
 
-## Architecture Decision: Vapi Webhook Flow
+Key method: `client.getPlace({ name: 'places/PLACE_ID', languageCode: 'en' })` with field mask `reviews,displayName,rating,userRatingCount,id`.
 
-**Critical architectural decision for the Action Engine:**
+**Why not raw fetch?** The `@googlemaps/places` package handles auth header injection, field mask serialization, and TypeScript types for the v1 response shape. The v1 REST API uses a non-trivial `X-Goog-FieldMask` header pattern that the SDK abstracts cleanly. Given this is a one-time call per location refresh (not a hot path), SDK overhead is irrelevant.
+
+**Why not `@googlemaps/google-maps-services-js`?** It wraps the Legacy API only. The Legacy API for Place Details returns at most 5 reviews (Google's undocumented cap) which matches the product requirement, but the Legacy API is explicitly deprecated and will be retired — start on v1.
+
+### Google Places API billing reality (HIGH confidence)
+
+Reviews fall under the **Place Details Enterprise + Atmosphere SKU** — the highest billing tier. Post-March 2025 pricing:
+
+- Free tier: **1,000 requests/month** per Enterprise SKU (not per place)
+- Beyond free: ~$20/1,000 requests
+
+**Critical implication for architecture:** The 1,000/month free cap means reviews must be fetched on-demand (when an admin registers or manually refreshes a location) and stored in Supabase. The stored copy is what the embed widget reads. Do NOT fetch live from Google on every widget page load.
+
+**Google's caching policy conflict (MEDIUM confidence):** Google's Places API Terms technically prohibit pre-fetching and storing API content (except place IDs). However, this restriction applies to displaying cached data as if it were live, and the rationale is attribution freshness. The practical industry approach (and what the project requires to stay within free tier) is to cache with a refresh interval (e.g., weekly or on-demand by admin) and display proper attribution (author name, link, photo). Google enforces this via attribution requirements, not technical blockers. The PROJECT.md goal of "store in DB" is consistent with how every real-world reviews widget operates.
+
+**Attribution requirements (mandatory):**
+- Display each reviewer's name, link to their Google profile, and photo (when provided)
+- Show how reviews are sorted
+- Link back to the place's Google Maps listing
+
+### Reviews API endpoint
 
 ```
-Vapi Call (live)
-    │
-    ▼ tool-calls webhook
-Supabase Edge Function (/api/vapi/tool-calls)
-    │
-    ├─► 1. Validate webhook signature (HMAC)
-    ├─► 2. Look up org by assistant ID → get credentials
-    ├─► 3. Look up tool config → get action sequence
-    ├─► 4. Execute actions sequentially (GHL API, Cal.com, etc.)
-    ├─► 5. Log each action with timing + payloads
-    └─► 6. Return { results: [...] } to Vapi (< 500ms)
+GET https://places.googleapis.com/v1/places/{PLACE_ID}
+Headers:
+  X-Goog-Api-Key: {API_KEY}
+  X-Goog-FieldMask: id,displayName,rating,userRatingCount,reviews
 ```
 
-**Why NOT use Vapi's built-in GoHighLevel tools:**
-Vapi has native GHL integration (Get/Create Contact, Check Availability, Create Event), but VoiceOps needs:
-1. **Action chaining** — one tool call triggers a sequence (create contact → check availability → book)
-2. **Multi-tenant credentials** — each org has different GHL API keys, managed per-tenant
-3. **Full observability** — every action logged with timing, request/response for the dashboard
-4. **Admin configurability** — trigger→action mapping configured by admin per org
-5. **Extensibility** — future integrations beyond GHL (Cal.com, custom webhooks, SMS)
+Reviews returned: up to 5 (Google's platform limit, confirmed by documentation examples and community reports — no official number is published but 5 is the consistent cap across both Legacy and New APIs).
 
-The Vapi built-in GHL tools are per-assistant and can't do any of this. VoiceOps uses **Custom Tools** with `server.url` pointing to VoiceOps Edge Functions, giving full control.
+### What NOT to add for Reviews
 
-**Edge Function latency strategy:**
-- Simple actions (create GHL contact, check availability): Execute synchronously, respond within 200ms
-- Complex chains (3+ actions): Execute first action synchronously, return intermediate result, continue async
-- Heavy processing (document upload, embedding generation): Respond 200 OK immediately, process in background via `EdgeRuntime.waitUntil()`
+| Skip | Why |
+|------|-----|
+| `@googlemaps/google-maps-services-js` | Legacy API wrapper only; explicitly not for Places v1 |
+| `react-google-reviews` (featurable) | React component library; the embed widget is vanilla JS (Shadow DOM IIFE) — same pattern as existing `widget.js` |
+| Any scraping library (`puppeteer`, etc.) | Violates Google ToS; unnecessary when API exists |
+| A separate esbuild config | Extend existing `build:widget` script or add a parallel `build:reviews-widget` script; same pipeline |
 
-## Supabase Auth Pattern for Multi-Tenancy
+---
+
+## Module 2: Meta Messaging (Instagram + Facebook Messenger)
+
+### What needs to be built
+
+1. **Facebook OAuth flow** — Admin connects Facebook Page → get Page Access Token → subscribe to Instagram account
+2. **Meta webhook receiver** — `POST /api/meta/webhook` (new route) for incoming messages from both channels
+3. **Meta webhook verifier** — `GET /api/meta/webhook` for Facebook's hub.challenge handshake
+4. **Message reply sender** — server action calls Graph API Send API with Page Access Token
+5. **Inbox extension** — extend existing `conversations`/`conversation_messages` tables and `AdminChatLayout` for `instagram` and `messenger` channel types
+
+### Package decision: No Meta SDK — use raw `fetch`
+
+**Do not install any Meta/Facebook npm package.** The Graph API is a straightforward REST API and no official Meta npm SDK exists for Node.js server-side use. Community wrappers (e.g., `fb`, `facebook-node-sdk`) are unmaintained or stale. The Graph API surface needed is exactly 3 endpoints:
+
+1. `GET https://graph.facebook.com/v25.0/me/accounts` — list Pages after OAuth
+2. `POST https://graph.facebook.com/v25.0/{PAGE_ID}/messages` — Messenger Send API
+3. `POST https://graph.instagram.com/{INSTAGRAM_USER_ID}/messages` — Instagram Messaging API
+
+All three are simple `fetch` calls with a Bearer token. TypeScript interfaces for request/response shapes can be defined inline (they are narrow).
+
+**Current Graph API version: v25.0** (released February 2026, current as of May 2026). Use this version string in all endpoint URLs.
+
+### Facebook OAuth: manual flow, no library
+
+**Do not add NextAuth.js or any OAuth library.** This is not user authentication — it is a one-time admin integration flow to connect a Facebook Page. The flow is:
+
+1. Redirect admin to `https://www.facebook.com/v25.0/dialog/oauth?client_id=...&redirect_uri=...&scope=pages_messaging,instagram_manage_messages,pages_manage_metadata`
+2. Facebook redirects back to `GET /api/meta/oauth/callback?code=...`
+3. Server exchanges `code` for short-lived token: `GET https://graph.facebook.com/v25.0/oauth/access_token`
+4. Exchange for long-lived token (60-day): `GET https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&...`
+5. Store encrypted long-lived Page Access Token in Supabase (using existing `crypto.ts` AES-256-GCM pattern)
+
+NextAuth.js would add 5+ dependencies and fight the existing Supabase Auth session model. The manual flow is ~50 lines of fetch calls in a route handler.
+
+### Webhook verification: Node.js `crypto` module
+
+**No npm package needed.** Meta signs webhook payloads with `X-Hub-Signature-256: sha256=...` using the App Secret as the HMAC key. Verification:
 
 ```typescript
-// lib/supabase/server.ts — Server Component client
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import crypto from 'node:crypto'
 
-export async function createClient() {
-  const cookieStore = await cookies();
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    {
-      cookies: {
-        getAll() { return cookieStore.getAll(); },
-        setAll(cookiesToSet) {
-          try { cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options)); }
-          catch { /* Server Component — setAll handled by middleware */ }
-        },
-      },
-    }
-  );
+function verifyMetaSignature(rawBody: Buffer, signature: string, appSecret: string): boolean {
+  const expected = 'sha256=' + crypto
+    .createHmac('sha256', appSecret)
+    .update(rawBody)
+    .digest('hex')
+  return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature))
 }
 ```
 
-**Auth roles:**
-- `admin` — Full access to all organizations, configuration, user management
-- `client` — Read-only access to own org's calls, transcripts, logs (deferred to post-MVP)
+The raw body must be captured before JSON parsing. In Next.js App Router route handlers, use `await request.arrayBuffer()` then convert to Buffer. Do NOT use `request.json()` before verification.
 
-**RLS pattern (every table):**
-```sql
-CREATE POLICY "org_isolation" ON call_logs
-  USING (organization_id = get_current_org_id());
+### Meta permissions required
+
+| Permission | Purpose | Review required? |
+|------------|---------|-----------------|
+| `pages_messaging` | Send/receive Messenger messages | Yes (App Review) |
+| `instagram_manage_messages` | Send/receive Instagram DMs | Yes (App Review) — use advanced access |
+| `pages_manage_metadata` | Subscribe page to webhooks | Yes (App Review) |
+| `pages_read_engagement` | Read page info, linked Instagram account | Standard access |
+
+**24-hour messaging window (must be enforced in app logic):**
+- Instagram: 24h window after user initiates contact. After window: Human Agent tag only (7 days, support-only).
+- Messenger: Same 24h window. `messaging_type: RESPONSE` inside window; `MESSAGE_TAG` outside.
+- The app must track `last_user_message_at` per conversation to gate reply options.
+
+### Meta webhook events to subscribe
+
+**Instagram:** `messages`, `messaging_seen`, `message_reactions`
+**Messenger:** `messages`, `messaging_postbacks`, `messaging_seen`
+
+Both share the same webhook endpoint — distinguish by `object` field in payload (`"instagram"` vs `"page"`).
+
+### What NOT to add for Meta Messaging
+
+| Skip | Why |
+|------|-----|
+| `next-auth` / `auth.js` | This is integration OAuth (connecting a Page), not user auth. Would conflict with existing Supabase Auth. |
+| `facebook-node-sdk` / `fb` | Unmaintained, legacy. Raw fetch covers the 3 endpoints needed. |
+| Any Instagram API wrapper | Same reason — narrow surface, straightforward REST. |
+| `passport.js` | Same as NextAuth — designed for user auth flows, not integration token management. |
+| Socket.io or WebSockets | Existing polling model in AdminChatLayout handles chat inbox. Meta delivers via webhooks to server, not real-time to browser. |
+
+---
+
+## Environment Variables to Add
+
+```bash
+# Google Places
+GOOGLE_PLACES_API_KEY=                # Server-side only, never expose to client
+
+# Meta App credentials
+META_APP_ID=                          # Public — used in OAuth dialog URL
+META_APP_SECRET=                      # Server-side only — HMAC key for webhook verification
+META_WEBHOOK_VERIFY_TOKEN=            # Static string you define — used in hub.verify_token check
 ```
 
-## RAG Knowledge Base Pattern
+Meta Page Access Tokens (long-lived, per org) are stored encrypted in the existing `integrations` / `org_credentials` Supabase table using the existing AES-256-GCM pattern in `src/lib/crypto.ts`.
 
-VoiceOps implements a **Custom Knowledge Base** endpoint (not Vapi's built-in KB):
+---
 
-```
-User asks question during call
-    │
-    ▼ knowledge-base-request webhook
-Supabase Edge Function (/api/vapi/knowledge-base)
-    │
-    ├─► 1. Get latest user message
-    ├─► 2. Generate embedding via OpenAI text-embedding-3-small
-    ├─► 3. Query pgvector with tenant-scoped cosine similarity
-    └─► 4. Return { documents: [...] } to Vapi
+## Widget Script Pipeline
+
+The existing esbuild pipeline produces `public/widget.js` from `src/widget/index.ts`. The Reviews Widget embed script follows the same pattern:
+
+```json
+"build:reviews-widget": "esbuild src/reviews-widget/index.ts --bundle --minify --platform=browser --format=iife --target=es2017 --outfile=public/reviews-widget.js"
 ```
 
-**Why custom KB endpoint:**
-- Tenant-scoped search (pgvector + RLS = org isolation)
-- Admin can see which documents are queried (observability)
-- Supports PDF, URL, text, CSV uploads processed into chunks
+Add this script to `package.json` and include it in the `build` script chain. No new esbuild config, no new esbuild plugins. The reviews widget is vanilla TypeScript compiled to an IIFE, same as the chat widget. It reads config from `GET /api/widget/reviews/[token]` (CORS-enabled, returns cached review data + widget config).
 
-**pgvector schema:**
-```sql
-CREATE TABLE knowledge_documents (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  organization_id UUID NOT NULL REFERENCES organizations(id),
-  title TEXT NOT NULL,
-  content TEXT NOT NULL,
-  embedding EXTENSIONS.vector(1536), -- text-embedding-3-small
-  source_type TEXT, -- 'pdf', 'url', 'text', 'csv'
-  source_url TEXT,
-  chunk_index INT,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-```
+---
 
 ## Alternatives Considered
 
-| Category | Recommended | Alternative | Why Not |
-|----------|-------------|-------------|---------|
-| Framework | Next.js 15 | Next.js 16 | Too new (Oct 2025). Breaking changes in params/cache model. No benefit for this project that justifies the risk. |
-| Framework | Next.js 15 | Remix | Supabase docs and examples are Next.js-first. Vercel hosting optimized for Next.js. |
-| Framework | Next.js 15 | Next.js 14 | 15 is stable since Oct 2024. React 19, improved caching, Turbopack stable. No reason to stay on 14. |
-| Backend | Supabase | Firebase | No PostgreSQL, no RLS, no pgvector. Would need separate vector DB for RAG. |
-| Backend | Supabase | Self-hosted Postgres + custom auth | Massive overhead. Supabase RLS is the multi-tenant guarantee. |
-| Vector DB | pgvector | Pinecone/Weaviate | pgvector is co-located with app data. No additional service, no sync issues. Sufficient for <1M vectors per tenant. |
-| Components | shadcn/ui | MUI/Ant Design | shadcn/ui is open-code (full control). Better for custom admin panels. Native TanStack Table integration. |
-| Tables | TanStack Table | AG Grid | TanStack is headless (full styling control). AG Grid is heavy and opinionated. Free. |
-| Forms | React Hook Form + Zod | TanStack Form | RHF is proven, shadcn/ui has official integration. TanStack Form is newer. |
-| ORM | supabase-js (no ORM) | Prisma/Drizzle | Supabase client handles typed queries via generated types. No ORM needed — adds complexity for little benefit with RLS. |
-| Edge Functions | Supabase Edge Functions | Vercel Edge Functions | Latency: Vapi needs <500ms response. Supabase Edge Functions are co-located with DB, avoiding network hop to Vercel. |
-| State | nuqs + server state | Redux/Zustand | URL-based state for table filters. Server state from Supabase queries. No need for global client state. |
+| Decision | Alternative | Why Not |
+|----------|-------------|---------|
+| `@googlemaps/places` (v1) | `@googlemaps/google-maps-services-js` | Explicitly wraps Legacy API only; deprecated path |
+| `@googlemaps/places` (v1) | Raw `fetch` to Places v1 REST | SDK handles field mask headers and TS types cleanly; request volume is low (admin-triggered only) |
+| Raw `fetch` for Graph API | `facebook-node-sdk` | Unmaintained; wraps deprecated APIs; 3 endpoints don't justify a dependency |
+| Raw `fetch` for Graph API | Any community wrapper | None with active maintenance; Graph API changes frequently; raw fetch is more durable |
+| Manual OAuth flow | NextAuth.js | Conflicts with Supabase Auth; integration OAuth ≠ user auth; unnecessary complexity |
+| `node:crypto` for Meta HMAC | `@kapso/whatsapp-cloud-api` or similar | Wrong product domain; crypto is built-in and 5 lines |
 
-## What NOT to Use
-
-| Avoid | Why | Use Instead |
-|-------|-----|-------------|
-| n8n | Entire project exists to replace n8n. No hybrid mode. | VoiceOps Action Engine |
-| Vercel API routes for Vapi webhooks | Cold starts, not co-located with DB. Vapi latency requirement makes this non-negotiable. | Supabase Edge Functions |
-| Vapi built-in GoHighLevel tools | No multi-tenant cred management, no action chaining, no observability. | Custom Tools → VoiceOps Action Engine |
-| Vapi built-in Knowledge Base | No tenant-scoping, no admin observability. | Custom KB endpoint → pgvector |
-| Prisma or Drizzle | Adds ORM layer on top of Supabase client which already handles typed queries via generated types. RLS policies are SQL-first. | `supabase-js` + generated types |
-| Redux / Zustand | This is a server-rendered admin panel, not a SPA. Supabase queries + URL state cover all needs. | `nuqs` for URL state; `supabase-js` for server state |
-| `moment.js` | Deprecated, massive bundle. | `date-fns` (tree-shakeable) |
-| CSS-in-JS (styled-components) | Not compatible with Server Components. | Tailwind CSS (ships with Next.js + shadcn/ui) |
-| Server Actions for Vapi webhooks | Server Actions are for form submissions, not webhook receivers. Can't guarantee sub-500ms. | Supabase Edge Functions |
-| WebSockets for real-time | Supabase Realtime handles this out of the box. | Supabase Realtime (Postgres Changes) |
-
-## Stack Patterns by Variant
-
-**If you need to add a new integration (e.g., Cal.com):**
-- Add integration type to `integrations` table
-- Add action handlers in Edge Functions (`actions/calcom.ts`)
-- Add credential fields to org settings UI
-- No framework changes needed — action engine is pluggable
-
-**If pgvector performance becomes insufficient at scale (>10M vectors):**
-- Add HNSW index: `CREATE INDEX ON knowledge_documents USING hnsw (embedding vector_cosine_ops);`
-- If still insufficient, migrate to Supabase Vector Buckets (public alpha, S3 Vectors backed)
-- Do NOT introduce a separate vector DB — keep co-located
-
-**If Edge Function cold starts become noticeable:**
-- Supabase Edge Functions have minimal cold starts compared to serverless
-- Use `EdgeRuntime.waitUntil()` for background work
-- Keep functions small and focused — one function per webhook type
-
-## Version Compatibility
-
-| Package A | Compatible With | Notes |
-|-----------|-----------------|-------|
-| Next.js 15.x | React 19.x | Next.js 15 ships React 19 — don't pin React separately |
-| Next.js 15.x | @supabase/ssr latest | Official guide uses Next.js middleware pattern |
-| shadcn/ui latest | React 19.x | Full React 19 support since late 2025 |
-| shadcn/ui latest | @tanstack/react-table 8.x | Official Data Table component guide |
-| shadcn/ui latest | react-hook-form 7.x + zod 3.x | Official React Hook Form guide with `<Field />` |
-| @vapi-ai/server-sdk 0.11.x | Node 18+ / Deno / Edge | Works in Supabase Edge Functions via `npm:` import |
-| Supabase Edge Functions | Deno runtime | NOT Node.js — use `npm:` imports, no `node_modules` |
-| pgvector | PostgreSQL 15+ (Supabase default) | Enable via `create extension vector` |
-| openai 4.x | Deno (Edge Functions) | Use via `npm:openai@4` in import_map.json |
-
-## Key Environment Variables
-
-```bash
-# .env.local (Next.js / Vercel)
-NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_xxx
-SUPABASE_SERVICE_ROLE_KEY=eyJxxx  # Server-side only — NEVER expose to client
-
-# Supabase Edge Function secrets (via supabase CLI)
-VAPI_WEBHOOK_SECRET=xxx           # HMAC secret for Vapi webhook verification
-OPENAI_API_KEY=sk-xxx             # For embeddings generation
-VAPI_API_KEY=vapi_xxx             # For Vapi API calls (campaigns, assistants)
-```
+---
 
 ## Sources
 
-- **Next.js Blog** (nextjs.org/blog) — Verified Next.js 15/16 release timeline and features
-- **Supabase Changelog** (supabase.com/changelog) — Verified Edge Functions, RLS, pgvector, PostgREST v14
-- **Vapi Docs** (docs.vapi.ai) — Verified Custom Tools, Server URL events, GHL integration, Knowledge Base, Outbound Campaigns, Server Authentication
-- **Vapi Server SDK** (npmjs.com/package/@vapi-ai/server-sdk) — Verified v0.11.0, TypeScript types, runtime compatibility
-- **Supabase Auth SSR** (supabase.com/docs/guides/auth/server-side/nextjs) — Verified `@supabase/ssr` patterns for Next.js 15
-- **Supabase Vector Columns** (supabase.com/docs/guides/ai/vector-columns) — Verified pgvector setup, match functions, operators
-- **Supabase Edge Functions** (supabase.com/docs/guides/functions) — Verified Deno runtime, `npm:` imports, connect-to-postgres patterns
-- **shadcn/ui** (ui.shadcn.com/docs) — Verified Data Table (TanStack Table), React Hook Form integration, Field component
-- **Confidence:** HIGH — All recommendations verified against official docs published within last 6 months
+- `@googlemaps/places` v2.4.0 — [npm](https://www.npmjs.com/package/@googlemaps/places), [Google Cloud Docs](https://docs.cloud.google.com/nodejs/docs/reference/places/latest)
+- `@googlemaps/google-maps-services-js` deprecation note — [GitHub README](https://github.com/googlemaps/google-maps-services-js) (v3.4.2, "only compatible with Legacy Services")
+- Google Places API (New) Place Details endpoint — [developers.google.com](https://developers.google.com/maps/documentation/places/web-service/place-details)
+- Google Places API billing post-March 2025 — [developers.google.com/maps/billing-and-pricing/march-2025](https://developers.google.com/maps/billing-and-pricing/march-2025)
+- Google Places API policies (caching/attribution) — [developers.google.com](https://developers.google.com/maps/documentation/places/web-service/policies)
+- Meta Graph API v25.0 — [developers.facebook.com/blog](https://developers.facebook.com/blog/post/2026/02/18/introducing-graph-api-v25-and-marketing-api-v25/)
+- Meta Graph API Send API (Messenger) — [developers.facebook.com](https://developers.facebook.com/docs/messenger-platform/reference/send-api/)
+- Instagram Messaging API 2026 — [zernio.com](https://zernio.com/blog/instagram-messaging-api)
+- Instagram webhook events — [developers.facebook.com](https://developers.facebook.com/docs/messenger-platform/instagram/features/webhook/)
+- Meta webhook `X-Hub-Signature-256` — Meta Community Forums, [hookdeck.com](https://hookdeck.com/webhooks/guides/how-to-implement-sha256-webhook-signature-verification)
+- Facebook OAuth long-lived tokens — [developers.facebook.com](https://developers.facebook.com/docs/facebook-login/guides/access-tokens/get-long-lived/)
+- Instagram permissions (`instagram_manage_messages`) — [developers.facebook.com](https://developers.facebook.com/docs/permissions/)
 
 ---
-*Stack research for: VoiceOps multi-tenant SaaS platform*
-*Researched: 2026-03-30*
+
+*Stack additions for: Operator v1.3 — Google Reviews Widget + Meta Messaging*
+*Researched: 2026-05-04*

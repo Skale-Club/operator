@@ -1,756 +1,492 @@
-# Architecture Research
+# Architecture: Google Reviews Widget + Meta Messaging Integration
 
-**Domain:** Multi-tenant SaaS operations platform for Vapi.ai voice AI assistants
-**Researched:** 2026-03-30
-**Confidence:** HIGH
-
----
-
-## Standard Architecture
-
-### System Overview
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                         EXTERNAL LAYER                               │
-│  ┌─────────────┐   ┌─────────────┐   ┌────────────┐                │
-│  │   Vapi.ai    │   │   Admin     │   │  Third-    │                │
-│  │  (Voice AI)  │   │   Browser   │   │  Party     │                │
-│  │  Webhooks    │   │  (Dashboard)│   │  APIs      │                │
-│  └──────┬───────┘   └──────┬──────┘   │ (GHL, etc) │                │
-│         │                  │          └─────┬──────┘                │
-├─────────┴──────────────────┴────────────────┴───────────────────────┤
-│                      EDGE FUNCTION LAYER                             │
-│         (Next.js Route Handlers — runtime = 'edge')                  │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐               │
-│  │ /api/vapi/   │  │ /api/vapi/   │  │ /api/vapi/   │               │
-│  │  tools       │  │ end-of-call  │  │  status      │               │
-│  │ (Action Router│  │ (Call Logger)│  │ (Status Sync)│               │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘               │
-│         │                  │                  │                       │
-├─────────┴──────────────────┴──────────────────┴──────────────────────┤
-│                    SERVERLESS FUNCTION LAYER                          │
-│         (Next.js Route Handlers — runtime = 'nodejs')                │
-│  ┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐        │
-│  │ Org CRUD   │ │ Tool Config│ │ Knowledge  │ │ Campaign   │        │
-│  │ & Auth     │ │ & Integ.   │ │ Upload/    │ │ Management │        │
-│  │            │ │ Mgmt       │ │ Processing │ │ & Dialing  │        │
-│  └─────┬──────┘ └─────┬──────┘ └─────┬──────┘ └─────┬──────┘        │
-│        │              │              │              │                 │
-├────────┴──────────────┴──────────────┴──────────────┴────────────────┤
-│                      SERVICE LAYER                                   │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐               │
-│  │   Action     │  │  Knowledge   │  │   Vapi API   │               │
-│  │   Executors  │  │  Pipeline    │  │   Client     │               │
-│  │ (GHL,Twilio, │  │ (Chunk,Embed │  │ (Outbound,   │               │
-│  │  Cal,Webhook)│  │  Search)     │  │  Calls)      │               │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘               │
-│         │                  │                  │                       │
-├─────────┴──────────────────┴──────────────────┴──────────────────────┤
-│                       DATA LAYER (Supabase)                          │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐             │
-│  │PostgreSQL│  │   Auth   │  │ Storage  │  │ pgvector │             │
-│  │ (RLS)    │  │          │  │          │  │          │             │
-│  └──────────┘  └──────────┘  └──────────┘  └──────────┘             │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
-### Component Responsibilities
-
-| Component | Responsibility | Implementation |
-|-----------|----------------|----------------|
-| **Edge: Tool Router** (`/api/vapi/tools`) | Receives Vapi `tool-calls` webhooks, resolves org by `assistantId`, fetches tool config, dispatches to correct executor, returns result to Vapi within 500ms | Next.js Route Handler with `export const runtime = 'edge'` |
-| **Edge: End-of-Call** (`/api/vapi/end-of-call`) | Receives `end-of-call-report`, stores transcript + summary + metadata in `call_logs`, links to org via assistant mapping | Next.js Route Handler with `export const runtime = 'edge'` |
-| **Edge: Status Update** (`/api/vapi/status`) | Receives `status-update` events, updates call status, triggers campaign contact status updates | Next.js Route Handler with `export const runtime = 'edge'` |
-| **Serverless: Org CRUD** | Organization CRUD, user management, assistant mapping CRUD, integration credential CRUD | Next.js Route Handler (Node.js runtime) |
-| **Serverless: Tool Config** | Admin UI for configuring trigger → action rules per tool per org | Next.js Route Handler (Node.js runtime) |
-| **Serverless: Knowledge Upload** | Document upload → text extraction → chunking → embedding generation → pgvector storage | Next.js Route Handler (Node.js runtime) |
-| **Serverless: Campaign Mgmt** | Campaign CRUD, contact import, cadence engine, Vapi outbound API calls | Next.js Route Handler (Node.js runtime) |
-| **Action Executors** | Pluggable action handlers: GHL (create contact, check availability, book appointment), Twilio (SMS), Cal.com, custom webhook, knowledge base query | Shared service modules imported by Edge and Serverless routes |
-| **Knowledge Pipeline** | Document processing: PDF/URL/text/CSV → extract text → chunk (~500 tokens) → OpenAI embeddings → pgvector with `organization_id` | Serverless function + background processing |
-| **Vapi API Client** | Wraps Vapi REST API for outbound calls, campaign management, assistant lookups | Server-side module using `fetch` |
-| **Supabase PostgreSQL + RLS** | All persistent storage with `organization_id` on every table enforcing tenant isolation at the database level | Supabase hosted PostgreSQL |
-| **Supabase Auth** | User authentication (email/password), session management, JWT issuance | Supabase Auth service |
-| **Supabase Storage** | File storage for uploaded knowledge base documents (PDFs, CSVs) before processing | Supabase Storage buckets |
-| **pgvector** | Vector similarity search scoped per organization for RAG knowledge base queries | Supabase PostgreSQL extension |
+**Project:** Operator v1.3
+**Researched:** 2026-05-04
+**Confidence:** HIGH — based on direct codebase inspection plus verified Meta and Google official docs
 
 ---
 
-## Recommended Project Structure
+## 1. Database Schema Changes
 
-```
-src/
-├── app/
-│   ├── (auth)/                        # Auth pages (no dashboard layout)
-│   │   ├── login/page.tsx
-│   │   ├── signup/page.tsx
-│   │   └── callback/route.ts          # Supabase auth callback
-│   ├── (dashboard)/                   # Dashboard layout group
-│   │   ├── layout.tsx                 # Sidebar + header + org context
-│   │   ├── page.tsx                   # Main dashboard (metrics)
-│   │   ├── assistants/
-│   │   │   └── page.tsx               # Assistant → org mapping
-│   │   ├── integrations/
-│   │   │   └── page.tsx               # Credential management
-│   │   ├── tools/
-│   │   │   ├── page.tsx               # Tool config list
-│   │   │   └── [id]/page.tsx          # Tool detail / action builder
-│   │   ├── knowledge/
-│   │   │   ├── page.tsx               # Document list + upload
-│   │   │   └── [id]/page.tsx          # Document detail + chunks
-│   │   ├── outbound/
-│   │   │   ├── page.tsx               # Campaign list
-│   │   │   └── [id]/page.tsx          # Campaign detail + contacts
-│   │   └── calls/
-│   │       ├── page.tsx               # Call list with filters
-│   │       └── [id]/page.tsx          # Call detail + transcript
-│   ├── api/
-│   │   ├── vapi/                      # ⚡ Edge Functions (Vapi webhooks)
-│   │   │   ├── tools/route.ts         # Action Router
-│   │   │   ├── end-of-call/route.ts   # Call Logger
-│   │   │   └── status/route.ts        # Status Sync
-│   │   ├── organizations/             # Org CRUD (serverless)
-│   │   ├── assistants/                # Assistant mapping CRUD
-│   │   ├── integrations/              # Integration credential CRUD
-│   │   ├── tools/                     # Tool config CRUD
-│   │   ├── knowledge/                 # Document upload + status
-│   │   ├── outbound/                  # Campaign + contacts CRUD
-│   │   ├── calls/                     # Call log queries
-│   │   └── analytics/                 # Aggregated metrics
-│   ├── layout.tsx                     # Root layout
-│   └── middleware.ts                  # Auth middleware (refresh tokens)
-├── components/
-│   ├── ui/                            # shadcn/ui base components
-│   ├── layout/                        # Sidebar, header, org switcher
-│   ├── dashboard/                     # Metric cards, charts
-│   ├── calls/                         # Transcript viewer, action badges
-│   ├── tools/                         # Action builder, action cards
-│   ├── knowledge/                     # Document upload, chunk viewer
-│   ├── campaigns/                     # Campaign status, contact table
-│   └── integrations/                  # Credential forms, test buttons
-├── lib/
-│   ├── supabase/
-│   │   ├── client.ts                  # Browser client (createBrowserClient)
-│   │   ├── server.ts                  # Server client (createServerClient)
-│   │   └── admin.ts                   # Service role client (webhooks only)
-│   ├── vapi/
-│   │   ├── types.ts                   # Vapi webhook payload types
-│   │   ├── outbound.ts               # Vapi outbound API wrapper
-│   │   └── verify.ts                  # Webhook signature validation
-│   ├── actions/                       # Action Executors (the "n8n Lite")
-│   │   ├── registry.ts                # Action type → executor mapping
-│   │   ├── executor.ts                # Base executor interface
-│   │   ├── ghl.ts                     # GoHighLevel executor
-│   │   ├── twilio.ts                  # Twilio SMS executor
-│   │   ├── cal.ts                     # Cal.com executor
-│   │   ├── webhook.ts                 # Generic webhook executor
-│   │   └── knowledge.ts              # RAG query executor
-│   ├── knowledge/
-│   │   ├── extract.ts                 # Text extraction (PDF, URL, CSV)
-│   │   ├── chunk.ts                   # Text chunking (~500 tokens)
-│   │   ├── embed.ts                   # OpenAI embedding generation
-│   │   └── search.ts                  # pgvector similarity search
-│   ├── encryption.ts                  # AES-256-GCM credential encryption
-│   └── utils.ts                       # Shared utilities
-├── hooks/                             # Custom React hooks
-├── types/                             # Global TypeScript types
-│   ├── database.ts                    # Supabase generated types
-│   ├── vapi.ts                        # Vapi webhook/event types
-│   └── actions.ts                     # Action config types
-└── middleware.ts                      # Next.js middleware (auth refresh)
-```
+### 1a. New Tables
 
-### Structure Rationale
+#### `google_locations`
+Stores a Google Place registered per org. One location per org is the expected MVP case; the schema allows many-to-one for future flexibility.
 
-- **`app/(auth)/` vs `app/(dashboard)/`**: Auth pages have no sidebar or org context. Dashboard pages share a common layout with sidebar navigation. Next.js route groups (`()`) enable different layouts without affecting URL structure.
-- **`app/api/vapi/`**: All Vapi webhook routes isolated in one folder. Every route.ts in here MUST have `export const runtime = 'edge'`. This makes the boundary explicit — if it's in this folder, it's an Edge Function.
-- **`lib/actions/`**: The Action Engine is a self-contained module with a registry pattern. Adding a new integration means adding one file and registering it. The Edge Function tool router imports from here.
-- **`lib/vapi/types.ts`**: Vapi webhook payloads have a specific shape (verified from docs). Strong typing prevents runtime parsing errors during live calls.
-- **`lib/supabase/admin.ts`**: Service role client used ONLY in Edge Functions receiving Vapi webhooks (no user JWT context). Never imported in browser code.
-
----
-
-## Architectural Patterns
-
-### Pattern 1: Edge/Serverless Split for Latency-Critical Paths
-
-**What:** Vapi webhook routes use Edge Runtime (`runtime = 'edge'`); all other routes use default Node.js runtime. Edge Functions handle the latency-critical path (Vapi expects < 500ms response); Serverless Functions handle everything else.
-
-**When to use:** Any route that Vapi calls during a live call (`tool-calls`, `knowledge-base-request`, `assistant-request`) MUST be Edge. Internal admin routes (CRUD, uploads, analytics) use Node.js runtime for full npm ecosystem access.
-
-**Trade-offs:**
-- Edge: Fast cold starts (~5ms), globally distributed, limited API surface (no Node.js built-ins like `fs`, limited `crypto` to Web Crypto only), 2MB bundle limit
-- Serverless: Full Node.js access, larger bundles OK, but slower cold starts (~250ms) and not globally distributed
-
-**Example:**
-```typescript
-// app/api/vapi/tools/route.ts — MUST be Edge
-export const runtime = 'edge';
-
-export async function POST(request: Request) {
-  const body = await request.json();
-  const startTime = Date.now();
-
-  // 1. Validate Vapi webhook (HMAC or secret header)
-  const secret = request.headers.get('x-vapi-secret');
-  if (secret !== process.env.VAPI_WEBHOOK_SECRET) {
-    return Response.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  // 2. Extract tool call data from Vapi payload
-  const { message } = body;
-  const toolCall = message.toolCallList[0];
-  const assistantId = message.call.assistant.id || message.call.assistantId;
-
-  // 3. Resolve organization (service_role — no user JWT in Vapi webhooks)
-  const supabase = createServiceRoleClient();
-  const { data: mapping } = await supabase
-    .from('assistant_mappings')
-    .select('organization_id')
-    .eq('vapi_assistant_id', assistantId)
-    .single();
-
-  const orgId = mapping.organization_id;
-
-  // 4. Fetch tool config for this org
-  const { data: toolConfig } = await supabase
-    .from('tools_config')
-    .select('*, integrations(*)')
-    .eq('organization_id', orgId)
-    .eq('tool_name', toolCall.name)
-    .eq('is_active', true)
-    .single();
-
-  // 5. Execute action via registry
-  const executor = getExecutor(toolConfig.action_type);
-  const result = await executor.execute(toolConfig, toolCall.arguments);
-
-  // 6. Log action (fire-and-forget via waitUntil if available)
-  const executionTime = Date.now() - startTime;
-  logAction(orgId, toolCall.name, result, executionTime);
-
-  // 7. Return to Vapi in required format
-  return Response.json({
-    results: [{
-      toolCallId: toolCall.id,
-      result: JSON.stringify(result),
-    }],
-  });
-}
-```
-
-### Pattern 2: Service Role + Manual Tenant Filtering for Webhooks
-
-**What:** Vapi webhooks arrive without user JWTs. Edge Functions must use the Supabase `service_role` key (bypasses RLS) and manually filter every query by `organization_id` resolved from the assistant mapping.
-
-**When to use:** Every Edge Function that receives Vapi webhooks. This is the ONLY place service_role should be used.
-
-**Trade-offs:**
-- Pro: Necessary — no user context in Vapi webhooks, RLS would return empty results
-- Con: No database-level safety net — bugs in manual filtering could leak cross-tenant data
-- Mitigation: Centralize the org resolution in a shared function; always derive `orgId` from the authenticated assistant mapping, never from the request body
-
-**Example:**
-```typescript
-// lib/vapi/resolve-org.ts — shared org resolver for all Vapi webhooks
-import { createServiceRoleClient } from '@/lib/supabase/admin';
-
-export async function resolveOrganization(assistantId: string): Promise<string> {
-  const supabase = createServiceRoleClient();
-  const { data, error } = await supabase
-    .from('assistant_mappings')
-    .select('organization_id')
-    .eq('vapi_assistant_id', assistantId)
-    .eq('is_active', true)
-    .single();
-
-  if (error || !data) {
-    throw new Error(`No organization found for assistant ${assistantId}`);
-  }
-
-  return data.organization_id; // Always derived server-side, never from client
-}
-```
-
-### Pattern 3: Action Registry (Pluggable Executor Pattern)
-
-**What:** A registry maps `action_type` strings to executor classes. Adding a new integration means creating one file and registering it — no changes to the Edge Function tool router.
-
-**When to use:** The Action Engine core. Each integration (GHL, Twilio, Cal.com, custom webhook, knowledge base) is an executor implementing a common interface.
-
-**Trade-offs:**
-- Pro: Open/Closed Principle — add integrations without modifying existing code
-- Pro: Each executor is independently testable
-- Con: Slight indirection — need to look at registry to find which executor handles which action
-
-**Example:**
-```typescript
-// lib/actions/executor.ts
-export interface ActionResult {
-  success: boolean;
-  data: Record<string, unknown>;
-  message?: string;
-}
-
-export interface ActionExecutor {
-  execute(config: ToolConfig, args: Record<string, unknown>): Promise<ActionResult>;
-}
-
-// lib/actions/registry.ts
-import { createContact } from './ghl';
-import { getAvailability } from './ghl';
-import { bookAppointment } from './ghl';
-import { sendSMS } from './twilio';
-import { queryKnowledge } from './knowledge';
-import { callWebhook } from './webhook';
-
-const registry: Record<string, ActionExecutor> = {
-  create_contact: createContact,
-  get_availability: getAvailability,
-  create_appointment: bookAppointment,
-  send_sms: sendSMS,
-  knowledge_base: queryKnowledge,
-  custom_webhook: callWebhook,
-};
-
-export function getExecutor(actionType: string): ActionExecutor {
-  const executor = registry[actionType];
-  if (!executor) throw new Error(`Unknown action type: ${actionType}`);
-  return executor;
-}
-```
-
-### Pattern 4: Multi-Tenant RLS with Helper Function
-
-**What:** Every table has `organization_id`. A single `security definer` helper function resolves the current user's organization, and all RLS policies reference it. This prevents circular policy evaluation and ensures consistent isolation.
-
-**When to use:** Every table in the `public` schema. Non-negotiable for this project.
-
-**Trade-offs:**
-- Pro: Database-level isolation — code bugs can't leak data
-- Pro: Single point of change for org resolution logic
-- Con: Every query has implicit WHERE clause (must index `organization_id`)
-- Con: Webhook routes must use service_role (no user JWT), requiring manual filtering
-
-**Example:**
 ```sql
--- migrations/001_rls_helpers.sql
--- Helper function in private schema (bypasses RLS on lookup)
-CREATE SCHEMA IF NOT EXISTS private;
+-- Migration 018: google_locations
+CREATE TABLE public.google_locations (
+  id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id         UUID        NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
+  place_id       TEXT        NOT NULL,                  -- Google Place ID (ChIJ...)
+  name           TEXT        NOT NULL,                  -- display name from Places API
+  address        TEXT,                                  -- formatted_address from Places API
+  review_token   TEXT        UNIQUE NOT NULL             -- public embed token (like widget_token)
+                             DEFAULT replace(gen_random_uuid()::text, '-', ''),
+  last_synced_at TIMESTAMPTZ,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(org_id, place_id)
+);
 
-CREATE OR REPLACE FUNCTION private.get_current_org_id()
-RETURNS UUID
-LANGUAGE plpgsql
-SECURITY DEFINER
-STABLE
-AS $$
-  SELECT organization_id FROM users
-  WHERE id = (select auth.uid())
-  LIMIT 1;
-$$;
+CREATE INDEX idx_google_locations_org_id       ON public.google_locations(org_id);
+CREATE INDEX idx_google_locations_review_token ON public.google_locations(review_token);
 
--- Apply to every multi-tenant table
-CREATE POLICY "org_isolation_select" ON call_logs
-  FOR SELECT TO authenticated
-  USING (organization_id = (select private.get_current_org_id()));
-
-CREATE POLICY "org_isolation_insert" ON call_logs
-  FOR INSERT TO authenticated
-  WITH CHECK (organization_id = (select private.get_current_org_id()));
-
-CREATE POLICY "org_isolation_update" ON call_logs
-  FOR UPDATE TO authenticated
-  USING (organization_id = (select private.get_current_org_id()))
-  WITH CHECK (organization_id = (select private.get_current_org_id()));
-
-CREATE POLICY "org_isolation_delete" ON call_logs
-  FOR DELETE TO authenticated
-  USING (organization_id = (select private.get_current_org_id()));
-
--- Index for RLS performance
-CREATE INDEX idx_call_logs_org_id ON call_logs (organization_id);
+ALTER TABLE public.google_locations ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "org_isolation" ON public.google_locations
+  FOR ALL TO authenticated
+  USING (org_id = public.get_current_org_id())
+  WITH CHECK (org_id = public.get_current_org_id());
 ```
 
-### Pattern 5: pgvector Match Function with Tenant Scoping
+#### `google_reviews`
+Stores up to 5 reviews per location (Google Places API hard limit). Upserted on sync using a stable dedup key derived from each review entry.
 
-**What:** PostgREST doesn't support pgvector operators directly. A SQL function wraps the similarity search and filters by `organization_id` before computing distances, ensuring tenant isolation and index usage.
-
-**When to use:** Knowledge base semantic search during calls and in the admin UI.
-
-**Trade-offs:**
-- Pro: PostgREST can call via `supabase.rpc()`
-- Pro: `organization_id` filter ensures no cross-tenant results and uses index
-- Con: Function-based queries are less composable than direct SQL
-
-**Example:**
 ```sql
--- migrations/002_knowledge_search.sql
-CREATE OR REPLACE FUNCTION match_knowledge_chunks(
-  p_organization_id UUID,
-  p_query_embedding VECTOR(1536),
-  p_match_threshold FLOAT DEFAULT 0.7,
-  p_match_count INT DEFAULT 5
-)
-RETURNS TABLE (
-  id UUID,
-  document_id UUID,
-  content TEXT,
-  similarity FLOAT
-)
-LANGUAGE plpgsql
-STABLE
-AS $$
-BEGIN
-  RETURN QUERY
-  SELECT
-    kc.id,
-    kc.document_id,
-    kc.content,
-    1 - (kc.embedding <=> p_query_embedding) AS similarity
-  FROM knowledge_chunks kc
-  WHERE kc.organization_id = p_organization_id
-    AND 1 - (kc.embedding <=> p_query_embedding) > p_match_threshold
-  ORDER BY kc.embedding <=> p_query_embedding ASC
-  LIMIT p_match_count;
-END;
-$$;
+-- Migration 018 (continued)
+CREATE TABLE public.google_reviews (
+  id               UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  location_id      UUID        NOT NULL REFERENCES public.google_locations(id) ON DELETE CASCADE,
+  org_id           UUID        NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
+  author_name      TEXT        NOT NULL,
+  author_photo_url TEXT,
+  rating           INTEGER     NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  text             TEXT,
+  published_at     TIMESTAMPTZ,
+  google_review_id TEXT        NOT NULL,              -- stable dedup key from Places API response
+  display_order    INTEGER     NOT NULL DEFAULT 0,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(location_id, google_review_id)
+);
 
--- HNSW index for performance (handles inserts/updates well)
-CREATE INDEX idx_knowledge_chunks_embedding
-  ON knowledge_chunks
-  USING hnsw (embedding vector_cosine_ops);
+CREATE INDEX idx_google_reviews_location_id ON public.google_reviews(location_id);
+CREATE INDEX idx_google_reviews_org_id      ON public.google_reviews(org_id);
+
+ALTER TABLE public.google_reviews ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "org_isolation" ON public.google_reviews
+  FOR ALL TO authenticated
+  USING (org_id = public.get_current_org_id())
+  WITH CHECK (org_id = public.get_current_org_id());
 ```
 
-### Pattern 6: Fire-and-Forget Logging for Edge Functions
+#### `meta_channels`
+One record per connected Facebook Page (Messenger) or linked Instagram account per org. Both Messenger and Instagram share the same table because they both flow through a Facebook Page connection — an Instagram account is always linked to a Page.
 
-**What:** The Edge Function's primary job is to respond to Vapi within 500ms. Action logging (writing to `action_logs`) happens after the response is sent, using `waitUntil` or fire-and-forget promises.
+```sql
+-- Migration 019: meta_channels
+CREATE TABLE public.meta_channels (
+  id                          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  org_id                      UUID        NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
+  channel_type                TEXT        NOT NULL CHECK (channel_type IN ('messenger', 'instagram')),
+  page_id                     TEXT        NOT NULL,              -- Facebook Page ID
+  page_name                   TEXT,
+  ig_account_id               TEXT,                              -- populated only for instagram rows
+  ig_username                 TEXT,                              -- populated only for instagram rows
+  encrypted_page_access_token TEXT        NOT NULL,              -- AES-256-GCM (same pattern as integrations)
+  token_expires_at            TIMESTAMPTZ,                       -- NULL = non-expiring page token
+  is_active                   BOOLEAN     NOT NULL DEFAULT true,
+  webhook_verified            BOOLEAN     NOT NULL DEFAULT false,
+  created_at                  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at                  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(org_id, page_id, channel_type)
+);
 
-**When to use:** Every Edge Function that needs to log actions or store data that isn't required in the response.
+CREATE INDEX idx_meta_channels_org_id  ON public.meta_channels(org_id);
+CREATE INDEX idx_meta_channels_page_id ON public.meta_channels(page_id);
 
-**Trade-offs:**
-- Pro: Keeps response latency minimal
-- Con: Logs may be lost if the Edge Function terminates before the write completes (rare but possible)
-- Mitigation: Critical actions (like credential creation) log synchronously; observability logs are fire-and-forget
+ALTER TABLE public.meta_channels ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "org_isolation" ON public.meta_channels
+  FOR ALL TO authenticated
+  USING (org_id = public.get_current_org_id())
+  WITH CHECK (org_id = public.get_current_org_id());
+```
+
+**Why not reuse the `integrations` table?** The integrations table uses a typed enum (`integration_provider`) and is keyed for one credential blob per provider per org. Meta channels require per-page rows, type discrimination between messenger/instagram, and additional Meta-specific metadata (page_id, ig_account_id, token_expires_at, webhook_verified). A separate table is cleaner and avoids widening the existing enum with a non-symmetric value.
+
+### 1b. Changes to Existing Tables
+
+#### `conversations` — add channel columns (Migration 020, fully backward-compatible)
+
+```sql
+-- Migration 020: multi-channel conversations
+ALTER TABLE public.conversations
+  ADD COLUMN IF NOT EXISTS channel          TEXT NOT NULL DEFAULT 'widget'
+                                            CHECK (channel IN ('widget', 'messenger', 'instagram')),
+  ADD COLUMN IF NOT EXISTS channel_metadata JSONB NOT NULL DEFAULT '{}';
+
+CREATE INDEX idx_conversations_channel ON public.conversations(channel);
+```
+
+`channel` defaults to `'widget'` so every existing row gets the correct value with no data migration. The CHECK constraint enforces the allowed set; new channels can be added in a future migration by dropping and re-adding the constraint.
+
+`channel_metadata` is a JSONB blob that carries channel-specific identifiers needed for reply routing:
+- widget: `{}` (empty; reply goes through SSE session)
+- messenger: `{ "page_id": "...", "psid": "..." }`
+- instagram: `{ "page_id": "...", "igsid": "...", "ig_account_id": "..." }`
+
+No RLS policy change needed — the existing `org_isolation` policy on `conversations` already covers all rows.
 
 ---
 
-## Data Flow
+## 2. New API Routes
 
-### Flow 1: Tool Call (Live Call) — THE Critical Path
+### Google Reviews Widget
 
-```
-Caller speaks → Vapi (STT → LLM decides tool needed)
-    │
-    ▼ POST /api/vapi/tools
-┌──────────────────────────────────────────────────────────────┐
-│ Edge Function (Tool Router)                                  │
-│                                                              │
-│  1. Validate x-vapi-secret header                           │
-│  2. Parse message.toolCallList[0] → { id, name, arguments } │
-│  3. Extract message.call.assistantId                        │
-│  4. service_role: lookup assistant_mappings → org_id        │
-│  5. service_role: lookup tools_config → action + integration│
-│  6. Decrypt integration credentials (Web Crypto AES-GCM)    │
-│  7. Execute action via registry (e.g., GHL create_contact)  │
-│  8. Log to action_logs (fire-and-forget)                    │
-│  9. Return { results: [{ toolCallId, result }] }            │
-│                                                              │
-│  ──── MUST complete in < 500ms ────                          │
-└──────────────────────────────────────────────────────────────┘
-    │
-    ▼ JSON response
-Vapi receives result → LLM incorporates → TTS speaks to caller
-```
+| Route | Method | Auth | Purpose |
+|-------|--------|------|---------|
+| `/api/reviews/[token]` | GET | Public (token) | Fetch cached reviews for embed. Returns JSON. CORS open. |
+| `/api/reviews/[token]` | OPTIONS | None | CORS preflight |
 
-**Timing budget (500ms total):**
-| Step | Target |
-|------|--------|
-| Webhook validation + payload parsing | 5ms |
-| Supabase: assistant → org lookup | 30-50ms |
-| Supabase: tool config + integration fetch | 30-50ms |
-| Credential decryption (Web Crypto) | 5ms |
-| External API call (e.g., GHL create contact) | 150-300ms |
-| Response formatting | 2ms |
-| **Buffer for network jitter** | 50-100ms |
+The `token` is the `review_token` column on `google_locations`. This mirrors the existing `/api/widget/[token]/config` pattern exactly. The route uses `createServiceRoleClient()` to bypass RLS — no user session required. The widget script reads from this endpoint at load time.
 
-### Flow 2: End-of-Call Report (Observability)
+Admin-triggered sync (re-fetching from Google Places API) is a server action on the dashboard page, not a public route. This keeps the Google API key server-side only.
 
-```
-Call ends → Vapi generates end-of-call-report
-    │
-    ▼ POST /api/vapi/end-of-call
-┌──────────────────────────────────────────────────────────┐
-│ Edge Function (Call Logger)                              │
-│                                                          │
-│  1. Validate x-vapi-secret                              │
-│  2. Parse: call.id, artifact.transcript, artifact.messages, │
-│     call.type, call.startedAt, call.endedAt, endedReason │
-│  3. Resolve org_id from call.assistantId                │
-│  4. Upsert into call_logs (by vapi_call_id)             │
-│     - transcript (JSONB: messages array)                │
-│     - summary, duration, status, phone_number           │
-│  5. Return 200 OK                                       │
-└──────────────────────────────────────────────────────────┘
-    │
-    ▼
-Dashboard displays: call list → click → transcript with tool badges
-```
+### Meta Messaging
 
-### Flow 3: Knowledge Base Query (RAG During Call)
+| Route | Method | Auth | Purpose |
+|-------|--------|------|---------|
+| `/api/meta/webhook` | GET | None (Meta verification) | Webhook verification handshake |
+| `/api/meta/webhook` | POST | None (Meta signature) | Receive Messenger and Instagram message events |
+| `/api/meta/callback` | GET | Admin session cookie | OAuth authorization code callback |
 
-```
-User asks question → Vapi triggers knowledge_base tool
-    │
-    ▼ POST /api/vapi/tools (tool_name = "knowledge_base")
-┌──────────────────────────────────────────────────────────┐
-│ Edge Function (Knowledge Executor)                       │
-│                                                          │
-│  1. Resolve org_id from assistant mapping               │
-│  2. Extract user's question from tool arguments          │
-│  3. Call OpenAI API: text-embedding-3-small             │
-│     → 1536-dim vector (question embedding)              │
-│  4. Supabase RPC: match_knowledge_chunks(org_id, vector)│
-│     → pgvector cosine similarity search                 │
-│     → top 3-5 chunks, scoped to org                    │
-│  5. Return chunks as result text                        │
-│  6. Log query to action_logs                            │
-└──────────────────────────────────────────────────────────┘
-    │
-    ▼
-Vapi receives chunks → LLM uses as context → speaks answer
-```
-
-### Flow 4: Outbound Campaign Execution
-
-```
-Admin creates campaign + imports contacts
-    │
-    ▼ POST /api/outbound/campaigns/:id/start
-┌──────────────────────────────────────────────────────────┐
-│ Serverless Function (Campaign Engine)                     │
-│                                                          │
-│  1. Load campaign config (assistant_id, cadence, times)  │
-│  2. SELECT contacts WHERE status = 'pending'             │
-│     ORDER BY created_at LIMIT batch_size                 │
-│     FOR UPDATE SKIP LOCKED                               │
-│  3. UPDATE contacts SET status = 'calling'               │
-│  4. For each contact: POST api.vapi.ai/call              │
-│     { assistantId, phoneNumberId, customer: { number } } │
-│  5. Store vapi_call_id on contact                        │
-│  6. Wait for cadence interval (calls_per_minute)         │
-│  7. Repeat from step 2 until all contacts processed      │
-│                                                          │
-│  Status updates arrive via /api/vapi/status webhook      │
-│  → UPDATE contacts SET status = 'completed'|'failed'     │
-└──────────────────────────────────────────────────────────┘
-    │
-    ▼
-Dashboard shows: campaign progress, per-contact status
-```
-
-### Flow 5: Knowledge Base Document Processing
-
-```
-Admin uploads PDF/URL/text → POST /api/knowledge/upload
-    │
-    ▼
-┌──────────────────────────────────────────────────────────┐
-│ Serverless Function (Document Processor)                  │
-│                                                          │
-│  1. Store file in Supabase Storage                       │
-│  2. Create knowledge_documents row (status: 'processing')│
-│  3. Extract text (PDF → parse, URL → scrape, CSV → parse)│
-│  4. Chunk text (~500 tokens per chunk, with overlap)     │
-│  5. Generate embeddings via OpenAI text-embedding-3-small│
-│  6. Insert chunks into knowledge_chunks                  │
-│     (organization_id, document_id, content, embedding)   │
-│  7. Update document status → 'ready'                     │
-│  8. Update document chunk_count                          │
-│                                                          │
-│  If error at any step → status = 'error', store message  │
-└──────────────────────────────────────────────────────────┘
-    │
-    ▼
-Admin UI polls status → shows "Processing..." → "Ready ✅"
-```
-
-### State Management
-
-```
-Server State (Supabase queries)
-    ↓ (React Query pattern — fetch on mount, refetch on mutation)
-Server Components (direct Supabase queries in RSC)
-    ↓ (streamed to client)
-Client Components (interactive parts: forms, filters, tables)
-    ↓ (nuqs for URL state — filters, pagination)
-URL Search Params (persisted in browser history)
-```
-
-No global client state store needed. This is a server-rendered admin panel:
-- **Server state**: Direct Supabase queries in Server Components (no React Query needed for initial render)
-- **Client state**: `nuqs` for table filters, pagination, date ranges persisted in URL
-- **Form state**: React Hook Form for all form inputs
-- **UI state**: React `useState` for modals, dropdowns, tabs
+All three Meta routes use `export const runtime = 'nodejs'`, matching the existing Vapi handler convention and required for `crypto` Node module access.
 
 ---
 
-## Scaling Considerations
+## 3. Meta OAuth Callback Flow (Next.js App Router)
 
-| Scale | Architecture Adjustments |
-|-------|--------------------------|
-| **1-20 orgs, <500 calls/day** | Monolith is perfect. Single Vercel deployment. Supabase free/pro tier. No optimization needed. |
-| **20-100 orgs, 500-5K calls/day** | Add HNSW index on pgvector. Pre-aggregate dashboard metrics (daily summary table). Cursor-based pagination on call logs. Consider Supabase Pro for connection pooling. |
-| **100-500 orgs, 5K-50K calls/day** | Add time-based partitioning on `action_logs` and `call_logs`. Background worker for log archival. Consider read replica for dashboard queries. Rate limiting per org. |
-| **500+ orgs, 50K+ calls/day** | Separate webhook processing from dashboard (different deployments). Dedicated Supabase instance with compute add-on. Consider queue system (Ingestor → Worker) for campaign dialing. |
+### Step 1 — Initiate OAuth (Server Action)
 
-### Scaling Priorities
-
-1. **First bottleneck: pgvector queries** — Even at small scale, embedding search without HNSW index is slow. Create HNSW from day one. ~1K vectors.
-2. **Second bottleneck: Call log table size** — `call_logs` and `action_logs` grow fast. Add `created_at` indexes and cursor pagination from day one. Pre-aggregation needed at ~10K rows.
-3. **Third bottleneck: Edge Function → Supabase latency** — Pin Vercel Edge Functions to the same region as Supabase. This saves 50-100ms per webhook call. Do this from day one.
-4. **Fourth bottleneck: Concurrent campaign dialing** — Sequential batch approach works for MVP. At scale, need a queue system with `SELECT FOR UPDATE SKIP LOCKED`. ~100 concurrent campaigns.
-
----
-
-## Anti-Patterns
-
-### Anti-Pattern 1: Using Vapi's Native GHL Tools Instead of Custom Action Engine
-
-**What people do:** Configure Vapi's built-in GoHighLevel integration (Get Contact, Create Contact, Check Availability, Create Event) per assistant.
-**Why it's wrong:** These tools are single-action, single-tenant, single-credential. They can't chain actions (create contact → check availability → book in one tool call), can't use different GHL credentials per client, and don't log to your observability layer.
-**Do this instead:** Use Vapi Custom Tools with `server.url` pointing to your Edge Function. Your Action Engine handles multi-tenant credential lookup, action sequencing, logging, and fallbacks.
-
-### Anti-Pattern 2: Doing Everything Synchronously in the Tool Webhook
-
-**What people do:** In the tool-call Edge Function, run all actions (create contact, check calendar, send SMS, log result) before returning the response to Vapi.
-**Why it's wrong:** Latency compounds. 3 API calls × 200ms each = 600ms. Add DB queries and you're past the 500ms budget. The caller hears dead air.
-**Do this instead:** Respond to Vapi with the primary data result. Use `waitUntil()` or fire-and-forget for side effects (logging, SMS, background tasks). Only the action that produces data the LLM needs should be synchronous.
-
-### Anti-Pattern 3: Relying on Application-Level Tenant Filtering Without RLS
-
-**What people do:** Add `organization_id` to tables but only filter in application code (`WHERE organization_id = ?`), without enabling RLS.
-**Why it's wrong:** One code path that forgets the filter exposes all data. API route, Server Component, or debug console — any unfiltered query returns everything.
-**Do this instead:** RLS on every table. Application-level filtering is a performance optimization (helps Postgres query planner), not a security boundary. RLS is the security boundary.
-
-### Anti-Pattern 4: Using Node.js Runtime for Vapi Webhook Routes
-
-**What people do:** Create `/api/vapi/tools/route.ts` without `export const runtime = 'edge'`, letting it default to Node.js runtime.
-**Why it's wrong:** Node.js serverless functions on Vercel have ~250ms cold starts. Vapi expects < 500ms total response time. A cold start alone consumes half the budget. The first call after deployment or scale-to-zero always times out.
-**Do this instead:** Every file in `app/api/vapi/` MUST have `export const runtime = 'edge'`. Edge Functions have ~5ms cold starts.
-
-### Anti-Pattern 5: Storing Integration Credentials in Plain Text
-
-**What people do:** Store GoHighLevel API keys, Twilio tokens, etc. as plain text in the `integrations.credentials` JSONB column.
-**Why it's wrong:** Database compromise exposes every client's third-party credentials. These grant access to CRMs, phone systems, and calendars — far beyond your platform.
-**Do this instead:** Encrypt with AES-256-GCM using Web Crypto API before storage. Decrypt only in Edge Functions (server-side). UI shows masked values only.
-
-### Anti-Pattern 6: Single Shared Vapi Assistant for All Tenants
-
-**What people do:** Use one Vapi assistant with conditional logic based on caller phone number to determine which client's data to use.
-**Why it's wrong:** No credential isolation, no true multi-tenancy, brittle routing logic, and Vapi's native tools can't be scoped per caller. Plus the system prompt becomes a mess of conditionals.
-**Do this instead:** Each client has their own Vapi assistant(s). `assistant_mappings` table links each `vapi_assistant_id` to an `organization_id`. The Edge Function resolves org from the assistant ID in the webhook payload.
-
----
-
-## Integration Points
-
-### External Services
-
-| Service | Integration Pattern | Notes |
-|---------|---------------------|-------|
-| **Vapi.ai (Webhooks)** | Vapi POSTs to your Edge Functions | Validate `x-vapi-secret` header on every request. Response format: `{ results: [{ toolCallId, result }] }`. Webhook types: `tool-calls`, `end-of-call-report`, `status-update`. |
-| **Vapi.ai (API)** | Your server calls `api.vapi.ai` REST | For outbound calls (`POST /call`), campaign management, assistant lookups. Auth via `Authorization: Bearer <VAPI_API_KEY>`. |
-| **GoHighLevel** | REST API from Edge Functions | `POST /contacts/`, `GET /calendars/{id}/slots`, `POST /appointments/`. Auth via API key in `Authorization: Bearer`. Per-org credentials. Rate-limited — implement backoff. |
-| **Twilio** | REST API from Edge Functions | `POST /Messages.json` for SMS. Auth via Account SID + Auth Token. Per-org credentials. |
-| **Cal.com** | REST API from Edge Functions | Availability checking, booking. Auth via API key. Per-org credentials. |
-| **OpenAI** | API from Edge + Serverless Functions | `text-embedding-3-small` for RAG embeddings. Called during document processing (serverless) and during knowledge_base tool execution (edge). |
-
-### Internal Boundaries
-
-| Boundary | Communication | Notes |
-|----------|---------------|-------|
-| Edge Functions ↔ Supabase | `supabase-js` (service_role) | No user JWT in Vapi webhooks → use service_role + manual org filtering |
-| Serverless Routes ↔ Supabase | `supabase-js` (user JWT via cookies) | RLS enforced. `createServerClient` from `@supabase/ssr` |
-| Server Components ↔ Supabase | `supabase-js` (user JWT) | Direct queries in RSC for dashboard data. RLS enforced. |
-| Edge Functions ↔ External APIs | `fetch()` | Raw REST calls. No SDK — keeps Edge bundle small. |
-| Campaign Engine ↔ Vapi API | `fetch()` to `api.vapi.ai` | Sequential batch dialing. Respect cadence limits. |
-| Knowledge Pipeline ↔ OpenAI | `openai` npm package | Document processing runs in Node.js runtime (not edge). |
-
----
-
-## Build Order (Dependency-Based)
-
-Based on component dependencies and the critical path (Action Engine must work first):
+The admin clicks "Connect with Facebook" on the Meta channel settings page. A server action:
+1. Generates a random CSRF token
+2. Stores it in a short-lived, encrypted, httpOnly cookie (e.g. `meta_oauth_state`)
+3. Optionally encodes the current org_id in the state value (e.g. `${csrfToken}:${orgId}`)
+4. Returns a `redirect()` to Meta's OAuth dialog:
 
 ```
-Phase 1: FOUNDATION (everything depends on this)
-├── 1a. Next.js project setup + Supabase connection
-├── 1b. Database schema (all tables + RLS policies + indexes)
-├── 1c. Auth (Supabase Auth + middleware + login/signup pages)
-├── 1d. Dashboard layout (sidebar, header, navigation)
-└── 1e. Organization CRUD (admin creates/manages tenants)
-
-Phase 2: ACTION ENGINE (core value proposition)
-├── 2a. Assistant mapping CRUD (link Vapi assistant → org)
-├── 2b. Integration credential CRUD (encrypted per-org creds)
-├── 2c. Tool config CRUD (trigger → action mapping UI)
-├── 2d. Edge Function: /api/vapi/tools (action router)
-├── 2e. GHL executor (create_contact, get_availability, book)
-├── 2f. Action logging (action_logs table writes)
-└── 2g. End-to-end test: Vapi → Edge Function → GHL → response
-
-Phase 3: OBSERVABILITY (proves the system works)
-├── 3a. Edge Function: /api/vapi/end-of-call (call logger)
-├── 3b. Call list page (filterable, paginated)
-├── 3c. Call detail page (chat transcript)
-├── 3d. Inline tool badges (merge call_logs + action_logs by call_id)
-├── 3e. Dashboard metrics (total calls, tool success rate, recent calls)
-└── 3f. Edge Function: /api/vapi/status (status sync)
-
-Phase 4: KNOWLEDGE BASE (RAG)
-├── 4a. Document upload (Supabase Storage + knowledge_documents)
-├── 4b. Processing pipeline (extract → chunk → embed → pgvector)
-├── 4c. pgvector match function + HNSW index
-├── 4d. Knowledge executor in Action Engine
-├── 4e. Document management UI (upload, status, delete)
-└── 4f. Admin can test queries against org's knowledge base
-
-Phase 5: OUTBOUND CAMPAIGNS
-├── 5a. Campaign CRUD + contact import (CSV)
-├── 5b. Vapi outbound API integration (dial contacts)
-├── 5c. Campaign engine (batch dialing + cadence)
-├── 5d. Real-time status tracking (via status webhook)
-└── 5e. Campaign monitoring dashboard
-
-Phase 6: POLISH + EXTENSIONS
-├── 6a. Additional executors (Twilio SMS, custom webhook)
-├── 6b. Failure alerting (email/webhook on tool failures)
-├── 6c. Performance optimization (pre-aggregation, caching)
-└── 6d. End-to-end testing + documentation
+https://www.facebook.com/dialog/oauth
+  ?client_id={META_APP_ID}
+  &redirect_uri=https://operator.skale.club/api/meta/callback
+  &scope=pages_show_list,pages_messaging,instagram_manage_messages,pages_read_engagement
+  &state={CSRF_TOKEN}
+  &response_type=code
 ```
 
-**Build order rationale:**
-1. **Foundation first** — RLS, auth, and org CRUD are prerequisites for everything. Without org isolation, no other feature is safe to build.
-2. **Action Engine before Observability** — Observability shows the results of tool executions. You need tool executions first. And the Action Engine is the core value proposition per PROJECT.md.
-3. **Observability before Knowledge Base** — The call list and transcript UI are the highest perceived value features for proving the system works to clients. Knowledge base adds capability but doesn't prove anything.
-4. **Campaigns last** — Campaigns are the most self-contained feature. They don't depend on knowledge base or advanced observability. They can be deferred without affecting the core loop.
+### Step 2 — Meta Redirects to `/api/meta/callback`
+
+```
+GET /api/meta/callback?code=AUTH_CODE&state=CSRF_TOKEN
+```
+
+This is a GET route handler (`src/app/api/meta/callback/route.ts`). It must be a GET handler, not a Server Action — Meta appends query parameters to the redirect URI, which is a GET request.
+
+```typescript
+export const runtime = 'nodejs'
+
+export async function GET(request: Request): Promise<Response> {
+  const url = new URL(request.url)
+  const code  = url.searchParams.get('code')
+  const state = url.searchParams.get('state')
+
+  // 1. Validate user session (getUser() — same pattern as dashboard pages)
+  const user = await getUser()
+  if (!user) return Response.redirect('/login')
+
+  // 2. Validate CSRF state against cookie
+  // compare state to cookie value; redirect to /integrations/meta?error=csrf on mismatch
+
+  // 3. Exchange code for short-lived user access token
+  //    POST https://graph.facebook.com/v21.0/oauth/access_token
+  //      ?client_id=&client_secret=&redirect_uri=&code=
+
+  // 4. Exchange short-lived user token for long-lived user token (60 days)
+  //    GET https://graph.facebook.com/oauth/access_token
+  //      ?grant_type=fb_exchange_token&client_id=&client_secret=&fb_exchange_token=SHORT_TOKEN
+
+  // 5. GET https://graph.facebook.com/me/accounts to list pages
+  //    — returns page_access_token per page (these do not expire for long-lived pages)
+
+  // 6. For each page: GET /{page-id}?fields=instagram_business_account to find linked IG account
+
+  // 7. Encrypt each page_access_token with lib/crypto.ts encrypt()
+
+  // 8. Upsert into meta_channels (one 'messenger' row per page, one 'instagram' row if IG linked)
+
+  // 9. Redirect to /integrations/meta?connected=true
+}
+```
+
+**Token lifecycle:**
+- Short-lived user token: 1 hour — not stored, used only to get long-lived token
+- Long-lived user token: 60 days — not stored, used only to get page tokens
+- Page access token (from `/me/accounts`): does not expire — this is what gets stored encrypted
+- `token_expires_at` is NULL for page tokens; set to 60-day expiry only if using Instagram user tokens (a different, less common flow)
+
+### Step 3 — Webhook Verification Handshake
+
+During Meta App Dashboard setup, Meta sends:
+
+```
+GET /api/meta/webhook?hub.mode=subscribe&hub.verify_token=MY_TOKEN&hub.challenge=CHALLENGE_INT
+```
+
+The GET handler:
+
+```typescript
+export async function GET(request: Request): Promise<Response> {
+  const url       = new URL(request.url)
+  const mode      = url.searchParams.get('hub.mode')
+  const token     = url.searchParams.get('hub.verify_token')
+  const challenge = url.searchParams.get('hub.challenge')
+
+  if (mode === 'subscribe' && token === process.env.META_VERIFY_TOKEN) {
+    return new Response(challenge, { status: 200 })
+  }
+  return new Response('Forbidden', { status: 403 })
+}
+```
+
+The same file exports both GET and POST handlers. GET handles verification; POST handles event delivery.
+
+---
+
+## 4. Meta Webhook Receiver — Signature Verification
+
+### HMAC-SHA256 Verification
+
+Meta signs every POST event with the app secret. The header:
+
+```
+X-Hub-Signature-256: sha256=<HMAC_HEX>
+```
+
+Node.js verification (note: use `node:crypto`, same runtime as existing Vapi handler):
+
+```typescript
+import { createHmac, timingSafeEqual } from 'crypto'
+
+function verifyMetaSignature(rawBody: string, signatureHeader: string | null): boolean {
+  if (!signatureHeader?.startsWith('sha256=')) return false
+  const expected = signatureHeader.slice(7)
+  const computed = createHmac('sha256', process.env.META_APP_SECRET!)
+    .update(rawBody, 'utf8')
+    .digest('hex')
+  return timingSafeEqual(Buffer.from(expected), Buffer.from(computed))
+}
+```
+
+**Critical:** Read the raw body as text before JSON parsing. Use `await request.text()`, then `JSON.parse(rawBody)`. Do not use `request.json()` if you need the raw bytes for signature verification — the body stream can only be consumed once.
+
+### Event Routing
+
+Both Messenger and Instagram events arrive on the same `/api/meta/webhook` POST endpoint. Distinguish by payload shape:
+
+```
+// Messenger
+entry[].messaging[].sender.id     → PSID (user identifier for that page)
+entry[].messaging[].message.text
+
+// Instagram
+entry[].changes[].field === 'messages'
+entry[].changes[].value.sender.id → IGSID (user identifier for that IG account)
+entry[].changes[].value.message.text
+```
+
+`entry[].id` is the Page ID in both cases. Look it up in `meta_channels` using `createServiceRoleClient()` to find the org. The webhook handler must return HTTP 200 within 5 seconds — use `after()` from `next/server` for the database writes, exactly as the existing Vapi handlers do.
+
+---
+
+## 5. Outbound Reply Routing
+
+The existing `handleSendMessage` in `AdminChatLayout` calls `POST /api/chat/conversations/{id}/messages`. That route currently persists the message and returns. For multi-channel, the route checks `conversations.channel` and routes accordingly:
+
+```typescript
+if (channel === 'widget') {
+  // unchanged: persist to DB, SSE polling picks it up
+  await persistMessage(conversationId, 'assistant', content)
+
+} else if (channel === 'messenger') {
+  const { page_id, psid } = channelMetadata
+  const token = await getDecryptedPageToken(page_id, orgId)
+  // POST to Messenger Send API
+  await fetch(`https://graph.facebook.com/v21.0/${page_id}/messages`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      recipient: { id: psid },
+      message: { text: content },
+      messaging_type: 'RESPONSE',
+      access_token: token,
+    }),
+  })
+  await persistMessage(conversationId, 'assistant', content)
+
+} else if (channel === 'instagram') {
+  const { ig_account_id, igsid, page_id } = channelMetadata
+  const token = await getDecryptedPageToken(page_id, orgId)
+  // POST to Instagram Messaging API
+  await fetch(`https://graph.instagram.com/v21.0/${ig_account_id}/messages`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      recipient: { id: igsid },
+      message: { text: content },
+      messaging_type: 'RESPONSE',
+      access_token: token,
+    }),
+  })
+  await persistMessage(conversationId, 'assistant', content)
+}
+```
+
+`getDecryptedPageToken(page_id, orgId)` queries `meta_channels` via service role client and calls `decrypt()` from `lib/crypto.ts`.
+
+**24-Hour Messaging Window:** Meta's standard `messaging_type: 'RESPONSE'` only works within 24 hours of the last inbound user message. After that, only `HUMAN_AGENT` tag (7-day window, requires App Review) is permitted. The webhook handler must update `conversations.last_message_at` on every inbound message. The ChatArea component should display a warning banner when the conversation channel is not `widget` and the last message was more than 23 hours ago.
+
+---
+
+## 6. Component Extension Strategy
+
+### `ConversationSummary` type (`src/types/chat.ts`)
+
+Add two optional fields — existing consumers are unaffected:
+
+```typescript
+export interface ConversationSummary {
+  // ... all existing fields unchanged
+  channel?: string | null                              // 'widget' | 'messenger' | 'instagram'
+  channelMetadata?: Record<string, unknown> | null
+}
+```
+
+### `/api/chat/conversations` GET route
+
+Add `channel` and `channel_metadata` to the SELECT and map them in the response. The change is additive — old callers simply receive extra fields they ignore.
+
+### `ConversationList` component
+
+Add a channel filter pill/dropdown beneath the search bar, above the Open/Archived/All tabs. Each conversation row gains a small icon (globe for widget, recognizable icon for messenger/instagram) beside the avatar. The filter is client-side — the component already filters the `conversations` prop and adding a `channel` dimension is a small addition.
+
+### `ChatArea` component
+
+1. Add a channel origin badge in the conversation header.
+2. Show a dismissible warning banner when `channel !== 'widget'` and `lastMessageAt` is older than 23 hours.
+3. The send form, keyboard shortcut, and optimistic append logic are unchanged.
+4. Reply routing is entirely server-side — no new props on `ChatArea` are required.
+
+---
+
+## 7. New Dashboard Pages
+
+### Google Reviews
+
+```
+src/app/(dashboard)/reviews/
+  page.tsx          -- list google_locations for active org; trigger sync; preview reviews
+  actions.ts        -- server actions: addLocation, syncReviews, deleteLocation
+  loading.tsx
+```
+
+The admin enters a Google Place ID (or the page searches by name). On save, a server action calls the Places API with `X-Goog-FieldMask: id,displayName,formattedAddress,reviews` and upserts the results. The `GOOGLE_PLACES_API_KEY` never leaves server-side code.
+
+### Meta Channels
+
+```
+src/app/(dashboard)/integrations/meta/
+  page.tsx          -- list connected channels; "Connect with Facebook" button; disconnect
+  actions.ts        -- server actions: initiateOAuth (set CSRF cookie + redirect), disconnectChannel
+  loading.tsx
+```
+
+Placed under `/integrations/` because channel setup is a one-time credential act, parallel to the existing integrations page.
+
+---
+
+## 8. Google Reviews Widget Build Pipeline
+
+Mirrors the existing chat widget exactly:
+
+```
+src/reviews-widget/index.ts   -- standalone vanilla TypeScript; no React imports
+public/reviews-widget.js      -- esbuild output
+```
+
+Add to `package.json` scripts:
+
+```json
+"build:reviews-widget": "esbuild src/reviews-widget/index.ts --bundle --minify --platform=browser --format=iife --target=es2017 --outfile=public/reviews-widget.js",
+"build": "npm run build:widget && npm run build:reviews-widget && next build"
+```
+
+Embed pattern on client sites:
+
+```html
+<script src="https://operator.skale.club/reviews-widget.js" data-token="REVIEW_TOKEN" data-layout="carousel" async></script>
+```
+
+The widget reads `data-token` from its own `<script>` element, calls `/api/reviews/[token]` (CORS open), and renders the chosen layout.
+
+---
+
+## 9. Environment Variables
+
+```bash
+# Existing — unchanged
+ENCRYPTION_SECRET=...           # AES-256-GCM key used for meta_channels token encryption too
+
+# New — Google Reviews (server-only)
+GOOGLE_PLACES_API_KEY=...
+
+# New — Meta Messaging (server-only)
+META_APP_ID=...
+META_APP_SECRET=...             # Used for HMAC-SHA256 webhook verification
+META_VERIFY_TOKEN=...           # Arbitrary secret you configure in App Dashboard
+```
+
+None of these are prefixed `NEXT_PUBLIC_` — they are never sent to the browser.
+
+---
+
+## 10. Build Order and Phase Dependencies
+
+| Phase | Deliverable | Hard Dependency | Can Parallelize With |
+|-------|-------------|-----------------|----------------------|
+| 1 | Migrations 018 + 019 + 020 (all schema) | None | Nothing — must ship first |
+| 2 | Google Reviews admin page + Places API sync server action | Migration 018 | Phase 4 |
+| 3 | Google Reviews embed widget + `/api/reviews/[token]` route | Migration 018 | Phase 4 |
+| 4 | Meta OAuth flow (callback route, CSRF, meta_channels write) | Migration 019 | Phase 2, 3 |
+| 5 | Meta webhook receiver + inbound conversation creation | Migrations 019 + 020, Phase 4 tokens | — |
+| 6 | Multi-channel inbox UI (icons, filter bar, 24h warning) | Migration 020, Phase 5 | — |
+| 7 | Outbound reply routing to Meta Send API | Phases 4 + 5 + 6 | — |
+
+**Key dependency reasoning:**
+- All three migrations (018, 019, 020) must land together in Phase 1, even though Google Reviews and Meta have no runtime dependency on each other, because the `conversations.channel` column (020) is required by both the Meta webhook writer (Phase 5) and the inbox UI (Phase 6).
+- Phases 2 and 3 (Google Reviews) have zero runtime dependency on Phases 4–7 (Meta) and can be built and shipped independently after Phase 1.
+- Phase 7 (outbound replies) is the highest-risk change because it modifies the existing `POST /api/chat/conversations/[id]/messages` route that widget chat already uses. It must be the last Phase built and tested.
+
+---
+
+## 11. Backward-Compatibility Matrix
+
+| Existing behavior | Change | Risk | Mitigation |
+|-------------------|--------|------|------------|
+| Widget conversations (`channel = 'widget'`) | `ALTER TABLE ... ADD COLUMN channel DEFAULT 'widget'` | None | DEFAULT ensures all existing rows get correct value; no data migration |
+| `ConversationSummary` TypeScript type | New optional `channel?` and `channelMetadata?` fields | None | Optional fields; all existing callers compile without changes |
+| `ConversationList` filter logic | New channel filter added alongside existing status tabs | None | Additive; existing filter code path unchanged |
+| `ChatArea` send form | Reply routing logic lives in the API route, not the component | None | Component interface props unchanged |
+| `/api/chat/conversations` GET | New columns added to SELECT and mapped to response | None | Additive JSON fields; existing clients ignore unknown fields |
+| Widget embed (`/api/widget/[token]/config`) | No changes | None | Separate route, separate table |
+| Vapi webhook routes (`/api/vapi/*`) | No changes | None | Completely separate routes |
+| `public/widget.js` build | Build command unchanged; reviews widget is a separate output | None | Two separate esbuild commands |
+| `integrations` table | No changes | None | `meta_channels` is a separate table |
 
 ---
 
 ## Sources
 
-- **Vapi Server Events** (docs.vapi.ai/server-url/events) — Webhook payload formats for `tool-calls`, `end-of-call-report`, `status-update`, `knowledge-base-request`. Tool response format `{ results: [{ toolCallId, result }] }`. Confidence: HIGH
-- **Vapi Custom Tools** (docs.vapi.ai/tools/custom-tools) — How to configure custom tools with `server.url`. Confirmed webhook shape and response format. Confidence: HIGH
-- **Vapi Outbound Calling** (docs.vapi.ai/calls/outbound-calling) — API for creating outbound calls: `POST /call` with `assistantId`, `phoneNumberId`, `customer`. Batch calling via `customers` array. Scheduling via `schedulePlan`. Confidence: HIGH
-- **Vapi Outbound Campaigns** (docs.vapi.ai/outbound-campaigns/overview) — Campaign setup, dynamic variables, concurrency limits. Confidence: HIGH
-- **Vapi GoHighLevel Integration** (docs.vapi.ai/tools/go-high-level) — Native GHL tools (Get/Create Contact, Check Availability, Create Event). Confirmed they're single-action and can't replace VoiceOps Action Engine. Confidence: HIGH
-- **Supabase RLS** (supabase.com/docs/guides/auth/row-level-security) — Policy patterns, `auth.uid()` wrapping for performance, `security definer` helper functions, index requirements. Confidence: HIGH
-- **Supabase pgvector** (supabase.com/docs/guides/ai/vector-columns) — Vector column creation, match function pattern, similarity operators (`<=>` for cosine), RPC usage via `supabase.rpc()`. Confidence: HIGH
-- **Supabase Edge Functions** (supabase.com/docs/guides/functions) — Deno runtime, `npm:` imports, `EdgeRuntime.waitUntil()`, connection pooling. Confidence: HIGH
-- **Next.js Route Handlers** (nextjs.org/docs/app/building-your-application/routing/route-handlers) — `export const runtime = 'edge'` for Edge Functions, segment config options, Web API Request/Response. Confidence: HIGH
-- **Vercel Edge Runtime** (vercel.com/docs/functions/runtimes/edge) — V8-based, ~5ms cold start, 2MB bundle limit, Web Crypto support. Confidence: HIGH
-- **PROJECT.md** — Project context, requirements, constraints. Source of truth for tech stack decisions. Confidence: HIGH
-
----
-*Architecture research for: VoiceOps multi-tenant Vapi.ai operations platform*
-*Researched: 2026-03-30*
+- [Meta Webhooks for Messenger Platform](https://developers.facebook.com/docs/messenger-platform/webhooks) — GET verification handshake, X-Hub-Signature-256 format
+- [Instagram Platform Webhooks](https://developers.facebook.com/docs/instagram-platform/webhooks/) — IGSID, message event payload, entry.changes structure
+- [Meta Messenger Send API](https://developers.facebook.com/docs/messenger-platform/reference/send-api/) — reply endpoint format, messaging_type
+- [Meta Access Token Lifecycle](https://developers.facebook.com/docs/facebook-login/guides/access-tokens/get-long-lived/) — page tokens do not expire; user tokens are 60 days
+- [Google Places API (New) Place Details](https://developers.google.com/maps/documentation/places/web-service/place-details) — reviews field, X-Goog-FieldMask, 5-review limit
+- Codebase: migrations 011–017, chat components, vapi handlers, crypto.ts, widget build pipeline (all read directly)
