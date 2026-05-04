@@ -12,7 +12,22 @@ Operator is not meant to encode one universal agency workflow. It is the shared 
 
 That business logic may differ by client. The invariant is the reliability of the execution path, not that every tenant follows the same pattern.
 
-## Current State: v1.2 ✅ Shipped 2026-04-05
+## Current Milestone: v1.3 — Google Reviews Widget + Meta Messaging
+
+**Goal:** Add two platform-level reusable modules — an embeddable Google Reviews widget for client sites, and Instagram/Facebook Messenger as new channels inside the existing chat inbox.
+
+**Target features:**
+- Google Places API integration: register locations, capture up to 5 reviews, store in DB
+- Embeddable reviews widget (4 layouts, visual customization, unique token per location)
+- Meta OAuth: connect Facebook page → Messenger + linked Instagram account
+- Extend existing chat inbox to support "instagram" and "messenger" channel types
+- Channel icons, origin labels, filter bar, and correct reply routing per channel
+- Automation binding per Meta channel (reuse existing action engine)
+- Token expiry detection and Meta compliance (24h messaging window)
+
+---
+
+## Last Shipped: v1.2 ✅ Shipped 2026-04-05
 
 **Shipped in v1.2 (Operator + Embedded Chatbot):**
 - Platform name: Operator (branding, navigation, page titles)
@@ -141,4 +156,4 @@ That business logic may differ by client. The invariant is the reliability of th
 
 Update this file whenever deployment assumptions, validated requirements, or core constraints change.
 
-*Last updated: 2026-05-04 after v1.2 milestone*
+*Last updated: 2026-05-04 — v1.3 milestone started*
