@@ -1,5 +1,26 @@
 # Milestones
 
+## v1.2 Operator + Embedded Chatbot (Shipped: 2026-04-05)
+
+**Stats:** 6 phases, 21 plans, 122 commits, 171 files, +26,190 / −1,886 lines
+**Timeline:** 2026-04-03 → 2026-04-05 (2 days)
+**Stack:** Next.js 15, Redis, Supabase, esbuild, Shadow DOM, LangChain, SSE
+
+**Key accomplishments:**
+
+1. **Platform renamed Operator** — brand rename (VoiceOps → Leaidear → Operator) across all UI, navigation, page titles, and branding
+2. **Embeddable chat widget** — single `<script>` tag or GTM install, Shadow DOM CSS isolation, floating bubble, SSE streaming chat panel, localStorage session persistence
+3. **Streaming AI conversation engine** — SSE-based streamed responses with knowledge base pre-retrieval (LangChain SupabaseVectorStore) and action engine tool calls mid-stream (OpenRouter + Anthropic)
+4. **Dual-memory architecture** — Redis short-term session memory + Supabase long-term conversation history; `conversations`/`conversation_messages` tables with RLS
+5. **Admin widget configuration** — per-org widget appearance (name, color, welcome message), live preview, embed code generator, token regeneration
+6. **Chat inbox** — dual-polling ConversationList + ChatArea + AdminChatLayout for managing widget conversations; widget settings moved under Chat in sidebar
+
+**UAT:** All 6 phases browser-verified (Phases 4, 5, 6 with explicit human checkpoint)
+
+**Archives:** [v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md) | [v1.2-REQUIREMENTS.md](milestones/v1.2-REQUIREMENTS.md)
+
+---
+
 ## v1.1 Knowledge Base (Shipped: 2026-04-03)
 
 **Stats:** 1 commit, 18 files, +2191 / -334 lines

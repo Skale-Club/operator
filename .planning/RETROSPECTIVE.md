@@ -86,6 +86,54 @@
 
 ---
 
+## Milestone: v1.2 — Operator + Embedded Chatbot
+
+**Shipped:** 2026-04-05
+**Phases:** 6 | **Plans:** 21 | **Commits:** 122 | **Timeline:** 2 days (2026-04-03 → 2026-04-05)
+
+### What Was Built
+- Brand rename: VoiceOps → Leaidear → Operator across all UI, nav, page titles
+- Embeddable chat widget — single `<script>` / GTM, Shadow DOM CSS isolation, SSE streaming panel, localStorage session persistence
+- Streaming AI conversation engine — SSE protocol, knowledge base pre-retrieval, action engine tool calls mid-stream
+- Dual-memory architecture: Redis (active session) + Supabase `conversations`/`conversation_messages` (persistent history)
+- Admin widget configuration — per-org name, color, welcome message, live preview, embed code, token regen
+- Chat inbox — ConversationList, ChatArea, AdminChatLayout with dual polling; admin can read and reply
+
+### What Worked
+- Phase-gated approach meant widget Phase 4 could verify the exact asset built in Phase 2 without rework
+- Shadow DOM isolation solved host-site CSS bleed completely without iframe complexity
+- TDD-first RED scaffolds in Wave 0 caught API shape mismatches before implementation
+- Dual-memory split (Redis session / Supabase persistence) is clean and fits Vercel Hobby constraints well
+- Admin config storing widget settings on `organizations` table is simpler than a separate table and naturally RLS-scoped
+- Phase 6 (chat inbox) scope expansion was smooth — added mid-milestone from a user spec without disrupting earlier phases
+
+### What Was Inefficient
+- INBOX-01..07 requirements were referenced in ROADMAP.md but never added to REQUIREMENTS.md — discovered only at milestone archive
+- Brand rename happened in two steps (VoiceOps → Leaidear in Phase 1, Leaidear → Operator later) — could have been a single clean cut
+- `resizable.tsx` needed a compatibility wrapper for react-resizable-panels v4 API — caught at runtime not at plan time
+- Chat inbox polling uses setInterval rather than a proper subscription pattern — acceptable now but will need upgrading if volume increases
+
+### Patterns Established
+- Shadow DOM as the widget isolation strategy — prevents host-site CSS bleed, avoids iframe complexity
+- `ReadableStream` + SSE `event: token` / `event: done` protocol for widget streaming
+- Widget config stored on `organizations` table (not a separate entity) — works well for single-widget-per-org scope
+- Denormalized `last_message`/`last_message_at` on `conversations` for inbox preview without aggregation queries
+- esbuild IIFE pipeline for widget bundling — fast, zero-config, produces a single loadable file
+- Phase scope expansions can be accommodated cleanly when they have a well-written CONTEXT.md from the start
+
+### Key Lessons
+1. If a Phase N adds requirements to ROADMAP.md, update REQUIREMENTS.md in the same commit — don't defer
+2. Brand rename is highest risk for search-and-replace errors — do it once, in one phase, with a test that catches regressions
+3. Human browser verification checkpoints (Phases 4, 5, 6) are worth the time — they caught real issues before milestone close
+4. Widget embed architecture (Shadow DOM + IIFE + SSE) is a reusable pattern — document it once and reference in future chat phases
+
+### Cost Observations
+- 122 commits across 2 days — higher velocity than v1.0 (75 commits/day vs 24/day)
+- 6 phases including one scope-expanded late addition (Phase 6)
+- Notable: esbuild pipeline let widget code be TypeScript while producing vanilla JS — no webpack config overhead
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -94,6 +142,7 @@
 |-----------|----------|--------|------------|
 | v1.0 | 4 days | 6 | Initial build — established all patterns |
 | v1.1 | 1 session | 4 (inline) | LangChain upgrade — single atomic delivery |
+| v1.2 | 2 days | 6 | Widget + chat inbox — TDD RED scaffolds, human verification checkpoints |
 
 ### Cumulative Quality
 
@@ -101,8 +150,11 @@
 |-----------|-------|------------|-------------|
 | v1.0 | 38 passing | 132 todos | 42/42 req wired |
 | v1.1 | 10/10 UAT | — | Code audit pass |
+| v1.2 | Wave 0 RED → green per phase | — | 21/21 plans + 3 human browser checkpoints |
 
 ### Top Lessons (Verified Across Milestones)
 
 1. Track requirements completion incrementally — not at milestone end
 2. RLS-first multi-tenancy prevents entire categories of bugs
+3. Human browser verification checkpoints catch real issues that unit tests miss — include for any user-facing UI phase
+4. Shadow DOM for embedded widgets is the right isolation primitive — avoid iframes unless sandboxing is needed
