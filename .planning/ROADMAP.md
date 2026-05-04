@@ -55,7 +55,7 @@ See [milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md)
 
 ### Phases
 
-- [x] **Phase 7: DB Foundation** — All three migrations: google_locations/google_reviews, meta_channels, conversations channel columns (completed 2026-05-04)
+- [x] **Phase 7: DB Foundation** — All three migrations: google_locations/google_reviews, meta_channels, conversations channel columns (completed 2026-05-04)
 - [ ] **Phase 8: Reviews Admin** — Location registration, Google Places API sync, admin dashboard with sync status
 - [ ] **Phase 9: Reviews Widget** — esbuild bundle, 4 layouts, public token endpoint, embed code generation
 - [ ] **Phase 10: Meta OAuth** — Facebook Login flow, full token exchange chain, channel settings page
@@ -92,8 +92,11 @@ Plans:
   3. Admin triggers a second sync within 24 hours and sees a rejection message — the system enforces the minimum 24h cooldown per location
   4. Dashboard shows last sync date, review count, and any API error message (e.g. invalid Place ID) per location
   5. The Google Places API key is never exposed in client-side network requests; all API calls occur server-side via server actions
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 3 plans
+Plans:
+- [ ] 08-01-PLAN.md — RED test stubs for addLocation, syncReviews, cooldown (Wave 0)
+- [ ] 08-02-PLAN.md — server actions (addLocation, syncReviews, deleteLocation) + sidebar nav + google-logo.svg (Wave 1)
+- [ ] 08-03-PLAN.md — /reviews page, loading.tsx, AddLocationForm, LocationCard, SyncButton components (Wave 2)
 
 ### Phase 9: Reviews Widget
 **Goal**: Admin can generate an embeddable script tag that renders a branded Google Reviews widget on any HTML page without auth or live API calls at render time
@@ -165,7 +168,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 7. DB Foundation | 2/3 | Complete    | 2026-05-04 |
-| 8. Reviews Admin | 0/? | Not started | — |
+| 8. Reviews Admin | 0/3 | Not started | — |
 | 9. Reviews Widget | 0/? | Not started | — |
 | 10. Meta OAuth | 0/? | Not started | — |
 | 11. Meta Webhook | 0/? | Not started | — |
@@ -174,4 +177,4 @@ Plans:
 
 ---
 
-*Last updated: 2026-05-04 — Phase 7 planned (3 plans, 2 waves)*
+*Last updated: 2026-05-04 — Phase 8 planned (3 plans, 3 waves)*
