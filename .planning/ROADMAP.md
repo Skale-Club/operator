@@ -78,8 +78,8 @@ See [milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md)
   4. `npx supabase db push` completes with no errors and `npm run build` passes with updated TypeScript types
 **Plans**: 3 plans
 Plans:
-- [ ] 07-01-PLAN.md — migrations 018 + 019 (google_locations, google_reviews, meta_channels tables)
-- [ ] 07-02-PLAN.md — migration 020 (add channel columns to conversations)
+- [x] 07-01-PLAN.md — migrations 018 + 019 (google_locations, google_reviews, meta_channels tables)
+- [x] 07-02-PLAN.md — migration 020 (add channel columns to conversations)
 - [ ] 07-03-PLAN.md — update TypeScript types in src/types/database.ts
 
 ### Phase 8: Reviews Admin
@@ -164,7 +164,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 7. DB Foundation | 0/3 | Not started | — |
+| 7. DB Foundation | 2/3 | In Progress|  |
 | 8. Reviews Admin | 0/? | Not started | — |
 | 9. Reviews Widget | 0/? | Not started | — |
 | 10. Meta OAuth | 0/? | Not started | — |
