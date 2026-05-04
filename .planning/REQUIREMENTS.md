@@ -96,33 +96,33 @@
 
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| GREV-01 | — | Not started |
-| GREV-02 | — | Not started |
-| GREV-03 | — | Not started |
-| GREV-04 | — | Not started |
-| GREV-05 | — | Not started |
-| GWDGT-01 | — | Not started |
-| GWDGT-02 | — | Not started |
-| GWDGT-03 | — | Not started |
-| GWDGT-04 | — | Not started |
-| GWDGT-05 | — | Not started |
-| GWDGT-06 | — | Not started |
-| META-01 | — | Not started |
-| META-02 | — | Not started |
-| META-03 | — | Not started |
-| META-04 | — | Not started |
-| META-05 | — | Not started |
-| META-06 | — | Not started |
-| METAEV-01 | — | Not started |
-| METAEV-02 | — | Not started |
-| METAEV-03 | — | Not started |
-| METAEV-04 | — | Not started |
-| METAEV-05 | — | Not started |
-| METAINBOX-01 | — | Not started |
-| METAINBOX-02 | — | Not started |
-| METAINBOX-03 | — | Not started |
-| METAINBOX-04 | — | Not started |
-| METAINBOX-05 | — | Not started |
-| METAINBOX-06 | — | Not started |
+| GREV-01 | Phase 8 | Not started |
+| GREV-02 | Phase 8 | Not started |
+| GREV-03 | Phase 8 | Not started |
+| GREV-04 | Phase 8 | Not started |
+| GREV-05 | Phase 8 | Not started |
+| GWDGT-01 | Phase 9 | Not started |
+| GWDGT-02 | Phase 9 | Not started |
+| GWDGT-03 | Phase 9 | Not started |
+| GWDGT-04 | Phase 9 | Not started |
+| GWDGT-05 | Phase 9 | Not started |
+| GWDGT-06 | Phase 9 | Not started |
+| META-01 | Phase 10 | Not started |
+| META-02 | Phase 10 | Not started |
+| META-03 | Phase 10 | Not started |
+| META-04 | Phase 10 | Not started |
+| META-05 | Phase 10 | Not started |
+| META-06 | Phase 10 | Not started |
+| METAEV-01 | Phase 11 | Not started |
+| METAEV-02 | Phase 11 | Not started |
+| METAEV-03 | Phase 11 | Not started |
+| METAEV-04 | Phase 11 | Not started |
+| METAEV-05 | Phase 11 | Not started |
+| METAINBOX-01 | Phase 12 | Not started |
+| METAINBOX-02 | Phase 12 | Not started |
+| METAINBOX-03 | Phase 13 | Not started |
+| METAINBOX-04 | Phase 12 | Not started |
+| METAINBOX-05 | Phase 12 | Not started |
+| METAINBOX-06 | Phase 12 | Not started |
 
-**Total: 27/27 requirements — all pending**
+**Total: 27/27 requirements mapped — all pending**
