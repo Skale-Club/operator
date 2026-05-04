@@ -42,9 +42,7 @@ Declared values (multiples of 4 only, matching Tailwind default scale):
 | 3xl | 64px | Not used in this phase |
 
 Exceptions:
-- Page header bottom margin: `mt-0.5` (2px) matches existing `widget/page.tsx` and RESEARCH.md pattern exactly — do not change.
 - Card dividers inside location list: `divide-y` border (1px) — not a spacing token, a separator.
-- Star icon display in review rows: `gap-0.5` (2px) between individual star glyphs only.
 
 ---
 
@@ -53,7 +51,7 @@ Exceptions:
 | Role | Size | Weight | Line Height | Tailwind Classes |
 |------|------|--------|-------------|-----------------|
 | Page heading | 18px (text-lg) | 600 (font-semibold) | 1.75rem | `text-lg font-semibold` |
-| Card / section label | 14px (text-sm) | 500 (font-medium) | 1.25rem | `text-sm font-medium` |
+| Card / section label | 14px (text-sm) | 400 (font-normal) | 1.25rem | `text-sm font-normal` |
 | Body / description | 14px (text-sm) | 400 (font-normal) | 1.25rem | `text-sm text-muted-foreground` |
 | Micro / meta | 12px (text-xs) | 400 (font-normal) | 1rem | `text-xs text-muted-foreground` |
 
@@ -81,6 +79,8 @@ All other interactive elements (cancel, secondary links, cooldown-disabled sync)
 Error/warning surface: Use `bg-destructive/10 text-destructive border-destructive/20` for inline error display (last_fetch_error). Same pattern as existing `integrations-table.tsx` badge pattern.
 
 Attribution badge ("Powered by Google"): `text-xs text-muted-foreground` with the official Google logo SVG served from `/public/google-logo.svg`. No custom color override.
+
+Primary focal point: "Add Location" CTA button (accent color, top of content area).
 
 ---
 
@@ -121,7 +121,7 @@ Mirrors `widget/page.tsx` exactly:
 <div className="p-6 space-y-5">
   <div>  {/* Page header */}
     <h1 className="text-lg font-semibold">Reviews</h1>
-    <p className="text-sm text-muted-foreground mt-0.5">...</p>
+    <p className="text-sm text-muted-foreground mt-1">...</p>
   </div>
 
   <AddLocationForm />          {/* collapsible Card or always-open Card */}
@@ -138,8 +138,8 @@ Each registered location renders as a `rounded-md border` card (matches `integra
 
 ```
 LocationCard (rounded-md border)
-├── Card header row (px-4 py-3.5, flex justify-between items-start)
-│   ├── LEFT: MapPin icon + name (text-sm font-medium) + client_name badge
+├── Card header row (px-4 py-3, flex justify-between items-start)
+│   ├── LEFT: MapPin icon + name (text-sm font-normal) + client_name badge
 │   │         address (text-xs text-muted-foreground)
 │   │         category (text-xs text-muted-foreground, if present)
 │   └── RIGHT: SyncButton + DeleteButton
@@ -155,7 +155,7 @@ LocationCard (rounded-md border)
     Each review: px-4 py-3, flex gap-3
     ├── Avatar (h-8 w-8, AvatarImage from author_photo_url, AvatarFallback initials)
     └── Review content column
-        ├── Author name (text-sm font-medium) + star rating row (5 Star icons, 12px)
+        ├── Author name (text-sm font-normal) + star rating row (5 Star icons, 12px)
         ├── relative_time (text-xs text-muted-foreground)
         └── review_text (text-sm, line-clamp-3)
         └── "View on Google" link (text-xs text-primary underline, opens in new tab)
@@ -298,7 +298,7 @@ Cooldown detection: computed client-side from `fetched_at` prop passed to `SyncB
 - Filled stars: `fill-current text-yellow-400` (using Tailwind `yellow-400` — the one exception to semantic-only colors, matching universal star rating convention)
 - Empty stars: `text-muted` (unfilled, no fill)
 - Icon size: `h-3 w-3`
-- Gap between stars: `gap-0.5`
+- Gap between stars: `gap-1` (4px — stars at 12px fit cleanly with 4px gap)
 - Rating is integer 1–5 from DB; no half-star display
 
 ---
@@ -325,7 +325,7 @@ Mirrors `widget/loading.tsx` exactly — spacing, structure, and `Skeleton` usag
 <div className="p-6 space-y-5">
   <div>
     <Skeleton className="h-5 w-24" />         {/* page heading */}
-    <Skeleton className="h-4 w-80 mt-1.5" />  {/* subheading */}
+    <Skeleton className="h-4 w-80 mt-1" />    {/* subheading */}
   </div>
   <Skeleton className="h-40 w-full rounded-md" />  {/* AddLocationForm card */}
   <div className="space-y-3">
