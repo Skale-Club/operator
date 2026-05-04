@@ -142,7 +142,10 @@ Plans:
   3. A test Messenger message sent to the connected page appears in the chat inbox within 5 seconds with `channel = 'messenger'`
   4. When an automation with a keyword trigger is bound to the channel and the inbound message contains that keyword, the automation fires and `executeAction` is invoked; the response is persisted to the conversation
   5. An automated reply attempt on a conversation whose last inbound message is older than 24 hours is blocked — no outbound message is sent and the admin sees the conversation marked as outside the reply window
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 11-01-PLAN.md — migration 022 (last_inbound_at + meta_channels.config) + TypeScript types + RED test stubs (Wave 0)
+- [ ] 11-02-PLAN.md — /api/meta/webhook route (GET + POST) + processMetaEvent lib + tests GREEN (Wave 1)
 
 ### Phase 12: Multi-Channel Inbox UI
 **Goal**: The existing chat inbox correctly identifies the origin channel of every conversation so admins can filter, recognize, and manage widget, Instagram, and Messenger conversations from one view
@@ -179,10 +182,10 @@ Plans:
 | 8. Reviews Admin | 3/3 | Complete    | 2026-05-04 |
 | 9. Reviews Widget | 3/3 | Complete    | 2026-05-04 |
 | 10. Meta OAuth | 3/3 | Complete | 2026-05-04 |
-| 11. Meta Webhook | 0/? | Not started | — |
+| 11. Meta Webhook | 0/2 | Not started | — |
 | 12. Multi-Channel Inbox UI | 0/? | Not started | — |
 | 13. Outbound Reply Routing | 0/? | Not started | — |
 
 ---
 
-*Last updated: 2026-05-04 - Phase 10 complete, Phase 11 next*
+*Last updated: 2026-05-04 - Phase 11 planned, 2 plans created*
