@@ -173,7 +173,10 @@ Plans:
   3. Admin sends a reply in a widget conversation; behavior is identical to pre-v1.3 (persisted to DB, SSE polling picks it up) — existing widget chat is not disrupted
   4. A reply attempt on a channel whose token has been revoked returns an error in the UI rather than silently dropping the message; the admin sees a reconnect prompt
   5. Unit tests assert that for each of the three channel values (`widget`, `messenger`, `instagram`), the correct send function is invoked and no other channel's send path is reached
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 13-01-PLAN.md — sendMetaMessage lib + RED test stubs (Wave 0)
+- [ ] 13-02-PLAN.md — Modify POST handler to branch on channel + tests GREEN + build gate (Wave 1)
 
 ---
 
@@ -187,8 +190,8 @@ Plans:
 | 10. Meta OAuth | 3/3 | Complete | 2026-05-04 |
 | 11. Meta Webhook | 2/2 | Complete    | 2026-05-05 |
 | 12. Multi-Channel Inbox UI | 2/2 | Complete    | 2026-05-05 |
-| 13. Outbound Reply Routing | 0/? | Not started | — |
+| 13. Outbound Reply Routing | 0/2 | Not started | — |
 
 ---
 
-*Last updated: 2026-05-05 - Phase 12 planned, 2 plans created*
+*Last updated: 2026-05-05 - Phase 13 planned, 2 plans created*
