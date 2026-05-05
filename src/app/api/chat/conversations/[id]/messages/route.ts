@@ -3,6 +3,8 @@
 import { createClient, getUser } from '@/lib/supabase/server'
 import { z } from 'zod'
 import type { ConversationMessage } from '@/types/chat'
+import { decrypt } from '@/lib/crypto'
+import { sendMetaMessage } from '@/lib/meta/send-message'
 
 export const runtime = 'nodejs'
 
@@ -99,7 +101,7 @@ export async function POST(
   // Verify conversation belongs to org via RLS
   const { data: conv } = await supabase
     .from('conversations')
-    .select('id, org_id')
+    .select('id, org_id, channel, channel_metadata')
     .eq('id', id)
     .single()
 
@@ -138,6 +140,46 @@ export async function POST(
     .from('conversations')
     .update({ last_message: content, last_message_at: msg.created_at, updated_at: new Date().toISOString() })
     .eq('id', id)
+
+  // --- Outbound channel routing (METAINBOX-03) ---
+  // DB insert and last_message update are complete for ALL channels at this point.
+  // Widget: no outbound call needed — SSE picks up the persisted message.
+  // Messenger / Instagram: call Meta Send API synchronously so admin gets delivery confirmation.
+  if (conv.channel === 'messenger' || conv.channel === 'instagram') {
+    const metadata = conv.channel_metadata as Record<string, string>
+    const pageId = metadata.page_id
+
+    const { data: metaChannel } = await supabase
+      .from('meta_channels')
+      .select('encrypted_page_access_token')
+      .eq('page_id', pageId)
+      .eq('channel_type', conv.channel)
+      .eq('is_active', true)
+      .maybeSingle()
+
+    if (!metaChannel) {
+      return Response.json({ error: 'channel_not_configured' }, { status: 400 })
+    }
+
+    const pageToken = await decrypt(metaChannel.encrypted_page_access_token)
+
+    // messenger → sender_id, instagram → igsid (per process-event.ts lines 93-96)
+    // NOTE: Migration 020 SQL comment says "psid" — this is WRONG. Use sender_id.
+    const recipientId =
+      conv.channel === 'instagram'
+        ? (metadata.igsid ?? '')
+        : (metadata.sender_id ?? '')
+
+    const result = await sendMetaMessage(pageToken, recipientId, content)
+
+    if ('error' in result) {
+      if (result.code === 190) {
+        return Response.json({ error: 'token_revoked', channel: conv.channel }, { status: 400 })
+      }
+      return Response.json({ error: 'meta_send_failed', message: result.error }, { status: 502 })
+    }
+  }
+  // --- End outbound channel routing ---
 
   const message: ConversationMessage = {
     id: msg.id,
