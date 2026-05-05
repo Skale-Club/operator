@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.3
 milestone_name: Google Reviews Widget + Meta Messaging
 status: verifying
-stopped_at: Completed 13-outbound-reply-routing-02-PLAN.md
-last_updated: "2026-05-05T02:20:42.091Z"
+stopped_at: Completed 15-refactor-01-PLAN.md
+last_updated: "2026-05-05T03:36:40.320Z"
 last_activity: 2026-05-05
 progress:
   total_phases: 7
@@ -22,7 +22,7 @@ Phase: 13
 Plan: Not started
 Status: Phase complete — ready for verification
 Last activity: 2026-05-05
-Stopped at: Completed 13-outbound-reply-routing-02-PLAN.md
+Stopped at: Completed 15-refactor-01-PLAN.md
 
 ## Progress Bar
 
@@ -57,6 +57,7 @@ See `.planning/PROJECT.md` (updated 2026-05-04)
 | 11 | Meta Webhook | Complete |
 | 12 | Multi-Channel Inbox UI | Complete |
 | 13 | Outbound Reply Routing | Not started |
+| 15 | Refactor (chat stream modularization) | Plan 01 complete |
 
 ## Accumulated Context
 
@@ -78,6 +79,7 @@ See `.planning/PROJECT.md` (updated 2026-05-04)
 
 | Decision | Status |
 |----------|--------|
+| Split src/lib/chat/stream.ts (480 LOC) into orchestrator + 4 sub-modules under src/lib/chat/stream/ | Decided — Phase 15-01; unified duplicated TOOL_SCHEMAS const; type-only cross-imports avoid runtime cycles; no caller changes |
 | All three migrations land together in Phase 7 | Decided — unblocks parallel Google and Meta work |
 | Phases 8-9 (Google Reviews) and Phase 10 (Meta OAuth) can build in parallel after Phase 7 | Decided |
 | Modify existing reply route (branch on channel) rather than create parallel route | Open — see research/SUMMARY.md Decision 4 |
@@ -93,6 +95,7 @@ See `.planning/PROJECT.md` (updated 2026-05-04)
 
 ## Latest Completed Work
 
+- Phase 15-01 (refactor) complete on 2026-05-05 — modularized src/lib/chat/stream.ts: 480-LOC monolith → 152-LOC orchestrator + 4 sub-modules (encoder, tool-schemas, openrouter, anthropic) under src/lib/chat/stream/; TOOL_SCHEMAS deduplicated; build passes; no caller changes; 142/3 vitest pass/fail (was 128/17 baseline — 14 widget tests went green after build:widget regenerated public/widget.js; remaining 3 failures pre-existing and unrelated)
 - Phase 12 complete on 2026-05-04
 - Created `src/components/chat/channel-icon.tsx` with ChannelIcon (Globe/Instagram/Messenger SVG) and `applyChannelAndBotFilter` pure helper
 - Extended ConversationList with channel + bot-state filter pills (client-side, no refetch) and channel icon in each row
