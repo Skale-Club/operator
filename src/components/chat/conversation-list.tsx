@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Search, Archive, ArchiveRestore, Trash2, Settings2 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import Link from 'next/link'
@@ -44,11 +44,19 @@ export function ConversationList({
   onConversationDeleted,
 }: ConversationListProps) {
   const [search, setSearch] = useState('')
+  // Debounced search query — 300ms after the user stops typing.
+  // Filtering uses debouncedSearch so the in-memory filter doesn't recompute on every keystroke.
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [activeTab, setActiveTab] = useState<TabValue>('open')
   const [channelFilter, setChannelFilter] = useState<ChannelFilter>('all')
   const [botStateFilter, setBotStateFilter] = useState<BotStateFilter>('all')
   const [isStatusLoading, setIsStatusLoading] = useState(false)
   const [isDeleteLoading, setIsDeleteLoading] = useState(false)
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 300)
+    return () => clearTimeout(timer)
+  }, [search])
 
   const filtered = conversations.filter((c) => {
     // Tab filter
@@ -59,9 +67,9 @@ export function ConversationList({
     const passesChannelBot = applyChannelAndBotFilter([c], channelFilter, botStateFilter)
     if (passesChannelBot.length === 0) return false
 
-    // Search filter
-    if (search.trim()) {
-      const q = search.toLowerCase()
+    // Search filter — uses debounced query (300ms) for performance with large lists
+    if (debouncedSearch.trim()) {
+      const q = debouncedSearch.toLowerCase()
       const name = (c.visitorName ?? '').toLowerCase()
       const email = (c.visitorEmail ?? '').toLowerCase()
       const msg = (c.lastMessage ?? '').toLowerCase()
