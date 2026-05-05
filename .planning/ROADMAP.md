@@ -175,7 +175,7 @@ Plans:
   5. Unit tests assert that for each of the three channel values (`widget`, `messenger`, `instagram`), the correct send function is invoked and no other channel's send path is reached
 **Plans**: 2 plans
 Plans:
-- [ ] 13-01-PLAN.md — sendMetaMessage lib + RED test stubs (Wave 0)
+- [x] 13-01-PLAN.md — sendMetaMessage lib + RED test stubs (Wave 0)
 - [ ] 13-02-PLAN.md — Modify POST handler to branch on channel + tests GREEN + build gate (Wave 1)
 
 ---
@@ -190,7 +190,7 @@ Plans:
 | 10. Meta OAuth | 3/3 | Complete | 2026-05-04 |
 | 11. Meta Webhook | 2/2 | Complete    | 2026-05-05 |
 | 12. Multi-Channel Inbox UI | 2/2 | Complete    | 2026-05-05 |
-| 13. Outbound Reply Routing | 0/2 | Not started | — |
+| 13. Outbound Reply Routing | 1/2 | In Progress|  |
 
 ---
 
