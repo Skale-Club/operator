@@ -5,7 +5,8 @@
 - ✅ **v1.0 MVP** — 6 phases, 30 plans (shipped 2026-04-03)
 - ✅ **v1.1 Knowledge Base** — LangChain vector pipeline (shipped 2026-04-03)
 - ✅ **v1.2 Operator + Embedded Chatbot** — 6 phases, 21 plans (shipped 2026-04-05)
-- 🔲 **v1.3 Google Reviews Widget + Meta Messaging** — 7 phases (phases 7–13, active)
+- ✅ **v1.3 Google Reviews Widget + Meta Messaging** — 7 phases (phases 7–13, shipped 2026-05-05)
+- 🚧 **v1.4 Chat System Refactor** — 5 phases (phases 14–18, active)
 
 ## Shipped
 
@@ -49,149 +50,109 @@ See [milestones/v1.2-ROADMAP.md](milestones/v1.2-ROADMAP.md)
 
 </details>
 
+<details>
+<summary>✅ v1.3 Google Reviews Widget + Meta Messaging — SHIPPED 2026-05-05</summary>
+
+See [milestones/v1.3-ROADMAP.md](milestones/v1.3-ROADMAP.md)
+
+- [x] Phase 7: DB Foundation — Migrations 018/019/020 (google_locations, meta_channels, channel columns) (completed 2026-05-04)
+- [x] Phase 8: Reviews Admin — Location registration, Google Places API sync, dashboard (completed 2026-05-04)
+- [x] Phase 9: Reviews Widget — Embeddable script, 4 layouts, public token endpoint (completed 2026-05-04)
+- [x] Phase 10: Meta OAuth — Facebook Login, full token exchange chain, channel settings (completed 2026-05-04)
+- [x] Phase 11: Meta Webhook — Inbound event receiver, conversation creation, 24h enforcement (completed 2026-05-05)
+- [x] Phase 12: Multi-Channel Inbox UI — Channel icons, filter pills, header, banners, bot pause/resume (completed 2026-05-05)
+- [x] Phase 13: Outbound Reply Routing — Branch reply route by channel (Messenger/Instagram/widget) (completed 2026-05-05)
+
+</details>
+
 ---
 
-## v1.3 Google Reviews Widget + Meta Messaging
+## v1.4 Chat System Refactor
+
+**Milestone Goal:** Improve maintainability and UX of the chat system by splitting oversized modules, clarifying data boundaries, adding real-time updates to the admin inbox, fixing broken tests, and adding conversation search.
 
 ### Phases
 
-- [x] **Phase 7: DB Foundation** — All three migrations: google_locations/google_reviews, meta_channels, conversations channel columns (completed 2026-05-04)
-- [x] **Phase 8: Reviews Admin** — Location registration, Google Places API sync, admin dashboard with sync status (completed 2026-05-04)
-- [x] **Phase 9: Reviews Widget** — esbuild bundle, 4 layouts, public token endpoint, embed code generation (completed 2026-05-04)
-- [x] **Phase 10: Meta OAuth** — Facebook Login flow, full token exchange chain, channel settings page (completed 2026-05-04)
-- [x] **Phase 11: Meta Webhook** — Inbound event receiver, conversation creation, automation binding, 24h window enforcement (completed 2026-05-05)
-- [x] **Phase 12: Multi-Channel Inbox UI** — Channel icons, filter bar, conversation header, 24h warning, bot pause/resume (completed 2026-05-05)
-- [x] **Phase 13: Outbound Reply Routing** — Branch existing reply route by channel, send to Messenger/Instagram Send API (completed 2026-05-05)
+- [ ] **Phase 14: TESTFIX** — Restore a green test baseline before any refactoring touches production code
+- [ ] **Phase 15: REFACTOR** — Split `stream.ts` (480 lines) and `chat-area.tsx` (408 lines) into focused modules with no behavioral change
+- [ ] **Phase 16: BOUNDARY** — Document the `chat_sessions` vs `conversations` data boundary so future readers find it from the source
+- [ ] **Phase 17: REALTIME** — Replace dual-polling in the admin inbox with Supabase Realtime postgres_changes subscriptions
+- [ ] **Phase 18: SEARCH** — Add debounced free-text conversation search above the inbox list
 
 ---
 
 ## Phase Details
 
-### Phase 7: DB Foundation
-**Goal**: All schema changes for v1.3 land in production so that no feature phase is blocked by a missing table or column
-**Depends on**: Nothing (first phase of v1.3)
-**Requirements**: *(No direct requirements — structural prerequisite for all v1.3 work)*
+### Phase 14: TESTFIX
+**Goal**: A clean, green test baseline so subsequent refactor and feature phases can detect regressions without false negatives from pre-existing failures
+**Depends on**: Nothing (first phase of v1.4 — intentionally first so all later phases run on green)
+**Requirements**: TESTFIX-01, TESTFIX-02
 **Success Criteria** (what must be TRUE):
-  1. Migration 018 applies cleanly: `google_locations` and `google_reviews` tables exist with RLS policies and `review_token`, `fetched_at`, `google_review_id` columns present
-  2. Migration 019 applies cleanly: `meta_channels` table exists with RLS, `encrypted_page_access_token`, `channel_type`, `webhook_verified` columns present
-  3. Migration 020 applies cleanly: `conversations` table has `channel TEXT DEFAULT 'widget'` and `channel_metadata JSONB DEFAULT '{}'` columns; all existing conversation rows have `channel = 'widget'` with no manual data migration
-  4. `npx supabase db push` completes with no errors and `npm run build` passes with updated TypeScript types
-**Plans**: 3 plans
-Plans:
-- [x] 07-01-PLAN.md — migrations 018 + 019 (google_locations, google_reviews, meta_channels tables)
-- [x] 07-02-PLAN.md — migration 020 (add channel columns to conversations)
-- [x] 07-03-PLAN.md — update TypeScript types in src/types/database.ts
+  1. `npx vitest run tests/chat-persist.test.ts` exits with code 0 — both previously-failing tests pass against the current `conversations`/`conversation_messages` schema
+  2. The full vitest suite (`npx vitest run`) reports zero failures unrelated to in-progress v1.4 work; the ACTN-02 case in `tests/action-engine.test.ts` is either fixed or formally retired with an inline comment explaining the rationale
+  3. `npm run build` continues to pass with no new type errors introduced by test fixes
+**Plans**: TBD
 
-### Phase 8: Reviews Admin
-**Goal**: Admin can register Google locations and see up to 5 live reviews pulled from the Google Places API, with sync status visible from the dashboard
-**Depends on**: Phase 7
-**Requirements**: GREV-01, GREV-02, GREV-03, GREV-04, GREV-05
+### Phase 15: REFACTOR
+**Goal**: The two largest chat modules are decomposed into single-concern files with no visible change to widget streaming or admin chat rendering
+**Depends on**: Phase 14
+**Requirements**: REFACTOR-01, REFACTOR-02, REFACTOR-03
 **Success Criteria** (what must be TRUE):
-  1. Admin can register a location by entering a Place ID; after save, the location appears in the `/reviews` dashboard with name, address, and client label
-  2. Admin clicks "Sync Reviews" and within 10 seconds the dashboard shows up to 5 reviews with author names, star ratings, and a "Last synced" timestamp
-  3. Admin triggers a second sync within 24 hours and sees a rejection message — the system enforces the minimum 24h cooldown per location
-  4. Dashboard shows last sync date, review count, and any API error message (e.g. invalid Place ID) per location
-  5. The Google Places API key is never exposed in client-side network requests; all API calls occur server-side via server actions
-**Plans**: 3 plans
-Plans:
-- [x] 08-01-PLAN.md — RED test stubs for addLocation, syncReviews, cooldown (Wave 0)
-- [x] 08-02-PLAN.md — server actions (addLocation, syncReviews, deleteLocation) + sidebar nav + google-logo.svg (Wave 1)
-- [x] 08-03-PLAN.md — /reviews page, loading.tsx, AddLocationForm, LocationCard, SyncButton components (Wave 2)
-
-### Phase 9: Reviews Widget
-**Goal**: Admin can generate an embeddable script tag that renders a branded Google Reviews widget on any HTML page without auth or live API calls at render time
-**Depends on**: Phase 7
-**Requirements**: GWDGT-01, GWDGT-02, GWDGT-03, GWDGT-04, GWDGT-05, GWDGT-06
-**Success Criteria** (what must be TRUE):
-  1. Admin copies an embed `<script>` tag from the dashboard and pastes it into a plain HTML file; the widget loads reviews with no console errors and no host-site CSS interference
-  2. Widget renders in all 4 layouts (carousel, grid, list, compact) selectable via `data-layout` attribute; layout is visible and functional without a page reload
-  3. Admin configures primary color, star color, and dark/light theme in the dashboard; the embedded widget reflects those settings on next page load
-  4. Widget displays "Powered by Google" attribution on every layout and includes author names adjacent to their review text
-  5. When the token is invalid or reviews data is unavailable, the widget silently disappears — no visible error, no broken layout, no JS errors thrown to the host page
-**Plans**: 3 plans
-Plans:
-- [x] 09-01-PLAN.md - RED test stubs for public route, widget bundle, and built asset (Wave 0)
-- [x] 09-02-PLAN.md - /api/reviews/[token] public route + reviews widget IIFE + build pipeline (Wave 1)
-- [x] 09-03-PLAN.md - /reviews dashboard embed configurator, preview, and copy snippet flow (Wave 2)
+  1. `src/lib/chat/stream.ts` is replaced by focused modules (SSE encoder, OpenRouter provider, Anthropic provider, RAG/knowledge lookup, action engine dispatch) — each new file is under 200 lines and has a single concern; the public `createChatStream` entry point keeps the same signature so callers are unchanged
+  2. `src/components/chat/chat-area.tsx` is replaced by a thin composition of `ChatHeader`, `MessageList`, `MessageBanner`, and `MessageComposer` components — each new component is under 150 lines and the rendered output is visually identical to pre-refactor (verified by manual inbox check)
+  3. The full vitest suite remains green, `npm run build` passes, and a live manual smoke test of the embedded widget (send message, receive streamed reply, trigger a tool call) shows no behavioral change versus pre-refactor
+**Plans**: TBD
 **UI hint**: yes
 
-### Phase 10: Meta OAuth
-**Goal**: Admin can connect a Facebook Page (and its linked Instagram account) to the platform via Meta OAuth, with encrypted tokens stored and connection status visible in settings
-**Depends on**: Phase 7
-**Requirements**: META-01, META-02, META-03, META-04, META-05, META-06
+### Phase 16: BOUNDARY
+**Goal**: A future contributor can understand within minutes when `chat_sessions` is written, when `conversations` is written, and how a widget message ends up in the admin inbox — without reading the entire chat codebase
+**Depends on**: Phase 14 (can run in parallel with Phases 15 and 17 — touches docs and comments only)
+**Requirements**: BOUNDARY-01, BOUNDARY-02
 **Success Criteria** (what must be TRUE):
-  1. Admin clicks "Connect with Facebook," completes the OAuth flow, and returns to `/integrations/meta` where the connected Facebook Page and its linked Instagram account are listed with active status
-  2. The stored token is a Page Access Token (not a short-lived user token); the full three-step exchange chain (short-lived → long-lived → page token) completes successfully before any token is written to the database
-  3. Admin can disconnect a channel; after disconnect, the channel disappears from the connected list and its token row is removed from `meta_channels`
-  4. When a token has been revoked (simulated via developer tools), the settings page shows a reconnect prompt rather than showing the channel as active
-  5. Admin can assign an existing automation to an Instagram DM channel and independently assign a different automation to the Messenger channel for the same page
-**Plans**: 3 plans
-Plans:
-- [x] 10-01-PLAN.md - RED test stubs for Meta OAuth actions, callback route, and settings UI (Wave 0)
-- [x] 10-02-PLAN.md - Shared Meta OAuth helpers + connect/disconnect actions + callback token exchange route (Wave 1)
-- [x] 10-03-PLAN.md - /integrations/meta dashboard UI, reconnect/disconnect controls, and automation binding (Wave 2)
+  1. `.planning/codebase/chat-data-boundary.md` exists and explains the lifecycle of both tables — when each row is created, who owns it, what fields are denormalized, and the data flow from public `/api/chat/[token]` through `persist.ts` and `session.ts` to the admin inbox
+  2. The three relevant source files (`src/lib/chat/session.ts`, `src/lib/chat/persist.ts`, `src/app/api/chat/[token]/route.ts`) each include a header or inline comment that points readers to the boundary doc by relative path
+  3. The doc and comments survive a self-audit: a reader unfamiliar with v1.2 chat work can answer "is `chat_sessions` still written by the current code path?" by following only the comment trail
+**Plans**: TBD
+
+### Phase 17: REALTIME
+**Goal**: The admin inbox reflects new conversations and messages within seconds via Supabase Realtime, with org isolation preserved and no zombie subscriptions left behind on navigation
+**Depends on**: Phase 14 (does not depend on Phase 15 — can run in parallel with refactor work since the realtime subscriptions hook into existing component boundaries)
+**Requirements**: REALTIME-01, REALTIME-02, REALTIME-03, REALTIME-04
+**Success Criteria** (what must be TRUE):
+  1. A new conversation created by a widget chat, Instagram DM, or Messenger event appears in the admin inbox `ConversationList` within 5 seconds without any manual refresh — verified by sending a test message from a second browser
+  2. A new message arriving in an already-open conversation appears in the `ChatArea` message list in real time without polling — the dual-polling approach is removed for these paths
+  3. Two admin sessions belonging to different organizations watch the inbox simultaneously and neither receives Realtime events from the other org's conversations — RLS policies (not just app-level filtering) enforce isolation
+  4. Navigating away from `/chat` cleanly unsubscribes — Chrome DevTools confirms no leftover Realtime channels or websocket subscriptions after route change
+**Plans**: TBD
 **UI hint**: yes
 
-### Phase 11: Meta Webhook
-**Goal**: Inbound Instagram DMs and Facebook Messenger messages arrive in the existing chat inbox as new conversations, and configured automations fire on receipt with 24h window enforcement
-**Depends on**: Phase 10
-**Requirements**: METAEV-01, METAEV-02, METAEV-03, METAEV-04, METAEV-05
+### Phase 18: SEARCH
+**Goal**: An admin with hundreds of conversations can locate a specific one in seconds by typing a name fragment or a phrase from a recent message
+**Depends on**: Phase 17 (built on top of the post-realtime ConversationList so search composes with live updates)
+**Requirements**: SEARCH-01, SEARCH-02, SEARCH-03, SEARCH-04
 **Success Criteria** (what must be TRUE):
-  1. Meta sends a GET verification challenge to `/api/meta/webhook` and the handler responds with the correct challenge value; webhook is confirmed active in the Meta App Dashboard
-  2. A test Instagram DM sent to the connected account appears in the chat inbox within 5 seconds, with `channel = 'instagram'` and correct `channel_metadata` (igsid, page_id)
-  3. A test Messenger message sent to the connected page appears in the chat inbox within 5 seconds with `channel = 'messenger'`
-  4. When an automation with a keyword trigger is bound to the channel and the inbound message contains that keyword, the automation fires and `executeAction` is invoked; the response is persisted to the conversation
-  5. An automated reply attempt on a conversation whose last inbound message is older than 24 hours is blocked — no outbound message is sent and the admin sees the conversation marked as outside the reply window
-**Plans**: 2 plans
-Plans:
-- [x] 11-01-PLAN.md — migration 022 (last_inbound_at + meta_channels.config) + TypeScript types + RED test stubs (Wave 0)
-- [x] 11-02-PLAN.md — /api/meta/webhook route (GET + POST) + processMetaEvent lib + tests GREEN (Wave 1)
-
-### Phase 12: Multi-Channel Inbox UI
-**Goal**: The existing chat inbox correctly identifies the origin channel of every conversation so admins can filter, recognize, and manage widget, Instagram, and Messenger conversations from one view
-**Depends on**: Phase 11
-**Requirements**: METAINBOX-01, METAINBOX-02, METAINBOX-04, METAINBOX-05, METAINBOX-06
-**Success Criteria** (what must be TRUE):
-  1. Each conversation row in the inbox shows a channel icon and label (globe for website, recognizable icons for Instagram and Messenger); existing widget conversations retain their appearance unchanged
-  2. Admin uses the channel filter to select "Instagram only" and the inbox shows only Instagram conversations; switching to "All" restores the full list without a page reload
-  3. Opening a Meta conversation shows the channel name and connected account name in the conversation header, alongside the current bot status (active or paused)
-  4. A conversation where the 24h Meta reply window has expired shows a visible warning banner in the chat area; the banner does not appear for widget conversations
-  5. Admin clicks "Pause bot" on a Meta conversation and confirms that subsequent inbound messages no longer trigger automation; clicking "Resume bot" restores automation firing
-**Plans**: 2 plans
-Plans:
-- [x] 12-01-PLAN.md — migration 023 (bot_status column) + type extension + API route enrichment + 5 RED test stubs (Wave 0)
-- [x] 12-02-PLAN.md — ChannelIcon component + filter pills + enriched header + 24h banner + bot pause/resume + tests GREEN (Wave 1)
+  1. Admin types a free-text query in the search box above `ConversationList`; conversations whose visitor name or `last_message` contain the query (case-insensitive substring) remain visible while non-matching ones disappear, with no manual refresh
+  2. The active channel filter and bot-state filter still apply when search is active — combining "Instagram only" + "Bot paused" + a search query narrows the list correctly
+  3. Typing fast in the search box does not re-render on every keystroke — the filter is debounced at roughly 300 ms so the list settles smoothly
+  4. Clearing the search box (empty string) restores the full conversation list filtered only by the channel and bot-state pills
+**Plans**: TBD
 **UI hint**: yes
-
-### Phase 13: Outbound Reply Routing
-**Goal**: When an admin manually replies in the inbox, the message is delivered to the correct channel — Messenger Send API, Instagram Messaging API, or existing widget path — with no risk of silent misdirection
-**Depends on**: Phase 12
-**Requirements**: METAINBOX-03
-**Success Criteria** (what must be TRUE):
-  1. Admin sends a reply in a Messenger conversation; the message is delivered to the user's Messenger thread and also persisted to the Supabase conversation — verified by receiving the reply on the test Messenger account
-  2. Admin sends a reply in an Instagram conversation; the message is delivered to the user's Instagram DM thread and persisted — verified by receiving the reply on the test Instagram account
-  3. Admin sends a reply in a widget conversation; behavior is identical to pre-v1.3 (persisted to DB, SSE polling picks it up) — existing widget chat is not disrupted
-  4. A reply attempt on a channel whose token has been revoked returns an error in the UI rather than silently dropping the message; the admin sees a reconnect prompt
-  5. Unit tests assert that for each of the three channel values (`widget`, `messenger`, `instagram`), the correct send function is invoked and no other channel's send path is reached
-**Plans**: 2 plans
-Plans:
-- [x] 13-01-PLAN.md — sendMetaMessage lib + RED test stubs (Wave 0)
-- [x] 13-02-PLAN.md — Modify POST handler to branch on channel + tests GREEN + build gate (Wave 1)
 
 ---
 
 ## Progress
 
+**Execution Order:**
+Phases execute in numeric order: 14 → 15 → 16 → 17 → 18. Phase 16 may overlap with 15/17; the listed order reflects the recommended sequence for green-by-default verification.
+
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 7. DB Foundation | 3/3 | Complete    | 2026-05-04 |
-| 8. Reviews Admin | 3/3 | Complete    | 2026-05-04 |
-| 9. Reviews Widget | 3/3 | Complete    | 2026-05-04 |
-| 10. Meta OAuth | 3/3 | Complete | 2026-05-04 |
-| 11. Meta Webhook | 2/2 | Complete    | 2026-05-05 |
-| 12. Multi-Channel Inbox UI | 2/2 | Complete    | 2026-05-05 |
-| 13. Outbound Reply Routing | 2/2 | Complete    | 2026-05-05 |
+| 14. TESTFIX | 0/TBD | Not started | - |
+| 15. REFACTOR | 0/TBD | Not started | - |
+| 16. BOUNDARY | 0/TBD | Not started | - |
+| 17. REALTIME | 0/TBD | Not started | - |
+| 18. SEARCH | 0/TBD | Not started | - |
 
 ---
 
-*Last updated: 2026-05-05 - Phase 13 planned, 2 plans created*
+*Last updated: 2026-05-05 — v1.4 milestone roadmap created (Phases 14–18)*

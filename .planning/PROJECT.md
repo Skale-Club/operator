@@ -12,22 +12,34 @@ Operator is not meant to encode one universal agency workflow. It is the shared 
 
 That business logic may differ by client. The invariant is the reliability of the execution path, not that every tenant follows the same pattern.
 
-## Current Milestone: v1.3 — Google Reviews Widget + Meta Messaging
+## Current Milestone: v1.4 — Chat System Refactor
 
-**Goal:** Add two platform-level reusable modules — an embeddable Google Reviews widget for client sites, and Instagram/Facebook Messenger as new channels inside the existing chat inbox.
+**Goal:** Improve maintainability and UX of the chat system by splitting oversized modules, clarifying data boundaries, adding real-time updates to the admin inbox, fixing broken tests, and adding conversation search.
 
 **Target features:**
-- Google Places API integration: register locations, capture up to 5 reviews, store in DB
-- Embeddable reviews widget (4 layouts, visual customization, unique token per location)
-- Meta OAuth: connect Facebook page → Messenger + linked Instagram account
-- Extend existing chat inbox to support "instagram" and "messenger" channel types
-- Channel icons, origin labels, filter bar, and correct reply routing per channel
-- Automation binding per Meta channel (reuse existing action engine)
-- Token expiry detection and Meta compliance (24h messaging window)
+- Split `src/lib/chat/stream.ts` (480 lines) into focused modules: provider switching, RAG/knowledge, action dispatch, SSE encoder
+- Split `src/components/chat/chat-area.tsx` (408 lines) into ChatHeader, MessageList, MessageBanner, MessageComposer
+- Document and clarify the `chat_sessions` vs `conversations` boundary — when each is written, who owns what
+- Realtime updates in the admin inbox via Supabase Realtime (replace manual refresh)
+- Fix broken `tests/chat-persist.test.ts` (2 failing tests reference renamed tables)
+- Conversation text search in the admin inbox (search across message content)
 
 ---
 
-## Last Shipped: v1.2 ✅ Shipped 2026-04-05
+## Last Shipped: v1.3 ✅ Shipped 2026-05-05
+
+**Shipped in v1.3 (Google Reviews Widget + Meta Messaging):**
+- Google Places API integration with 24h cooldown, encrypted location storage
+- Embeddable reviews widget (4 layouts, themable, public token endpoint)
+- Meta OAuth — Facebook + Instagram with full token exchange chain (page tokens encrypted)
+- Meta Webhook (`/api/meta/webhook`) — HMAC-SHA256, after() async processing
+- Multi-channel inbox UI — ChannelIcon, filter pills, enriched header, 24h banner, bot pause/resume
+- Outbound reply routing — branched POST handler dispatches to widget/messenger/instagram
+- Two-tier settings system — `platform_settings` (global) + `integrations` (per-org)
+
+**Production:** `https://operator.skale.club`
+
+## Last Shipped (previous): v1.2 ✅ Shipped 2026-04-05
 
 **Shipped in v1.2 (Operator + Embedded Chatbot):**
 - Platform name: Operator (branding, navigation, page titles)
@@ -156,4 +168,4 @@ That business logic may differ by client. The invariant is the reliability of th
 
 Update this file whenever deployment assumptions, validated requirements, or core constraints change.
 
-*Last updated: 2026-05-04 — v1.3 milestone started*
+*Last updated: 2026-05-05 — v1.4 milestone started*
