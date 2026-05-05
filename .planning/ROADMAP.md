@@ -182,7 +182,7 @@ Plans:
 | 8. Reviews Admin | 3/3 | Complete    | 2026-05-04 |
 | 9. Reviews Widget | 3/3 | Complete    | 2026-05-04 |
 | 10. Meta OAuth | 3/3 | Complete | 2026-05-04 |
-| 11. Meta Webhook | 2/2 | Complete   | 2026-05-05 |
+| 11. Meta Webhook | 2/2 | Complete    | 2026-05-05 |
 | 12. Multi-Channel Inbox UI | 0/? | Not started | — |
 | 13. Outbound Reply Routing | 0/? | Not started | — |
 
