@@ -241,3 +241,32 @@ export async function deleteToolConfig(id: string): Promise<{ error?: string } |
 
   revalidatePath('/tools')
 }
+
+export async function reorderFolders(orderedIds: string[]): Promise<{ error?: string } | void> {
+  const user = await getUser()
+  if (!user) return { error: 'Not authenticated.' }
+  if (orderedIds.length === 0) return
+  const supabase = await createClient()
+  const updates = orderedIds.map((id, index) =>
+    supabase.from('tool_folders').update({ position: index }).eq('id', id)
+  )
+  const results = await Promise.all(updates)
+  const failed = results.find((r) => r.error)
+  if (failed) return { error: 'Failed to save folder order.' }
+  revalidatePath('/tools')
+}
+
+export async function moveToolToFolder(
+  toolId: string,
+  folderId: string | null
+): Promise<{ error?: string } | void> {
+  const user = await getUser()
+  if (!user) return { error: 'Not authenticated.' }
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('tool_configs')
+    .update({ folder_id: folderId })
+    .eq('id', toolId)
+  if (error) return { error: error.message }
+  revalidatePath('/tools')
+}
