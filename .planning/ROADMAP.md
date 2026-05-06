@@ -97,7 +97,8 @@ See [milestones/v1.4-ROADMAP.md](milestones/v1.4-ROADMAP.md)
 
 ### Phases
 
-- [x] **Phase 22: Foundation** — DB migrations (manychat_channels, manychat_events, enum extensions), webhook endpoint with secret verification, channel server actions (completed 2026-05-06)
+- [x] **Phase 22: Foundation** — DB migrations (manychat_channels, manychat_events, enum extensions), webhook endpoint with secret verification, channel server actions
+ (completed 2026-05-06)
 - [ ] **Phase 23: Inbound Routing** — manychat_rules table, payload parser, rule matcher, action dispatch
 - [ ] **Phase 24: Dashboard Config UI** — /integrations/manychat setup page (API key form, webhook URL + secret + payload template display, test connection)
 - [ ] **Phase 25: Outbound Actions** — manychat_* action_type enum values, src/lib/manychat/ client module, executors registered in action engine
@@ -130,7 +131,12 @@ Plans:
   3. When a webhook payload matches a rule (event_type + condition), the bound tool_config action executes via the existing action engine
   4. The manychat_events row for a matched event is updated with status matched and linked to the resulting action_logs entry via action_log_id
   5. When no rule matches, the manychat_events row is logged with status unmatched and no action fires
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 23-01-PLAN.md — Migration 027 + database.ts type widening + Wave 0 RED test stubs
+- [ ] 23-02-PLAN.md — resolveRule + resolveToolById + dispatchManychatEvent modules + logAction extension
+- [ ] 23-03-PLAN.md — Rule CRUD server actions (createManychatRule, updateManychatRule, deleteManychatRule, getManychatRules)
+- [ ] 23-04-PLAN.md — Webhook integration (inline dispatch) + extended webhook tests
 
 ### Phase 24: Dashboard Config UI
 **Goal**: Admins have a complete self-serve setup flow to connect ManyChat and get everything they need to configure the External Request in ManyChat
@@ -176,9 +182,9 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 22. Foundation | v1.6 | 2/2 | Complete    | 2026-05-06 |
-| 23. Inbound Routing | v1.6 | 0/? | Not started | - |
+| 23. Inbound Routing | v1.6 | 0/4 | Plans Complete | - |
 | 24. Dashboard Config UI | v1.6 | 0/? | Not started | - |
 | 25. Outbound Actions | v1.6 | 0/? | Not started | - |
 | 26. Rules UI + Event Log | v1.6 | 0/? | Not started | - |
 
-*Last updated: 2026-05-06 — Phase 22 planned (2 plans, 2 waves)*
+*Last updated: 2026-05-06 — Phase 23 planned (4 plans, 3 waves)*
