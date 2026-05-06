@@ -2,25 +2,25 @@
 gsd_state_version: 1.0
 milestone: v1.6
 milestone_name: ManyChat Integration
-status: roadmap_ready
-stopped_at: Roadmap created — Phase 22 ready for planning
-last_updated: "2026-05-06T00:00:00.000Z"
+status: executing
+stopped_at: Completed 22-foundation/22-01-PLAN.md
+last_updated: "2026-05-06T19:14:44.051Z"
 last_activity: 2026-05-06
 progress:
   total_phases: 5
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 2
+  completed_plans: 1
 ---
 
 # Operator - State
 
 ## Current Position
 
-Phase: 22 (not started)
-Plan: —
-Status: Roadmap ready — awaiting /gsd:plan-phase 22
-Last activity: 2026-05-06 — v1.6 roadmap written (5 phases, 20 requirements)
+Phase: 22 (Foundation) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
+Last activity: 2026-05-06
 
 ## Milestone Progress
 
@@ -30,13 +30,13 @@ Last activity: 2026-05-06 — v1.6 roadmap written (5 phases, 20 requirements)
 - v1.3 Google Reviews Widget + Meta Messaging: ✅ Shipped 2026-05-05
 - v1.4 Chat System Refactor: ✅ Shipped 2026-05-05
 - v1.5 Tools Folder System: ✅ Shipped 2026-05-06
-- v1.6 ManyChat Integration: 🚧 Active — Phase 22 not started
+- v1.6 ManyChat Integration: 🚧 Active — Phase 22 in progress (plan 1 of 2 complete)
 
 ## v1.6 Phase Summary
 
 | Phase | Goal | Status |
 |-------|------|--------|
-| 22. Foundation | Receive + log webhook events; channel CRUD with encrypted API key | Not started |
+| 22. Foundation | Receive + log webhook events; channel CRUD with encrypted API key | In Progress (1/2) |
 | 23. Inbound Routing | Rule-based dispatch to action engine | Not started |
 | 24. Dashboard Config UI | Self-serve setup page (UI) | Not started |
 | 25. Outbound Actions | manychat_* executors in action engine | Not started |
@@ -65,6 +65,9 @@ See `projects/manychat-integration/PLANNING.md` for v1.6 seed document.
 - Event log (`manychat_events`) is append-only — full audit trail preserved
 - Standardized payload template provided to admin for ManyChat External Request config
 - ROUTING-01 and ROUTING-02 span two phases: backend (Phase 23) + UI surface (Phase 26)
+- (22-01) `manychat_events.Update` typed as `Record<string, never>` to mirror SQL append-only RLS in the TS layer
+- (22-01) Wave 0 RED tests use dynamic `await import()` so missing modules surface as ERR_MODULE_NOT_FOUND per test rather than failing collection
+- (22-01) Extending `integration_provider` enum requires updating cross-cutting unions: `integrations.provider` Row/Insert, `IntegrationForDisplay.provider`, and `PROVIDER_LABELS` map
 
 ### Architecture Notes
 
@@ -79,5 +82,5 @@ See `projects/manychat-integration/PLANNING.md` for v1.6 seed document.
 
 ## Session Continuity
 
-Last session: 2026-05-06
-Stopped at: v1.6 roadmap created — run /gsd:plan-phase 22 to start
+Last session: 2026-05-06T19:14:44.047Z
+Stopped at: Completed 22-foundation/22-01-PLAN.md
