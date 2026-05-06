@@ -3,27 +3,27 @@ gsd_state_version: 1.0
 milestone: v1.5
 milestone_name: Tools Folder System
 status: verifying
-stopped_at: Completed 20-03-PLAN.md
-last_updated: "2026-05-06T16:44:10.666Z"
+stopped_at: Completed 21-01-PLAN.md
+last_updated: "2026-05-06T17:25:31.605Z"
 last_activity: 2026-05-06
 progress:
   total_phases: 3
   completed_phases: 2
-  total_plans: 6
-  completed_plans: 6
-  percent: 0
+  total_plans: 8
+  completed_plans: 7
+  percent: 75
 ---
 
 # Operator - State
 
 ## Current Position
 
-Phase: 21
-Plan: Not started
-Status: Phase complete — ready for verification
-Last activity: 2026-05-06
+Phase: 21 (Drag and Drop) — EXECUTING
+Plan: 2 of 2
+Status: Plan 01 complete — executing Plan 02 next
+Last activity: 2026-05-06 -- Phase 21 Plan 01 completed
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [████████░░] 75%
 
 ## Milestone Progress
 
@@ -65,6 +65,7 @@ See `.planning/REQUIREMENTS.md` for v1.5 requirement list.
 - [Phase 20-folder-subfolder-crud]: StaticFolderHeader font-medium migrated to font-semibold — plan requires no font-medium on folder label spans
 - [Phase 20]: folderDeleteTarget stores full ToolFolder object so modal title can display folder name without extra lookup
 - [Phase 20]: buttonVariants({ variant: 'outline' }) applied as className to AlertDialogAction — AlertDialogAction has no variant prop
+- [Phase 21-drag-and-drop]: reorderFolders uses Promise.all of N supabase updates; moveToolToFolder is a focused action to avoid silent field-wipe
 
 ### Codebase Starting Points
 
@@ -82,6 +83,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-05-06T16:39:56.441Z
-Stopped at: Completed 20-03-PLAN.md
+Last session: 2026-05-06T17:25:31.600Z
+Stopped at: Completed 21-01-PLAN.md
 Resume file: None

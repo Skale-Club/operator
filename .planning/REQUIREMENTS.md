@@ -52,11 +52,11 @@
 | FOLDER-01    | 20    | Complete |
 | FOLDER-02    | 20    | Complete |
 | FOLDER-03    | 20    | Complete |
-| FOLDER-04    | 21    | Pending |
+| FOLDER-04    | 21    | Complete |
 | SUBFOLDER-01 | 20    | Complete |
 | SUBFOLDER-02 | 20    | Complete |
 | SUBFOLDER-03 | 20    | Complete |
-| MOVE-01      | 21    | Pending |
-| MOVE-02      | 21    | Pending |
+| MOVE-01      | 21    | Complete |
+| MOVE-02      | 21    | Complete |
 | DISPLAY-01   | 20    | Complete |
 | DISPLAY-02   | 20    | Complete |
