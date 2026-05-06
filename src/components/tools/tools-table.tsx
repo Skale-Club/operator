@@ -10,14 +10,19 @@ import {
   flexRender,
   type SortingState,
   type ColumnDef,
+  type Row,
 } from '@tanstack/react-table'
 import {
   DndContext,
+  DragOverlay,
   closestCenter,
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
+  useDraggable,
+  type DragStartEvent,
+  type DragOverEvent,
   type DragEndEvent,
 } from '@dnd-kit/core'
 import {
@@ -32,7 +37,8 @@ import { Wrench, MoreHorizontal, FolderPlus, GripVertical, ScrollText, ChevronRi
 import { toast } from 'sonner'
 import type { ToolConfigWithIntegration, ToolFolder } from '@/app/(dashboard)/tools/actions'
 import type { IntegrationForDisplay } from '@/app/(dashboard)/integrations/actions'
-import { deleteToolConfig, updateFolder, createFolder, deleteFolder, deleteFolderWithTools } from '@/app/(dashboard)/tools/actions'
+import { deleteToolConfig, updateFolder, createFolder, deleteFolder, deleteFolderWithTools, reorderFolders, moveToolToFolder } from '@/app/(dashboard)/tools/actions'
+import { cn } from '@/lib/utils'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -100,6 +106,7 @@ function SortableFolderHeader({
   onRenameBlur,
   onAddSubfolder,
   onDeleteClick,
+  isDropTarget,
 }: {
   id: string
   label: string
@@ -115,16 +122,17 @@ function SortableFolderHeader({
   onRenameBlur: (e: React.FocusEvent) => void
   onAddSubfolder: () => void
   onDeleteClick: () => void
+  isDropTarget: boolean
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id })
+    useSortable({ id, data: { type: 'folder' } })
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
   }
   return (
-    <TableRow ref={setNodeRef} style={style} className="bg-muted/40 hover:bg-muted/60 group">
+    <TableRow ref={setNodeRef} style={style} className={cn("bg-muted/40 hover:bg-muted/60 group", isDropTarget && "bg-primary/10 ring-1 ring-inset ring-primary/40")}>
       <TableCell colSpan={colSpan} className="py-1.5 px-4">
         <div className="flex items-center gap-2">
           <button
@@ -231,6 +239,7 @@ function SubfolderHeader({
   onRenameKeyDown,
   onRenameBlur,
   onDeleteClick,
+  isDropTarget,
 }: {
   folder: ToolFolder
   count: number
@@ -244,9 +253,10 @@ function SubfolderHeader({
   onRenameKeyDown: (e: React.KeyboardEvent) => void
   onRenameBlur: (e: React.FocusEvent) => void
   onDeleteClick: () => void
+  isDropTarget: boolean
 }) {
   return (
-    <TableRow className="bg-muted/30 hover:bg-muted/40 group">
+    <TableRow className={cn("bg-muted/30 hover:bg-muted/40 group", isDropTarget && "bg-primary/10 ring-1 ring-inset ring-primary/40")}>
       <TableCell colSpan={colSpan} className="py-1.5 pl-8 pr-4">
         <div className="flex items-center gap-2">
           {/* Grip spacer — aligns with SortableFolderHeader; DnD Phase 21 */}
@@ -305,6 +315,43 @@ function SubfolderHeader({
   )
 }
 
+// ─── Draggable tool row ───────────────────────────────────────────────────────
+
+function DraggableToolRow({
+  tool,
+  row,
+}: {
+  tool: ToolConfigWithIntegration
+  row: Row<ToolConfigWithIntegration>
+}) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: tool.id,
+    data: { type: 'tool' },
+  })
+  return (
+    <TableRow
+      ref={setNodeRef}
+      className={cn('group/row', isDragging && 'opacity-40 bg-muted/20')}
+    >
+      {row.getVisibleCells().map((cell, i) => (
+        <TableCell key={cell.id} className={i === 0 ? 'relative group/row' : undefined}>
+          {i === 0 && (
+            <span
+              {...attributes}
+              {...listeners}
+              className="absolute left-1 top-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing text-muted-foreground opacity-0 group-hover/row:opacity-100 transition-opacity"
+              aria-label="Drag to move to folder"
+            >
+              <GripVertical className="h-3 w-3" />
+            </span>
+          )}
+          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+        </TableCell>
+      ))}
+    </TableRow>
+  )
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function ToolsTable({
@@ -334,6 +381,12 @@ export function ToolsTable({
   const [newSubfolderName, setNewSubfolderName] = useState('')
   const [folderDeleteTarget, setFolderDeleteTarget] = useState<{ folder: ToolFolder } | null>(null)
 
+  // DnD state — Phase 21
+  const [activeId, setActiveId] = useState<string | null>(null)
+  const [activeDragType, setActiveDragType] = useState<'folder' | 'tool' | null>(null)
+  const [activeDragTool, setActiveDragTool] = useState<ToolConfigWithIntegration | null>(null)
+  const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null)
+
   // Full folder list passed to form for Phase 20 picker
   const existingFolders = useMemo(
     () => folders,
@@ -351,14 +404,70 @@ export function ToolsTable({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   )
 
+  function resetDragState() {
+    setActiveId(null)
+    setActiveDragType(null)
+    setActiveDragTool(null)
+    setDragOverFolderId(null)
+  }
+
+  function handleDragStart(event: DragStartEvent) {
+    const { active } = event
+    setActiveId(active.id as string)
+    const type = active.data.current?.type as 'folder' | 'tool' | undefined
+    setActiveDragType(type ?? null)
+    if (type === 'tool') {
+      const tool = toolConfigs.find((t) => t.id === active.id)
+      setActiveDragTool(tool ?? null)
+    }
+  }
+
+  function handleDragOver(event: DragOverEvent) {
+    const { active, over } = event
+    if (active.data.current?.type === 'tool') {
+      setDragOverFolderId(over ? (over.id as string) : null)
+    }
+  }
+
+  function handleDragCancel() {
+    resetDragState()
+  }
+
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event
-    if (!over || active.id === over.id) return
-    const oldIndex = orderedFolders.findIndex((f) => f.id === active.id)
-    const newIndex = orderedFolders.findIndex((f) => f.id === over.id)
-    if (oldIndex === -1 || newIndex === -1) return
-    setOrderedFolders((prev) => arrayMove(prev, oldIndex, newIndex))
-    // TODO Phase 21: persist reorder via updateFolder position
+    const dragType = active.data.current?.type as 'folder' | 'tool' | undefined
+
+    if (dragType === 'folder') {
+      if (!over || active.id === over.id) { resetDragState(); return }
+      const oldIndex = orderedFolders.findIndex((f) => f.id === active.id)
+      const newIndex = orderedFolders.findIndex((f) => f.id === over.id)
+      if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) { resetDragState(); return }
+      const reordered = arrayMove(orderedFolders, oldIndex, newIndex)
+      setOrderedFolders(reordered)
+      startTransition(async () => {
+        const result = await reorderFolders(reordered.map((f) => f.id))
+        if (result && 'error' in result && result.error) toast.error(result.error)
+      })
+    } else if (dragType === 'tool') {
+      if (over) {
+        const targetFolderId = over.id as string
+        const toolId = active.id as string
+        // Guard: no-op if tool is already in this folder
+        const tool = toolConfigs.find((t) => t.id === toolId)
+        if (tool?.folder_id === targetFolderId) { resetDragState(); return }
+        startTransition(async () => {
+          const result = await moveToolToFolder(toolId, targetFolderId)
+          if (result && 'error' in result && result.error) {
+            toast.error(result.error)
+          } else {
+            toast.success('Tool moved.')
+            router.refresh()
+          }
+        })
+      }
+    }
+
+    resetDragState()
   }
 
   function toggleCollapse(folderId: string) {
@@ -718,7 +827,10 @@ export function ToolsTable({
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
+          onDragCancel={handleDragCancel}
         >
         <div className="rounded-md border">
           <Table>
@@ -769,6 +881,7 @@ export function ToolsTable({
                             }}
                             onAddSubfolder={() => { setAddingSubfolderTo(folder.id); setNewSubfolderName('') }}
                             onDeleteClick={() => setFolderDeleteTarget({ folder })}
+                            isDropTarget={dragOverFolderId === folder.id}
                           />
                         )}
                         {addingSubfolderTo === folder.id && (
@@ -830,18 +943,13 @@ export function ToolsTable({
                                       commitRename(sub.id)
                                     }}
                                     onDeleteClick={() => setFolderDeleteTarget({ folder: sub })}
+                                    isDropTarget={dragOverFolderId === sub.id}
                                   />
                                   {!subIsCollapsed && subTools.map((tool) => {
                                     const row = rowById.get(tool.id)
                                     if (!row) return null
                                     return (
-                                      <TableRow key={row.id}>
-                                        {row.getVisibleCells().map((cell) => (
-                                          <TableCell key={cell.id}>
-                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                          </TableCell>
-                                        ))}
-                                      </TableRow>
+                                      <DraggableToolRow key={tool.id} tool={tool} row={row} />
                                     )
                                   })}
                                 </Fragment>
@@ -851,13 +959,7 @@ export function ToolsTable({
                               const row = rowById.get(tool.id)
                               if (!row) return null
                               return (
-                                <TableRow key={row.id}>
-                                  {row.getVisibleCells().map((cell) => (
-                                    <TableCell key={cell.id}>
-                                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                    </TableCell>
-                                  ))}
-                                </TableRow>
+                                <DraggableToolRow key={tool.id} tool={tool} row={row} />
                               )
                             })}
                           </>
@@ -881,13 +983,7 @@ export function ToolsTable({
                     const row = rowById.get(tool.id)
                     if (!row) return null
                     return (
-                      <TableRow key={row.id}>
-                        {row.getVisibleCells().map((cell) => (
-                          <TableCell key={cell.id}>
-                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                          </TableCell>
-                        ))}
-                      </TableRow>
+                      <DraggableToolRow key={tool.id} tool={tool} row={row} />
                     )
                   })}
                 </>
@@ -903,6 +999,13 @@ export function ToolsTable({
             </TableBody>
           </Table>
         </div>
+        <DragOverlay>
+          {activeDragType === 'tool' && activeDragTool ? (
+            <div className="text-sm font-mono bg-background border shadow-md px-3 py-1.5 rounded-md flex items-center gap-2 opacity-90">
+              {activeDragTool.tool_name}
+            </div>
+          ) : null}
+        </DragOverlay>
         </DndContext>
       )}
 

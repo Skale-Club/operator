@@ -7,9 +7,9 @@
 
 ## External APIs & Services
 
-### Vapi.ai (Core Integration)
+### Vapi.ai (Voice Trigger Source)
 
-VoiceOps is an operational layer built ON TOP of Vapi — not a competitor. Vapi handles all voice processing (STT, TTS, LLM). VoiceOps receives Vapi events and executes business logic.
+Vapi handles all voice processing (STT, TTS, LLM, assistant configuration). Operator receives Vapi webhook events and executes business logic — Vapi is one trigger source among several (Meta, ManyChat, etc.).
 
 **Webhook Events Received (inbound from Vapi):**
 - `tool-calls` — Fired during a live call when Vapi triggers a Tool. Received at `POST /api/vapi/tools`. MUST respond within 500ms.

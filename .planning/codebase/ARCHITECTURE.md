@@ -4,9 +4,9 @@
 
 ## System Overview
 
-VoiceOps is a multi-tenant SaaS operations platform that acts as the execution and observability layer for agencies running voice AI assistants via Vapi.ai. It does NOT replicate Vapi's capabilities (STT, TTS, LLM, assistant configuration). Instead, it handles everything Vapi does not: routing tool-call webhooks to tenant-specific business logic, managing integration credentials, running RAG knowledge base queries, executing outbound calling campaigns, and providing call observability.
+Operator is a multi-tenant integration and orchestration platform. It connects trigger sources (Vapi voice calls, Meta DMs, ManyChat flows, and more) to action targets (GoHighLevel, Twilio, custom webhooks, knowledge base, etc.) per tenant configuration. Vapi is one of several supported sources, not the center of the platform.
 
-The fundamental contract: when Vapi triggers a Tool during a live call, VoiceOps receives the webhook, identifies the tenant from the `vapi_assistant_id`, executes the configured business logic against third-party APIs, logs everything, and returns a result to Vapi — all under 500ms.
+The fundamental contract: when a trigger source sends a webhook, Operator receives it, identifies the tenant, resolves the configured automation, executes the action against a third-party API, logs everything, and returns a structured response — all within the source's latency window.
 
 **System boundary diagram (planned):**
 

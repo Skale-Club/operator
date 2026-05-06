@@ -16,7 +16,7 @@ Always run `npm run build` after changes to catch type errors before finishing.
 **Stack:** Next.js 15 (App Router) · TypeScript 5 (strict) · Supabase (PostgreSQL + pgvector + Auth) · Tailwind 4 · shadcn/ui
 
 **Runtime split:**
-- Node.js - dashboard pages, server actions, and all `/api/vapi/*` webhook handlers
+- Node.js - dashboard pages, server actions, and all webhook receivers (`/api/vapi/*`, `/api/meta/`, `/api/manychat/`, etc.)
 - Deno - `supabase/functions/process-embeddings/` (Supabase Edge Function)
 - GitHub Actions - auxiliary scheduled automation such as Supabase keepalive
 
@@ -41,7 +41,7 @@ const supabase = await createClient()
 `cache()` deduplicates these across the render tree per request. Auth gating happens in layouts, pages, route handlers, and server actions instead of middleware.
 
 ### API Routes
-Vapi webhooks always return HTTP 200:
+Inbound webhooks (Vapi, Meta, ManyChat, etc.) always return HTTP 200:
 
 ```ts
 export const runtime = 'nodejs'
@@ -85,7 +85,7 @@ src/
   app/api/campaigns/   campaign control API
   components/layout/   AppSidebar, OrgSwitcher
   components/ui/       shadcn primitives
-  lib/action-engine/   Vapi tool dispatch
+  lib/action-engine/   Action dispatch engine (webhook → action routing)
   lib/campaigns/       outbound campaign engine
   lib/ghl/             GoHighLevel API
   lib/knowledge/       embeddings + semantic search
