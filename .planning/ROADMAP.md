@@ -134,7 +134,7 @@ Plans:
 **Plans**: 4 plans
 Plans:
 - [x] 23-01-PLAN.md — Migration 027 + database.ts type widening + Wave 0 RED test stubs
-- [ ] 23-02-PLAN.md — resolveRule + resolveToolById + dispatchManychatEvent modules + logAction extension
+- [x] 23-02-PLAN.md — resolveRule + resolveToolById + dispatchManychatEvent modules + logAction extension
 - [ ] 23-03-PLAN.md — Rule CRUD server actions (createManychatRule, updateManychatRule, deleteManychatRule, getManychatRules)
 - [ ] 23-04-PLAN.md — Webhook integration (inline dispatch) + extended webhook tests
 
@@ -182,7 +182,7 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 22. Foundation | v1.6 | 2/2 | Complete    | 2026-05-06 |
-| 23. Inbound Routing | v1.6 | 1/4 | In Progress|  |
+| 23. Inbound Routing | v1.6 | 2/4 | In Progress|  |
 | 24. Dashboard Config UI | v1.6 | 0/? | Not started | - |
 | 25. Outbound Actions | v1.6 | 0/? | Not started | - |
 | 26. Rules UI + Event Log | v1.6 | 0/? | Not started | - |
