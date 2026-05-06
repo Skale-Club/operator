@@ -74,7 +74,7 @@ Each task was committed atomically:
 1. **Task 1: Create test stub for tools/actions server actions** - `c2ff599` (test)
 2. **Task 2: Write migration 025_tool_folders.sql** - `9619633` (chore)
 
-**Plan metadata:** (pending — see final commit)
+**Plan metadata:** `5bf68f6` (docs: complete tool-folders db foundation plan)
 
 ## Files Created/Modified
 - `tests/tools/actions.test.ts` - Vitest stub with todo cases for getFolders, createFolder, updateFolder, deleteFolder
