@@ -104,6 +104,15 @@ export async function testManychatConnection(): Promise<{ success: boolean; erro
  *   `X-Operator-Secret` header gate on `/api/manychat/webhook`.
  * - Does NOT set `org_id` manually — RLS `WITH CHECK (org_id = get_current_org_id())`
  *   handles tenant scoping automatically for the authenticated client.
+ *
+ * Phase 25 (D-03/D-04/D-05): ALSO inserts a bridge `integrations` row with
+ * provider='manychat' linked back via `manychat_channel_id`. The bridge row
+ * carries the credentials so `tool_configs.integration_id → integrations` joins
+ * resolve transparently for outbound actions. The encrypted blob is REUSED —
+ * never re-encrypted (would change the IV with no benefit).
+ *
+ * On bridge-insert failure, the just-created channel row is deleted (compensating
+ * delete) so the two tables never diverge. Open Question 4 in 25-RESEARCH.md.
  */
 export async function createManychatChannel(data: {
   channelName: string
@@ -118,16 +127,55 @@ export async function createManychatChannel(data: {
   const keyHint = maskApiKey(data.apiKey)
   const webhookSecret = crypto.randomUUID()
 
-  const { error } = await supabase.from('manychat_channels').insert({
-    channel_name: data.channelName,
-    encrypted_api_key: encryptedApiKey,
+  // 1. Canonical insert (manychat_channels) — capture the inserted id
+  const { data: channel, error: channelErr } = await supabase
+    .from('manychat_channels')
+    .insert({
+      channel_name: data.channelName,
+      encrypted_api_key: encryptedApiKey,
+      key_hint: keyHint,
+      webhook_secret: webhookSecret,
+      is_active: true,
+      config: {},
+    })
+    .select('id')
+    .single()
+
+  if (channelErr || !channel) {
+    return { error: channelErr?.message ?? 'Failed to create channel.' }
+  }
+
+  // 2. Bridge insert (integrations) — same encrypted blob, FK back to channel.
+  //    Resolve organization_id from org_members (same pattern as integrations/actions.ts).
+  const { data: member, error: memberErr } = await supabase
+    .from('org_members')
+    .select('organization_id')
+    .eq('user_id', user.id)
+    .single()
+
+  if (memberErr || !member) {
+    // Compensating delete — channel insert succeeded but we can't resolve org for bridge.
+    await supabase.from('manychat_channels').delete().eq('id', channel.id)
+    return { error: 'Bridge sync failed: could not resolve organization.' }
+  }
+
+  const { error: bridgeErr } = await supabase.from('integrations').insert({
+    organization_id: member.organization_id,
+    provider: 'manychat',
+    name: data.channelName,
+    encrypted_api_key: encryptedApiKey, // reuse — never re-encrypt
     key_hint: keyHint,
-    webhook_secret: webhookSecret,
-    is_active: true,
+    location_id: null,
     config: {},
+    is_active: true,
+    manychat_channel_id: channel.id,
   })
 
-  if (error) return { error: error.message }
+  if (bridgeErr) {
+    // Compensating delete — keep manychat_channels and integrations consistent.
+    await supabase.from('manychat_channels').delete().eq('id', channel.id)
+    return { error: `Bridge sync failed: ${bridgeErr.message}` }
+  }
 
   revalidatePath('/integrations/manychat')
 }
@@ -145,6 +193,9 @@ export async function deleteManychatChannel(
 
   const supabase = await createClient()
 
+  // The integrations bridge row is removed automatically via the
+  // manychat_channel_id ON DELETE CASCADE FK (migration 028). No manual
+  // bridge delete needed here.
   const { error } = await supabase
     .from('manychat_channels')
     .delete()
