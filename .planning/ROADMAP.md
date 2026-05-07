@@ -202,7 +202,7 @@ Plans:
 **Plans**: 3 plans
 Plans:
 - [ ] 27-01-PLAN.md — Migration 028 + database.ts enum update + test stubs
-- [ ] 27-02-PLAN.md — Google OAuth utility module + server actions
+- [x] 27-02-PLAN.md — Google OAuth utility module + server actions
 - [ ] 27-03-PLAN.md — OAuth callback route handler
 
 ### Phase 28: Action Executors
@@ -240,7 +240,7 @@ Plans:
 | 24. Dashboard Config UI | v1.6 | 2/2 | Complete   | 2026-05-07 |
 | 25. Outbound Actions | v1.6 | 0/? | Not started | - |
 | 26. Rules UI + Event Log | v1.6 | 0/? | Not started | - |
-| 27. OAuth + DB Foundation | v1.7 | 0/? | Not started | - |
+| 27. OAuth + DB Foundation | v1.7 | 1/3 | In Progress|  |
 | 28. Action Executors | v1.7 | 0/? | Not started | - |
 | 29. Dashboard UI | v1.7 | 0/? | Not started | - |
 
