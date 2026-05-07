@@ -67,7 +67,7 @@ SELECT
   o.id,
   folder_name,
   (ordinality - 1)::INT,
-  NULL
+  NULL::uuid
 FROM public.organizations o,
      LATERAL unnest(o.tool_folder_order) WITH ORDINALITY AS u(folder_name, ordinality)
 WHERE array_length(o.tool_folder_order, 1) > 0
@@ -80,7 +80,7 @@ SELECT DISTINCT
   tc.organization_id,
   tc.folder,
   0,
-  NULL
+  NULL::uuid
 FROM public.tool_configs tc
 WHERE tc.folder IS NOT NULL
   AND NOT EXISTS (
