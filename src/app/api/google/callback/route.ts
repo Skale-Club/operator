@@ -38,68 +38,69 @@ export async function GET(request: NextRequest): Promise<Response> {
   const url = new URL(request.url)
   const code = url.searchParams.get('code')
   const state = url.searchParams.get('state')
-  const errorParam = url.searchParams.get('error')
 
   const jar = await cookies()
   const storedState = jar.get(GOOGLE_OAUTH_STATE_COOKIE)?.value
 
   await clearStateCookie()
 
-  // User denied consent on Google's side
-  if (errorParam) {
-    return buildRedirect(request, `/integrations?error=${encodeURIComponent(errorParam)}`)
-  }
-
   if (!code) {
-    return buildRedirect(request, '/integrations?error=missing_code')
+    return buildRedirect(request, '/integrations/google-contacts?error=missing_code')
   }
 
   if (!state || !storedState || state !== storedState) {
-    return buildRedirect(request, '/integrations?error=csrf')
+    return buildRedirect(request, '/integrations/google-contacts?error=csrf')
   }
 
+  // D-09: always resolve org from session — never trust request params
   const supabase = await createClient()
   const { data: orgId } = await supabase.rpc('get_current_org_id')
 
   if (!orgId) {
-    return buildRedirect(request, '/integrations?error=no_org')
+    return buildRedirect(request, '/integrations/google-contacts?error=no_org')
   }
 
   try {
-    const { access_token, refresh_token, expires_in } = await exchangeCodeForTokens(code)
-    const googleEmail = await fetchGoogleUserEmail(access_token)
+    const tokens = await exchangeCodeForTokens(code)
 
-    const tokenExpiry = new Date(Date.now() + expires_in * 1000).toISOString()
-
-    const tokenBundle = JSON.stringify({
-      access_token,
-      refresh_token,
-      token_expiry: tokenExpiry,
-      google_email: googleEmail,
-    })
-
-    const encryptedBundle = await encrypt(tokenBundle)
-
-    const { error } = await supabase.from('integrations').upsert(
-      {
-        organization_id: orgId,
-        provider: 'google_contacts',
-        name: `Google Contacts (${googleEmail})`,
-        encrypted_api_key: encryptedBundle,
-        key_hint: googleEmail,
-        location_id: null,
-        config: {},
-        is_active: true,
-      },
-      { onConflict: 'organization_id,provider' }
-    )
-
-    if (error) {
-      throw new Error(error.message)
+    // Pitfall 2: refresh_token may be absent on reconnect (Google only issues on first grant).
+    // Log a warning but do not fail — the row will be upserted with whatever tokens are present.
+    if (!tokens.refresh_token) {
+      console.warn('[google-callback] refresh_token absent — this may be a reconnect. Proceeding with available tokens.')
     }
 
-    return buildRedirect(request, '/integrations?google_connected=true')
+    const googleEmail = await fetchGoogleUserEmail(tokens.access_token)
+
+    // D-02: encrypt only the token blob — encrypt() takes a STRING, not an object
+    const encryptedBlob = await encrypt(JSON.stringify({ access_token: tokens.access_token, refresh_token: tokens.refresh_token ?? null }))
+
+    const tokenExpiry = new Date(Date.now() + tokens.expires_in * 1000).toISOString()
+
+    const { error: upsertError } = await supabase
+      .from('integrations')
+      .upsert(
+        {
+          organization_id: orgId,
+          provider: 'google_contacts', // D-05
+          name: 'Google Contacts',
+          encrypted_api_key: encryptedBlob,  // D-02: { access_token, refresh_token } encrypted
+          key_hint: googleEmail,             // D-04: unencrypted email for display
+          config: {                          // D-03: non-sensitive metadata in JSONB
+            token_expiry: tokenExpiry,
+            google_email: googleEmail,
+          },
+          is_active: true,
+        },
+        { onConflict: 'organization_id,provider' } // D-06: enforced unique constraint
+      )
+
+    if (upsertError) {
+      throw new Error(upsertError.message)
+    }
+
+    // D-07: redirect to integrations page with success indicator
+    return buildRedirect(request, '/integrations/google-contacts?connected=true')
   } catch {
-    return buildRedirect(request, '/integrations?error=oauth_exchange')
+    return buildRedirect(request, '/integrations/google-contacts?error=oauth_exchange')
   }
 }
