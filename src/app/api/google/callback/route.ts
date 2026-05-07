@@ -5,7 +5,7 @@ import { encrypt } from '@/lib/crypto'
 import {
   GOOGLE_OAUTH_STATE_COOKIE,
   exchangeCodeForTokens,
-  getGoogleUserEmail,
+  fetchGoogleUserEmail,
 } from '@/lib/google-contacts/oauth'
 import { createClient, getUser } from '@/lib/supabase/server'
 
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest): Promise<Response> {
 
   try {
     const { access_token, refresh_token, expires_in } = await exchangeCodeForTokens(code)
-    const googleEmail = await getGoogleUserEmail(access_token)
+    const googleEmail = await fetchGoogleUserEmail(access_token)
 
     const tokenExpiry = new Date(Date.now() + expires_in * 1000).toISOString()
 
