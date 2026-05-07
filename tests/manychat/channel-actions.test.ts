@@ -22,8 +22,22 @@ import { createClient, getUser } from '@/lib/supabase/server'
 import { encrypt, maskApiKey } from '@/lib/crypto'
 
 function buildMockSupabaseClient(insertError: string | null = null, deleteError: string | null = null) {
-  const insertSpy = vi.fn().mockResolvedValue({ data: null, error: insertError ? { message: insertError } : null })
+  // Channel insert chain: insert({...}).select('id').single()
+  const singleSpy = vi.fn().mockResolvedValue({
+    data: insertError ? null : { id: 'ch-mock-id' },
+    error: insertError ? { message: insertError } : null,
+  })
+  const selectSpy = vi.fn().mockReturnValue({ single: singleSpy })
+  const insertSpy = vi.fn().mockReturnValue({ select: selectSpy })
   const eqSpy = vi.fn().mockResolvedValue({ data: null, error: deleteError ? { message: deleteError } : null })
+
+  // org_members mock for bridge insert path
+  const orgMemberSingleSpy = vi.fn().mockResolvedValue({ data: { organization_id: 'org-test-1' }, error: null })
+  const orgMemberEqSpy = vi.fn().mockReturnValue({ single: orgMemberSingleSpy })
+  const orgMemberSelectSpy = vi.fn().mockReturnValue({ eq: orgMemberEqSpy })
+
+  // integrations bridge insert mock
+  const integrationInsertSpy = vi.fn().mockResolvedValue({ data: null, error: null })
 
   const fromMock = vi.fn((table: string) => {
     if (table === 'manychat_channels') {
@@ -31,6 +45,12 @@ function buildMockSupabaseClient(insertError: string | null = null, deleteError:
         insert: insertSpy,
         delete: vi.fn().mockReturnValue({ eq: eqSpy }),
       }
+    }
+    if (table === 'org_members') {
+      return { select: orgMemberSelectSpy }
+    }
+    if (table === 'integrations') {
+      return { insert: integrationInsertSpy }
     }
     return {}
   })
@@ -224,10 +244,13 @@ type BridgeMockOpts = {
   channelInsertError?: string | null
   bridgeInsertError?: string | null
   deleteError?: string | null
+  orgId?: string
+  memberError?: string | null
 }
 
 function buildBridgeMockSupabase(opts: BridgeMockOpts = {}) {
   const channelId = opts.channelId ?? 'ch-new-1'
+  const orgId = opts.orgId ?? 'org-test-1'
 
   // manychat_channels.insert(...).select('id').single()
   const channelSingleSpy = vi.fn().mockResolvedValue({
@@ -247,6 +270,14 @@ function buildBridgeMockSupabase(opts: BridgeMockOpts = {}) {
     error: opts.bridgeInsertError ? { message: opts.bridgeInsertError } : null,
   })
 
+  // org_members.select('organization_id').eq('user_id', ...).single()
+  const orgMemberSingleSpy = vi.fn().mockResolvedValue({
+    data: opts.memberError ? null : { organization_id: orgId },
+    error: opts.memberError ? { message: opts.memberError } : null,
+  })
+  const orgMemberEqSpy = vi.fn().mockReturnValue({ single: orgMemberSingleSpy })
+  const orgMemberSelectSpy = vi.fn().mockReturnValue({ eq: orgMemberEqSpy })
+
   const fromMock = vi.fn((table: string) => {
     if (table === 'manychat_channels') {
       return {
@@ -256,6 +287,9 @@ function buildBridgeMockSupabase(opts: BridgeMockOpts = {}) {
     }
     if (table === 'integrations') {
       return { insert: bridgeInsertSpy }
+    }
+    if (table === 'org_members') {
+      return { select: orgMemberSelectSpy }
     }
     return {}
   })
@@ -267,6 +301,7 @@ function buildBridgeMockSupabase(opts: BridgeMockOpts = {}) {
     _bridgeInsertSpy: bridgeInsertSpy,
     _channelDeleteEqSpy: channelDeleteEqSpy,
     _channelDeleteSpy: channelDeleteSpy,
+    _orgMemberSingleSpy: orgMemberSingleSpy,
   }
 }
 
@@ -288,7 +323,7 @@ describe('OUTBOUND-bridge: createManychatChannel bridge sync', () => {
   })
 
   it('BR-2: integrations insert payload has provider="manychat", manychat_channel_id, same encrypted blob as channel insert', async () => {
-    const mockClient = buildBridgeMockSupabase({ channelId: 'ch-new-1' })
+    const mockClient = buildBridgeMockSupabase({ channelId: 'ch-new-1', orgId: 'org-test-1' })
     vi.mocked(createClient).mockResolvedValue(mockClient as unknown as Awaited<ReturnType<typeof createClient>>)
 
     const { createManychatChannel } = await import('@/app/(dashboard)/integrations/manychat/actions')
@@ -297,6 +332,7 @@ describe('OUTBOUND-bridge: createManychatChannel bridge sync', () => {
     const bridgeArg = mockClient._bridgeInsertSpy.mock.calls[0][0] as Record<string, unknown>
     expect(bridgeArg.provider).toBe('manychat')
     expect(bridgeArg.name).toBe('Main Bot')
+    expect(bridgeArg.organization_id).toBe('org-test-1')
     expect(bridgeArg.encrypted_api_key).toBe('iv-base64:ciphertext-base64') // same blob as channel insert (no re-encryption)
     expect(bridgeArg.key_hint).toBe('••••••••key4')
     expect(bridgeArg.location_id).toBeNull()
