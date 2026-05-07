@@ -194,7 +194,7 @@ Plans:
 **Plans**: 2 plans
 **UI hint**: yes
 Plans:
-- [ ] 26-01-PLAN.md — getManychatFlows() + rules page + RuleFormSheet + delete AlertDialog (Wave 1)
+- [x] 26-01-PLAN.md — getManychatFlows() + rules page + RuleFormSheet + delete AlertDialog (Wave 1)
 - [ ] 26-02-PLAN.md — events page + ManychatEvents component + getManychatEvents() action (Wave 2)
 
 ### Phase 27: OAuth + DB Foundation
@@ -242,7 +242,7 @@ Plans:
 | 23. Inbound Routing | v1.6 | 4/4 | Complete   | 2026-05-06 |
 | 24. Dashboard Config UI | v1.6 | 2/2 | Complete   | 2026-05-07 |
 | 25. Outbound Actions | v1.6 | 4/4 | Complete    | 2026-05-07 |
-| 26. Rules UI + Event Log | v1.6 | 0/2 | Not started | - |
+| 26. Rules UI + Event Log | v1.6 | 1/2 | In Progress|  |
 | 27. OAuth + DB Foundation | v1.7 | 0/? | Not started | - |
 | 28. Action Executors | v1.7 | 0/? | Not started | - |
 | 29. Dashboard UI | v1.7 | 0/? | Not started | - |
