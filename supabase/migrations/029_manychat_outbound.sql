@@ -1,5 +1,5 @@
 -- =============================================================================
--- Migration: 028_manychat_outbound
+-- Migration: 029_manychat_outbound
 -- Phase: v1.6 ManyChat Integration — Phase 25 Outbound Actions
 -- Adds:    4 enum values to public.action_type (set_field, add_tag, trigger_flow, send_message)
 --          integrations.manychat_channel_id FK column (ON DELETE CASCADE)
