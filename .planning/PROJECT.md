@@ -25,7 +25,7 @@ That business logic may differ by client. The invariant is the reliability of th
 
 ---
 
-## Last Milestone: v1.6 ManyChat Integration 🚧 (in progress — phases 25-26 pending)
+## Last Milestone: v1.6 ManyChat Integration 🚧 (in progress — phase 26 pending)
 
 **Goal:** Add ManyChat as a trigger source — a ManyChat flow fires an External Request → Operator routes it to any configured action (GHL, Twilio, etc.) and can push back to ManyChat as an action output.
 
@@ -33,7 +33,7 @@ That business logic may differ by client. The invariant is the reliability of th
 - Webhook ingestion (`/api/manychat/webhook`) with `X-Operator-Secret` verification + event audit log
 - Inbound routing engine: `event_type` + condition JSONB → dispatch to existing tool_configs actions
 - Dashboard setup UI: connect API key, copy webhook URL + secret + payload template
-- Outbound actions: `manychat_set_field`, `manychat_add_tag`, `manychat_trigger_flow`, `manychat_send_message`
+- Outbound actions: `manychat_set_field`, `manychat_add_tag`, `manychat_trigger_flow`, `manychat_send_message` ✅ Phase 25 complete (2026-05-07)
 - Rules manager UI + event log with status/date filters
 
 ---
