@@ -212,7 +212,7 @@ export interface Database {
         Row: {
           id: string
           organization_id: string
-          integration_id: string
+          integration_id: string | null
           tool_name: string
           action_type: 'create_contact' | 'get_availability' | 'create_appointment' | 'send_sms' | 'knowledge_base' | 'custom_webhook' | 'manychat_set_field' | 'manychat_add_tag' | 'manychat_trigger_flow' | 'manychat_send_message' | 'google_contacts_create' | 'google_contacts_update' | 'google_contacts_find' | 'google_contacts_delete'
           config: Json
@@ -226,7 +226,7 @@ export interface Database {
         Insert: {
           id?: string
           organization_id: string
-          integration_id: string
+          integration_id?: string | null
           tool_name: string
           action_type: 'create_contact' | 'get_availability' | 'create_appointment' | 'send_sms' | 'knowledge_base' | 'custom_webhook' | 'manychat_set_field' | 'manychat_add_tag' | 'manychat_trigger_flow' | 'manychat_send_message' | 'google_contacts_create' | 'google_contacts_update' | 'google_contacts_find' | 'google_contacts_delete'
           config?: Json
@@ -238,7 +238,7 @@ export interface Database {
           updated_at?: string
         }
         Update: {
-          integration_id?: string
+          integration_id?: string | null
           tool_name?: string
           action_type?: 'create_contact' | 'get_availability' | 'create_appointment' | 'send_sms' | 'knowledge_base' | 'custom_webhook' | 'manychat_set_field' | 'manychat_add_tag' | 'manychat_trigger_flow' | 'manychat_send_message' | 'google_contacts_create' | 'google_contacts_update' | 'google_contacts_find' | 'google_contacts_delete'
           config?: Json
