@@ -267,8 +267,8 @@ Plans:
   5. When a custom_webhook request exceeds 10 seconds, the executor returns a timeout error without crashing the action engine
 **Plans**: 2 plans
 Plans:
-- [x] 30-01-PLAN.md — Wave 0 test stubs (SMS-01..04 + WEBHOOK-01..05 as it.todo)
-- [ ] 30-02-PLAN.md — Twilio SMS executor + custom_webhook executor + execute-action.ts wiring
+- [ ] 30-01-PLAN.md — Twilio SMS executor (send_sms) + credentials resolver
+- [x] 30-02-PLAN.md — custom_webhook executor + ActionContext.toolConfig + call site updates
 
 ### Phase 31: Tool Config Form UI
 **Goal**: Admins can configure send_sms and custom_webhook tool_configs entirely from the tool form UI without touching the database directly
@@ -297,7 +297,7 @@ Plans:
 | 27. OAuth + DB Foundation | v1.7 | 3/3 | Complete ⚠️ | 2026-05-07 |
 | 28. Action Executors | v1.7 | 4/4 | Complete    | 2026-05-07 |
 | 29. Dashboard UI | v1.7 | 1/1 | Complete    | 2026-05-07 |
-| 30. Executor Backends | v1.8 | 1/2 | In Progress|  |
+| 30. Executor Backends | v1.8 | 1/2 (30-02 done) | In progress | — |
 | 31. Tool Config Form UI | v1.8 | 0/? | Not started | — |
 
 *Last updated: 2026-05-07 — v1.8 roadmap created. Phases 30–31 ready to plan.*

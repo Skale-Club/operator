@@ -2,25 +2,25 @@
 gsd_state_version: 1.0
 milestone: v1.8
 milestone_name: Executor Completeness
-status: executing
-stopped_at: Completed 30-01-PLAN.md
-last_updated: "2026-05-08T00:09:08.585Z"
+status: in_progress
+stopped_at: Completed 30-02-PLAN.md — custom_webhook executor implemented
+last_updated: "2026-05-08T00:09:13Z"
 last_activity: 2026-05-08
 progress:
-  total_phases: 10
-  completed_phases: 5
-  total_plans: 23
-  completed_plans: 17
+  total_phases: 2
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Operator - State
 
 ## Current Position
 
-Phase: 30 (Executor Backends) — EXECUTING
-Plan: 2 of 2
-Status: Ready to execute
-Last activity: 2026-05-08
+Phase: 30 — Executor Backends
+Plan: 02 complete (custom_webhook executor)
+Status: In progress — 30-01 (send_sms) parallel
+Last activity: 2026-05-08 — 30-02 custom_webhook executor complete
 
 ## Milestone Progress
 
@@ -51,15 +51,21 @@ See `.planning/ROADMAP.md` for phase details.
 
 ## Accumulated Context
 
+### v1.8 Decisions
+
+| Decision | Plan | Rationale |
+|----------|------|-----------|
+| toolConfig passed via ActionContext.toolConfig optional field | 30-02 | Keeps executor signature clean without polluting params namespace |
+| Non-2xx returns error string, not throw | 30-02 | HTTP status in result string is more informative than generic fallback_message |
+| AbortError propagates from executeWebhook | 30-02 | Caller can distinguish timeout vs error in action_logs status field |
+
 ### v1.8 Scope
 
 Two executor stubs that throw "Unsupported action type" in `src/lib/action-engine/execute-action.ts`:
-
 - `send_sms` — Twilio API using org's Account SID + Auth Token from `integrations` table (provider: `twilio`), encrypted as JSON blob in `encrypted_api_key`
 - `custom_webhook` — configurable HTTP call; URL/method/headers/body template stored in `tool_configs.config` JSONB; `{{param_name}}` substitution before send; 10s timeout
 
 Pattern references:
-
 - Executor pattern: `src/lib/google-contacts/` and `src/lib/manychat/`
 - Credential decryption: see how google_contacts and twilio integration rows are read
 - Tool config form: `src/components/tools/tool-config-form.tsx`
@@ -72,5 +78,5 @@ No new migrations needed — `send_sms` and `custom_webhook` are already in the 
 
 ## Session Continuity
 
-Last session: 2026-05-08T00:09:08.577Z
-Stopped at: Completed 30-01-PLAN.md
+Last session: 2026-05-07
+Stopped at: v1.8 roadmap created — run `/gsd:plan-phase 30` next

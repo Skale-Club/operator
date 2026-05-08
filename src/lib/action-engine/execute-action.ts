@@ -1,6 +1,7 @@
 // src/lib/action-engine/execute-action.ts
 // Dispatcher: routes action_type to the correct executor
 // Phase 4: added 'knowledge_base' case with optional ctx parameter
+// Phase 30: added custom_webhook executor; ActionContext gains optional toolConfig
 
 import { createContact } from '@/lib/ghl/create-contact'
 import { getAvailability } from '@/lib/ghl/get-availability'
@@ -14,8 +15,9 @@ import { createGoogleContact } from '@/lib/google-contacts/create-contact'
 import { updateGoogleContact } from '@/lib/google-contacts/update-contact'
 import { findGoogleContact } from '@/lib/google-contacts/find-contact'
 import { deleteGoogleContact } from '@/lib/google-contacts/delete-contact'
+import { executeWebhook } from '@/lib/custom-webhook/execute-webhook'
 import type { GhlCredentials } from '@/lib/ghl/client'
-import type { Database } from '@/types/database'
+import type { Database, Json } from '@/types/database'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 type ActionType = Database['public']['Enums']['action_type']
@@ -23,6 +25,8 @@ type ActionType = Database['public']['Enums']['action_type']
 export interface ActionContext {
   organizationId: string
   supabase: SupabaseClient<Database>
+  /** tool_configs.config JSONB — required for custom_webhook */
+  toolConfig?: Json
 }
 
 export async function executeAction(
@@ -70,9 +74,14 @@ export async function executeAction(
       return deleteGoogleContact(params, ctx)
     }
     case 'send_sms':
-    case 'custom_webhook':
-      // Stubs for v2 requirements
-      throw new Error(`Unsupported action type: ${actionType}`)
+      // Stub — implemented by send_sms executor (30-01)
+      throw new Error('Unsupported action type: send_sms')
+    case 'custom_webhook': {
+      if (!ctx?.toolConfig) {
+        throw new Error('custom_webhook requires ctx.toolConfig (the tool_config.config JSONB)')
+      }
+      return executeWebhook(params, ctx.toolConfig)
+    }
     case 'manychat_set_field':
       return setManychatField(params, credentials)
     case 'manychat_add_tag':
