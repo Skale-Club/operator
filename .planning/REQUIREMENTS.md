@@ -42,10 +42,10 @@
 | SMS-02 | Phase 30 | In Progress |
 | SMS-03 | Phase 30 | In Progress |
 | SMS-04 | Phase 30 | In Progress |
-| SMS-05 | Phase 31 | Pending |
+| SMS-05 | Phase 31 | Complete |
 | WEBHOOK-01 | Phase 30 | Pending |
 | WEBHOOK-02 | Phase 30 | Pending |
 | WEBHOOK-03 | Phase 30 | Pending |
 | WEBHOOK-04 | Phase 30 | Pending |
 | WEBHOOK-05 | Phase 30 | Pending |
-| WEBHOOK-06 | Phase 31 | Pending |
+| WEBHOOK-06 | Phase 31 | Complete |
