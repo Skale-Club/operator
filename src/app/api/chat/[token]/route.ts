@@ -129,7 +129,7 @@ export async function POST(
       if (!rawTools || rawTools.length === 0) return []
 
       // Fetch integrations for all integration_ids referenced by these tools
-      const integrationIds = [...new Set(rawTools.map(t => t.integration_id))]
+      const integrationIds = [...new Set(rawTools.map(t => t.integration_id).filter((id): id is string => id !== null))]
       const { data: integrations } = await supabase
         .from('integrations')
         .select('id, encrypted_api_key, location_id')
@@ -142,7 +142,7 @@ export async function POST(
 
       const toolsWithCreds: ToolWithCredentials[] = []
       for (const tool of rawTools) {
-        const integration = integrationMap.get(tool.integration_id)
+        const integration = tool.integration_id ? integrationMap.get(tool.integration_id) : undefined
         if (!integration) continue
         try {
           const apiKey = await decrypt(integration.encrypted_api_key)
@@ -152,7 +152,7 @@ export async function POST(
             action_type: tool.action_type as ToolWithCredentials['action_type'],
             config: (tool.config ?? {}) as Record<string, unknown>,
             fallback_message: tool.fallback_message,
-            integration_id: tool.integration_id,
+            integration_id: tool.integration_id ?? '',
             apiKey,
             locationId: integration.location_id ?? '',
           })
