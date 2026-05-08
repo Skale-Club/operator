@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.8
 milestone_name: Executor Completeness
 status: completed
-stopped_at: 30-04 complete — Twilio SMS executor wired into action engine
-last_updated: "2026-05-08T01:04:24.947Z"
+stopped_at: 31-01 complete — tool-config-form conditional fields for send_sms and custom_webhook
+last_updated: "2026-05-08T01:26:33.392Z"
 last_activity: 2026-05-08
 progress:
   total_phases: 10
-  completed_phases: 6
-  total_plans: 25
-  completed_plans: 20
+  completed_phases: 7
+  total_plans: 26
+  completed_plans: 21
 ---
 
 # Operator - State
@@ -18,8 +18,8 @@ progress:
 ## Current Position
 
 Phase: 31
-Plan: Not started
-Status: Phase 30 complete — all 4 plans executed
+Plan: 01 (complete)
+Status: Phase 31 plan 01 complete — tool-config-form conditional fields + integration_id fix
 Last activity: 2026-05-08
 
 ## Milestone Progress
@@ -32,11 +32,11 @@ Last activity: 2026-05-08
 - v1.5 Tools Folder System: ✅ Shipped 2026-05-06
 - v1.6 ManyChat Integration: ✅ Shipped 2026-05-07
 - v1.7 Google Contacts Integration: ✅ Shipped 2026-05-07 ⚠️ pending Google Cloud credentials
-- v1.8 Executor Completeness: 🚧 Active — 0/2 phases complete
+- v1.8 Executor Completeness: 🚧 Active — 1/2 phases complete
 
 ```
-Phase 30 [          ] 0%   Executor Backends
-Phase 31 [          ] 0%   Tool Config Form UI
+Phase 30 [██████████] 100%   Executor Backends
+Phase 31 [██████████] 100%   Tool Config Form UI
 ```
 
 ## Project Reference
@@ -66,17 +66,23 @@ Pattern references:
 
 No new migrations needed — `send_sms` and `custom_webhook` are already in the `action_type` DB enum and in `database.ts` types.
 
+## Decisions
+
+- [Phase 31] integrationId made optional/nullable in zod with superRefine conditional validation rather than schema swapping — keeps the type simple and the schema single
+- [Phase 31] Conditional spread pattern for NOT NULL FK columns: omit integration_id entirely from DB insert/update when empty rather than passing an empty string
+
 ## Pending Todos
 
 - ⚠️ (v1.7) Register Google OAuth app in Google Cloud Console + set GOOGLE_CLIENT_ID/SECRET in Vercel
 
 ## Session Continuity
 
-Last session: 2026-05-08
-Stopped at: 30-04 complete — Twilio SMS executor wired into action engine
+Last session: 2026-05-08T01:26:33.383Z
+Stopped at: 31-01 complete — tool-config-form conditional fields for send_sms and custom_webhook
 
 ## Performance Metrics
 
 | Phase | Plan | Duration | Tasks | Files |
 |-------|------|----------|-------|-------|
 | 30 | 04 | 8 min | 2/2 | 3 |
+| 31 | 01 | 12 min | 1/1 | 2 |
