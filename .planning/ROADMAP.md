@@ -41,7 +41,11 @@ Continuous numbering across milestones. v1.8 ended at phase 31; v1.9 starts at p
   3. Every Lost opportunity in the configured GHL location whose `updatedAt` is older than the threshold (default 180 days) receives exactly one SMS per contact ever — repeated invocations skip contacts already present in `ghl_reengagement_sent`
   4. Each SMS message has `{{first_name}}` substituted (or the fallback "amigo(a)" when missing) and every dispatch attempt (success or failure) appears in `action_logs` with `tool_name='ghl_reengagement_sms'` and either response payload or error detail
   5. An operator can configure the automation end-to-end by setting env vars on Vercel + GitHub Action secrets — the required vars are documented in `docs/automations/ghl-reengagement.md` along with the cron schedule and how to manually trigger a run
-**Plans**: TBD
+**Plans**: 4 plans
+- [ ] 32-01-PLAN.md — Wave 0 test scaffolds (4 Vitest stubs + shared fixture for REENG-01, 03, 08)
+- [ ] 32-02-PLAN.md — GHL list lib + render-template helper + migration 032_ghl_reengagement_sent + schema push + types regen (REENG-01..04, 08, 09)
+- [ ] 32-03-PLAN.md — runReengagement orchestration (claim-first anti-loop, allSettled dispatch, logAction redaction) (REENG-02, 04, 10, 11, 12)
+- [ ] 32-04-PLAN.md — Protected route handler + GitHub Action workflow + operator docs + phase gate (REENG-05..07, 13..17)
 
 ## Progress
 
@@ -50,4 +54,4 @@ Phases execute in numeric order: 32 → (future phases continue from 33)
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 32. GHL Lost-Lead Reengagement SMS Automation | v1.9 | 0/TBD | Not started | - |
+| 32. GHL Lost-Lead Reengagement SMS Automation | v1.9 | 0/4 | Planned | - |
