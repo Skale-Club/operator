@@ -29,18 +29,13 @@ export async function createIntegration(data: {
   if (!user) return { error: 'Not authenticated.' }
   const supabase = await createClient()
 
-  const { data: member, error: memberError } = await supabase
-    .from('org_members')
-    .select('organization_id')
-    .eq('user_id', user.id)
-    .single()
-
-  if (memberError || !member) return { error: 'No organization found for this user.' }
+  const { data: orgId, error: orgError } = await supabase.rpc('get_current_org_id')
+  if (orgError || !orgId) return { error: 'No active organization found for this user.' }
 
   const encryptedKey = await encrypt(data.apiKey)
 
   const { error } = await supabase.from('integrations').insert({
-    organization_id: member.organization_id,
+    organization_id: orgId,
     provider: data.provider as Provider,
     name: data.name,
     encrypted_api_key: encryptedKey,
@@ -49,7 +44,12 @@ export async function createIntegration(data: {
     config: data.config ?? {},
   })
 
-  if (error) return { error: error.message }
+  if (error) {
+    if (error.code === '23505') {
+      return { error: `An integration for ${data.name} already exists in this organization. Edit the existing one instead.` }
+    }
+    return { error: error.message }
+  }
 
   revalidatePath('/integrations')
 }
