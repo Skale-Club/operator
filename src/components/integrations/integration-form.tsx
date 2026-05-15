@@ -102,14 +102,15 @@ export function IntegrationForm({ provider, integration, onSuccess }: Integratio
       }
 
       if (result && 'error' in result && result.error) {
-        toast.error('Failed to save integration. Try again.')
+        toast.error(`Failed to save integration: ${result.error}`)
         return
       }
 
       toast.success('Integration saved.')
       onSuccess()
-    } catch {
-      toast.error('Failed to save integration. Try again.')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error'
+      toast.error(`Failed to save integration: ${msg}`)
     } finally {
       setIsPending(false)
     }
