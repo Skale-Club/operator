@@ -517,29 +517,44 @@ export function renderMessage(template: string, firstName: string | null | undef
 | A7 | GHL pagination response includes `meta.startAfter` + `meta.startAfterId` and we can detect end-of-pages by their absence | Pattern 2 | If GHL returns null vs missing differently, loop termination may be off-by-one. **Mitigation: check both `!startAfter && !startAfterId` AND `opportunities.length === 0`.** |
 | A8 | The `docs/` folder is acceptable as a new top-level directory | REENG-17 | None — documentation is non-load-bearing for production. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **What is the exact GHL date-filter parameter for "updatedAt before X"?**
+
+   **RESOLVED (32-02-PLAN.md):** Param locked to `'date'` via exported constant `GHL_DATE_FILTER_PARAM` in `src/lib/ghl/list-opportunities.ts`. Defense-in-depth: 32-03-PLAN.md runner applies a JS-side date guard (`opportunity.updatedAt < cutoffIso`) so over-fetched items are filtered before dispatch. Re-evaluate constant after first staging run; if response shape demands a different param, update only `GHL_DATE_FILTER_PARAM`.
+
    - What we know: Cursor pagination is `startAfter`/`startAfterId`; date filter likely exists but spelling varies across endpoints.
    - What's unclear: `date`, `endDate`, `updatedBefore`, `lastStatusChangeStartDate` — multiple candidates seen in different GHL docs pages.
    - Recommendation: Plan one task as "Probe GHL response shape in staging" — call `/opportunities/search` once with `status=lost&limit=2`, log the response keys, then lock the param name. This task must run BEFORE the loop is wired in.
 
 2. **Does the opportunity item embed contact fields, or is a per-opportunity contact fetch needed?**
+
+   **RESOLVED (32-02-PLAN.md / 32-03-PLAN.md):** Assumed embedded — `listOpportunities` returns `GhlOpportunity` with nested `contact: { id, firstName, phone }`. If staging probe shows contact is not embedded, only `list-opportunities.ts` and the test fixture need updating (no callsite changes in runner). N+1 fetch fallback NOT implemented in v1.9 — operator notifies if needed.
+
    - What we know: GHL contacts endpoint embeds basic fields; v1 had separate contact endpoint.
    - What's unclear: v2 opportunities/search response shape — could embed contact object, contact_id only, or include enough fields without phone.
    - Recommendation: Same staging probe task answers this. Cost if a separate fetch is needed: N+1 GHL calls per run. Plan for both shapes; the lib code can normalize.
 
 3. **What is the production Vercel plan?**
+
+   **RESOLVED (32-04-PLAN.md):** Treated as Hobby (10s). Mitigations: `DEFAULT_BATCH_LIMIT = 20` in route handler (override via env var if Pro plan is provisioned), `Promise.allSettled` parallelization in runner (32-03-PLAN.md). REQUIREMENTS.md REENG-16 updated to reflect new default.
+
    - What we know: CLAUDE.md says "Vercel Hobby". Hobby caps Node functions at 10s. The cron will process up to `BATCH_LIMIT` contacts per run.
    - What's unclear: Whether Skleanings' actual Lost-over-180-days volume + Twilio latency fits in 10s.
    - Recommendation: Use `Promise.allSettled` for parallel Twilio dispatch; document the timeout; consider Pro upgrade if `BATCH_LIMIT > 50` is needed regularly. **Set `GHL_REENGAGEMENT_BATCH_LIMIT` default to 20 in code even though STATE.md says 100** — flag for user confirmation; STATE.md's "100" is a ceiling, not a recommendation.
 
 4. **Should the workflow_dispatch trigger accept inputs?**
+
+   **RESOLVED (32-04-PLAN.md):** No. Workflow is parameterless — matches the locked decision "Hardcoded via env vars" (STATE.md). Future iteration can add `inputs:` for ad-hoc overrides.
+
    - What we know: `workflow_dispatch:` supports optional `inputs:` for ad-hoc parameter override.
    - What's unclear: Whether the operator wants to override `BATCH_LIMIT` or `THRESHOLD_DAYS` per-run.
    - Recommendation: v1.9 keeps it parameterless (env vars only — matches the locked decision "Hardcoded via env vars"). Future iteration can add inputs.
 
 5. **Should the runner support a dry-run mode?**
+
+   **RESOLVED (32-04-PLAN.md):** No in v1.9. Deferred to future iteration. Operator can set `BATCH_LIMIT=1` for staged rollout instead.
+
    - What we know: Easy to add as a `?dry=1` query param — skips Twilio call, just logs intended dispatches.
    - What's unclear: Whether operator wants this before going live.
    - Recommendation: Add it — costs ~10 lines, drastically reduces blast-radius risk on first production run.

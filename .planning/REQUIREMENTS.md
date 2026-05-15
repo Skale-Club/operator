@@ -42,7 +42,7 @@ Requirements for the v1.9 milestone — MVP automation that detects GHL `Lost` o
 ### REENG — Configuration
 
 - [ ] **REENG-15:** Runner reads required env vars on each invocation: `GHL_REENGAGEMENT_LOCATION_ID`, `GHL_REENGAGEMENT_INTEGRATION_ID`, `GHL_REENGAGEMENT_TWILIO_INTEGRATION_ID`, `GHL_REENGAGEMENT_MESSAGE`, `GHL_REENGAGEMENT_TRIGGER_SECRET`. Missing required vars → HTTP 500 with a clear actionable error
-- [ ] **REENG-16:** Optional env vars with defaults: `GHL_REENGAGEMENT_THRESHOLD_DAYS` (default 180), `GHL_REENGAGEMENT_BATCH_LIMIT` (default 100)
+- [ ] **REENG-16:** Optional env vars with defaults: `GHL_REENGAGEMENT_THRESHOLD_DAYS` (default 180), `GHL_REENGAGEMENT_BATCH_LIMIT` (default 20 on Vercel Hobby; raise via env var if on Pro/Enterprise with > 10s function timeout)
 - [ ] **REENG-17:** Documentation file `docs/automations/ghl-reengagement.md` explains env var setup for Vercel + GitHub Action secrets, includes the cron schedule, and how to run a manual trigger
 
 ---
