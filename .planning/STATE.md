@@ -67,7 +67,7 @@ Critical pieces:
   - `GHL_REENGAGEMENT_MESSAGE` (template com `{{first_name}}`)
   - `GHL_REENGAGEMENT_TRIGGER_SECRET` (bearer pro endpoint)
   - `GHL_REENGAGEMENT_THRESHOLD_DAYS` (default 180, optional)
-  - `GHL_REENGAGEMENT_BATCH_LIMIT` (default 100, optional)
+  - `GHL_REENGAGEMENT_BATCH_LIMIT` (default 20, optional — Vercel Hobby safety; raise on Pro)
 
 Pattern references:
 
@@ -88,6 +88,7 @@ Reserved for future milestone (não fazer agora):
 - [v1.9] GitHub Actions como scheduler — projeto já usa pra keepalive; evita custo de Vercel Cron e mantém scheduling externo ao app
 - [v1.9] Anti-loop persistido em DB (não em GHL tag) — fonte da verdade no nosso lado, evita depender de tags GHL que podem ser removidas
 - [v1.9] Single-phase decomposition (Phase 32) — MVP scope is small and tightly coupled; splitting list/migration/endpoint from scheduler/docs would create artificial cut without value
+- [v1.9] BATCH_LIMIT default reduced from documented 100 → 20 in implementation. Reason: Vercel Hobby 10s function timeout + Twilio ~500ms latency + Promise.allSettled fan-out makes 100 unsafe; operator can raise via env var on Pro plan.
 
 ## Pending Todos
 
