@@ -1,15 +1,14 @@
 # Phase 32: GHL Lost-Lead Reengagement SMS Automation — Research
 
 **Researched:** 2026-05-15
-**Revised:** 2026-05-15 — SMS executor swapped from Twilio to GHL Conversations API (`sendSmsViaGhl`). Rationale: keep the conversation thread inside the GHL sub-account so replies route back through GHL's inbound webhook and stay in the CRM contact history.
-**Domain:** Scheduled outbound automation — GHL Opportunities API + GHL Conversations SMS executor + Supabase anti-loop persistence + GitHub Actions scheduler
+**Domain:** Scheduled outbound automation — GHL Opportunities API + Twilio SMS executor + Supabase anti-loop persistence + GitHub Actions scheduler
 **Confidence:** HIGH (internal patterns) · MEDIUM (GHL Opportunities Search API field shape — docs are JS-rendered)
 
 ## Summary
 
-Phase 32 entrega um MVP end-to-end de reengagement SMS para a sub-account Skleanings no GoHighLevel. A maior parte do trabalho é **integração** de peças já existentes no codebase, não código novo de plataforma: o executor GHL SMS (`sendSmsViaGhl`) já está implementado em `src/lib/ghl/send-sms.ts`, o wrapper GHL (`ghlFetch` / `ghlFetchJson` com `timeoutMs` opcional) já está pronto em `src/lib/ghl/client.ts`, o padrão de logging em `action_logs` já existe e está tipado, e o scheduler já tem um precedente (`.github/workflows/supabase-keepalive.yml`). As únicas peças novas são: (1) um novo método `listOpportunities()` que usa cursor pagination da GHL, (2) uma migration adicionando a tabela `ghl_reengagement_sent` com RLS org-scoped, (3) um endpoint Node `POST /api/automations/ghl-reengagement/run` autenticado por bearer secret e usando service-role client (sem sessão de usuário), e (4) um workflow YAML de cron diário.
+Phase 32 entrega um MVP end-to-end de reengagement SMS para a sub-account Skleanings no GoHighLevel. A maior parte do trabalho é **integração** de peças já existentes no codebase, não código novo de plataforma: o executor Twilio (`sendSms`) já está validado em v1.8 em `src/lib/twilio/send-sms.ts`, o wrapper GHL (`ghlFetch` / `ghlFetchJson` com `timeoutMs` opcional) já está pronto em `src/lib/ghl/client.ts`, o padrão de logging em `action_logs` já existe e está tipado, e o scheduler já tem um precedente (`.github/workflows/supabase-keepalive.yml`). As únicas peças novas são: (1) um novo método `listOpportunities()` que usa cursor pagination da GHL, (2) uma migration adicionando a tabela `ghl_reengagement_sent` com RLS org-scoped, (3) um endpoint Node `POST /api/automations/ghl-reengagement/run` autenticado por bearer secret e usando service-role client (sem sessão de usuário), e (4) um workflow YAML de cron diário.
 
-**Key simplification from the Twilio version:** porque `/opportunities/search` já retorna `contact.id`, o runner passa `contactId` direto pro `sendSmsViaGhl` e pula o branch find-or-create — exatamente 1 chamada GHL por dispatch.
+**Note on `src/lib/ghl/send-sms.ts`:** esse arquivo existe no codebase mas serve à camada de Vapi tool routing (quando uma tool específica tem integração GHL bound). NÃO é o executor desta automação — Phase 32 usa Twilio (`src/lib/twilio/send-sms.ts`), seguindo a decisão "depende de Phase 31 (v1.8 send_sms Twilio executor)" do ROADMAP.
 
 A maior incerteza concentra-se nos detalhes exatos da GHL Search Opportunities API — o nome canônico do filtro de data (`updatedAt` vs `lastStatusChangeStartDate`) e a forma exata em que o contato é embutido no item do response. A documentação oficial é renderizada via JS e bloqueia scraping. A pagination cursor (`startAfter` + `startAfterId` + `meta` no response) está confirmada por fonte secundária independente.
 
@@ -100,7 +99,7 @@ A maior incerteza concentra-se nos detalhes exatos da GHL Search Opportunities A
 | Library | Purpose | Reuse Point |
 |---------|---------|-------------|
 | Native `fetch` | GHL HTTP | `src/lib/ghl/client.ts:29` |
-| `sendSmsViaGhl` | SMS dispatch via GHL Conversations API | `src/lib/ghl/send-sms.ts` (já existe; aceita `contactId` direto → 1 chamada GHL por dispatch) |
+| `sendSms` | SMS dispatch via Twilio Messages REST API | `src/lib/twilio/send-sms.ts` (validado em v1.8; assina `sendSms({ to, body }, ctx)` — resolve credenciais Twilio do row `integrations` indicado por `GHL_REENGAGEMENT_TWILIO_INTEGRATION_ID`) |
 | Web Crypto (`crypto.subtle`) | AES-GCM decrypt of stored API key | `src/lib/crypto.ts:48` |
 | Node `crypto` | `timingSafeEqual` for bearer secret compare | Node-runtime only — fine because runner is `runtime = 'nodejs'` |
 
@@ -427,7 +426,7 @@ function isAuthorized(req: Request): boolean {
 | Problem | Don't Build | Use Instead | Why |
 |---------|-------------|-------------|-----|
 | HTTP wrapper with auth headers + JSON parsing for GHL | A new fetch wrapper | `ghlFetchJson` from `src/lib/ghl/client.ts:45` | Já trata Bearer + Version header + error shape; agora aceita `timeoutMs` opcional |
-| GHL SMS dispatch | Um chamador custom da Conversations API | `sendSmsViaGhl()` from `src/lib/ghl/send-sms.ts` | Já existe; aceita `contactId` (preferido) ou phone (find-or-create). Para o cron runner SEMPRE passar `contactId` da `/opportunities/search` — pula find-or-create |
+| SMS dispatch via Twilio | Um chamador custom da Twilio Messages API | `sendSms()` from `src/lib/twilio/send-sms.ts` | Já validado em v1.8; resolve credenciais Twilio (account_sid + auth_token + from_number) do row `integrations` apontado por `GHL_REENGAGEMENT_TWILIO_INTEGRATION_ID`. Runner passa `{ to: phone, body }` direto — phone vem da `/opportunities/search` |
 | Supabase service-role client | Inline `createClient` call | `createServiceRoleClient()` from `src/lib/supabase/admin.ts:7` | Single source of truth; respects `auth.persistSession: false` |
 | `action_logs` insert | Inline `.from('action_logs').insert(…)` | `logAction()` from `src/lib/action-engine/log-action.ts:23` | Wraps in try/catch (never throws); returns log id for chaining |
 | API key decryption | Reimplementing AES-GCM | `decrypt()` from `src/lib/crypto.ts:48` | Edge/Node compatible; do not touch encryption format (CLAUDE.md sensitive path) |
@@ -457,11 +456,11 @@ function isAuthorized(req: Request): boolean {
 **How to avoid:** First-run probing — log the full GHL response JSON keys once in staging (use the GHL_REENGAGEMENT_BATCH_LIMIT=1 + tail logs). Then commit the correct param name as a constant.
 **Warning signs:** Runner sends to contacts whose `updatedAt` < threshold; first deploy must include a JS-side date guard as defense in depth.
 
-### Pitfall 2: GHL contact phone formatting (mitigado pelo dispatch GHL-nativo)
-**What goes wrong:** Com o executor Twilio, o runner precisava rejeitar contatos sem E.164. Com `sendSmsViaGhl`, a Conversations API usa o phone que o GHL já tem armazenado naquele `contactId` — a gente nunca passa um phone raw.
-**Por que ainda importa:** Um contato GHL sem phone ou sem permissão de mensageria fará a Conversations API retornar erro tipo "contact has no phone number" ou "messaging not enabled". Trate como `failed` (não `skipped`) — não dá pra saber sem ler o contato antes, que custa uma chamada extra.
-**How to avoid:** Confie nos dados do GHL. Surface erros da API em `action_logs.error_detail` para o operador corrigir no CRM.
-**Warning signs:** GHL responde `400` / `422` com mensagem sobre missing phone ou messaging permissions.
+### Pitfall 2: GHL contact phone formatting vs Twilio E.164 strictness
+**What goes wrong:** A Twilio Messages API rejeita números fora do formato E.164 (`+` + country code + dígitos, sem espaços/dashes/parênteses). GHL armazena phones em formatos variados — alguns contatos chegam como `+5511999990001` (OK), outros como `11999990001` ou `(11) 99999-0001` (Twilio rejeita).
+**Why it matters:** Sem pré-validação, cada phone non-E.164 vira um erro Twilio 4xx — gasta round-trip, polui `action_logs` com noise, e (pior) o claim anti-loop precisaria de rollback. Mais simples: pular antes de chamar.
+**How to avoid:** Pre-flight regex `/^\+[1-9]\d{7,14}$/` no runner ANTES de chamar `sendSms`. Contatos sem phone ou com phone non-E.164 → contar como `skipped` com reason `'phone_invalid'`, NÃO `failed`. Anti-loop row NÃO é inserido para esses (eles podem voltar quando o phone for corrigido no CRM).
+**Warning signs:** Twilio retorna `400 The 'To' number is not a valid phone number` ou erro `21211 Invalid 'To' Phone Number`.
 
 ### Pitfall 3: Pagination loop without a hard page cap
 **What goes wrong:** A bug in GHL pagination metadata (or a misread of the response shape) causes infinite loop until function timeout.
@@ -519,31 +518,33 @@ const credentials: GhlCredentials = {
 const orgId = row.organization_id   // CRITICAL: used for log + anti-loop inserts
 ```
 
-### GHL SMS reuse pattern — call sendSmsViaGhl with contactId direct
+### Twilio SMS reuse pattern — call sendSms with phone + body
 ```typescript
-// GHL SMS executor é uma função simples — não precisa de ActionContext porque
-// as creds são passadas explicitamente. Ver src/lib/ghl/send-sms.ts:42-99.
+// Twilio executor já validado em v1.8 — assinatura `sendSms(params, ctx)` onde
+// ctx é o ActionContext padrão (carrega supabase + organizationId). Resolve
+// credenciais Twilio (account_sid + auth_token + from_number) do row `integrations`
+// indicado por GHL_REENGAGEMENT_TWILIO_INTEGRATION_ID. Ver src/lib/twilio/send-sms.ts:51-88.
 
-import { sendSmsViaGhl } from '@/lib/ghl/send-sms'
-import type { GhlCredentials } from '@/lib/ghl/client'
+import { sendSms } from '@/lib/twilio/send-sms'
+import type { ActionContext } from '@/lib/action-engine/execute-action'
 
-// IMPORTANTE: SEMPRE passar contactId direto da /opportunities/search.
-// Isso bypassa o branch find-or-create do sendSmsViaGhl → 1 chamada GHL por
-// dispatch ao invés de 2-3. O loop de pagination já tem opp.contact.id.
+// IMPORTANTE: pre-flight E.164 guard (Pitfall 2). Pular phones inválidos com
+// reason="phone_invalid" antes de chamar sendSms — evita 4xx + rollback do claim.
+const E164 = /^\+[1-9]\d{7,14}$/
+if (!opp.contact.phone || !E164.test(opp.contact.phone)) {
+  // count as skipped(reason='phone_invalid'); do NOT insert anti-loop row
+  continue
+}
 
-const result = await sendSmsViaGhl(
-  {
-    contactId: opp.contact.id,
-    body: rendered,
-    ...(fromNumberOverride ? { fromNumber: fromNumberOverride } : {}),
-  },
-  ghlCredentials,
+const result = await sendSms(
+  { to: opp.contact.phone, body: rendered },
+  ctx,  // ActionContext { supabase, organizationId, ... }
 )
-// Retorna: "SMS sent via GHL. ID: <messageId|conversationId>"
-// Lança em GHL API error (non-2xx) — runner captura e marca como failed.
+// Retorna: "SMS sent. SID: <twilio-message-sid>"
+// Lança em Twilio non-2xx — runner captura e marca como failed.
 ```
 
-**Pre-flight check:** Antes do loop de dispatch, asserir que a integration row resolvida por `GHL_REENGAGEMENT_INTEGRATION_ID` tem `provider='gohighlevel'` E `is_active=true`. Senão, retornar HTTP 500 do route handler com erro actionable (REENG-15).
+**Pre-flight check:** Antes do loop de dispatch, asserir que (a) a integration row GHL apontada por `GHL_REENGAGEMENT_INTEGRATION_ID` tem `provider='gohighlevel'` E `is_active=true`, e (b) a integration row Twilio apontada por `GHL_REENGAGEMENT_TWILIO_INTEGRATION_ID` tem `provider='twilio'` E `is_active=true`. Senão, retornar HTTP 500 do route handler com erro actionable (REENG-15).
 
 ### Anti-loop check (in-memory bulk skip)
 ```typescript
@@ -645,8 +646,8 @@ export function renderMessage(template: string, firstName: string | null | undef
 | `SUPABASE_SERVICE_ROLE_KEY` env var | Runner DB access | ✓ (existing, used by `/api/vapi/tools`) | — | — |
 | `ENCRYPTION_SECRET` env var | `decrypt()` for GHL key | ✓ (existing) | 64-char hex | — |
 | GitHub Actions | Scheduler | ✓ (already runs `supabase-keepalive`) | — | — |
-| GHL Private Integration token for Skleanings | API access (list + SMS dispatch) | **?** | — | Must be encrypted + stored in `integrations` row (`provider='gohighlevel'`) before deploy. O mesmo row serve para `listOpportunities` E `sendSmsViaGhl`. |
-| GHL sub-account SMS-enabled number | SMS dispatch | **?** | — | Configurar dentro do GHL sub-account; v1.9 não tem UI de verification — o primeiro dispatch falha loud se faltar |
+| GHL Private Integration token for Skleanings | API access (Opportunities Search list) | **?** | — | Must be encrypted + stored in `integrations` row (`provider='gohighlevel'`) before deploy. Esse row serve apenas para `listOpportunities` — o dispatch SMS usa o row Twilio separado. |
+| Twilio Account SID + Auth Token + `from_number` | SMS dispatch via `sendSms` | **?** | — | Must be encrypted + stored in `integrations` row (`provider='twilio'`, `is_active=true`) referenced by `GHL_REENGAGEMENT_TWILIO_INTEGRATION_ID`. Mesma row já usada por v1.8 send_sms executor. |
 | Vercel project + env vars set | Runner serves traffic | ✓ (existing prod) | — | — |
 | Vitest | Unit tests | ✓ | (devDep) | — |
 
@@ -750,14 +751,14 @@ export function renderMessage(template: string, firstName: string | null | undef
 | Replay attack on runner endpoint | DoS / unintended dispatch | Bearer secret + UNIQUE anti-loop constraint = repeated POSTs are idempotent for already-contacted leads. Within the same run, two concurrent dispatches risk double-send (see Pitfall 5). Mitigation: use `INSERT … ON CONFLICT DO NOTHING RETURNING id` and only send if a row was actually inserted (claim-first pattern). |
 | GitHub Actions secret exfiltration | Confidentiality | Secrets in `${{ secrets.X }}` are masked in logs by default; never echo them in run scripts. |
 
-**Recommendation: claim-first anti-loop pattern.** Insert `ghl_reengagement_sent` row BEFORE chamando `sendSmsViaGhl` usando `ON CONFLICT DO NOTHING` e cláusula `RETURNING id`. Se `id` retornou → claimed → dispatch. Se conflito → outro run já claimou → skip. Em GHL API failure, DELETE o claim recém-inserido (pequeno rollback). Mais robusto que "send-then-record".
+**Recommendation: claim-first anti-loop pattern.** Insert `ghl_reengagement_sent` row BEFORE chamando `sendSms` (Twilio) usando `ON CONFLICT DO NOTHING` e cláusula `RETURNING id`. Se `id` retornou → claimed → dispatch. Se conflito → outro run já claimou → skip. Em Twilio API failure, DELETE o claim recém-inserido (pequeno rollback). Mais robusto que "send-then-record".
 
 ## Sources
 
 ### Primary (HIGH confidence)
 - **Codebase** — direct file reads:
   - `src/lib/ghl/client.ts:1-60` (ghlFetch + headers + timeout — `timeoutMs` param já adicionado)
-  - `src/lib/ghl/send-sms.ts:1-99` (GHL Conversations API executor — `sendSmsViaGhl`, find-or-create branch + 2500ms per-call timeout)
+  - `src/lib/twilio/send-sms.ts:1-89` (Twilio Messages REST API executor — `sendSms({ to, body }, ctx)` validated in v1.8)
   - `src/lib/action-engine/execute-action.ts:1-108` (ActionContext shape + provider branch no send_sms)
   - `src/lib/action-engine/log-action.ts:1-43` (logAction never-throws helper)
   - `src/lib/crypto.ts:48-56` (decrypt)
