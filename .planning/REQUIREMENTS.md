@@ -178,12 +178,95 @@ These are anti-features identified by research; explicitly excluded to protect a
 
 ## Traceability
 
-Phases are mapped during roadmap creation. Empty until `gsd-roadmapper` populates.
+Every v2.0 REQ-ID and acceptance gate maps to exactly one phase. Coverage: **52/52 requirements + 7/7 gates = 100%**.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
+| AGENT-01 | Phase 36 | Pending |
+| AGENT-02 | Phase 36 | Pending |
+| AGENT-03 | Phase 36 | Pending |
+| AGENT-04 | Phase 34 | Pending |
+| AGENT-05 | Phase 34 | Pending |
+| AGENT-06 | Phase 34 | Pending |
+| AGENT-07 | Phase 34 | Pending |
+| AGENT-08 | Phase 36 | Pending |
+| AGENT-09 | Phase 33 | Pending |
+| AGENT-10 | Phase 34 | Pending |
+| AGENT-11 | Phase 41 | Pending |
+| AGENT-12 | Phase 41 | Pending |
+| AGENT-13 | Phase 41 | Pending |
+| AGENT-14 | Phase 41 | Pending |
+| AGENT-15 | Phase 41 | Pending |
+| TOOL-01 | Phase 33 | Pending |
+| TOOL-02 | Phase 36 | Pending |
+| TOOL-03 | Phase 36 | Pending |
+| TOOL-04 | Phase 36 | Pending |
+| TOOL-05 | Phase 34 | Pending |
+| TOOL-06 | Phase 34 | Pending |
+| RUNTIME-01 | Phase 34 | Pending |
+| RUNTIME-02 | Phase 34 | Pending |
+| RUNTIME-03 | Phase 34 | Pending |
+| RUNTIME-04 | Phase 34 | Pending |
+| RUNTIME-05 | Phase 34 | Pending |
+| RUNTIME-06 | Phase 34 | Pending |
+| RUNTIME-07 | Phase 34 | Pending |
+| RUNTIME-08 | Phase 34 | Pending |
+| RUNTIME-09 | Phase 34 | Pending |
+| RUNTIME-10 | Phase 34 | Pending |
+| DELEG-01 | Phase 33 | Pending |
+| DELEG-02 | Phase 38 | Pending |
+| DELEG-03 | Phase 38 | Pending |
+| DELEG-04 | Phase 38 | Pending |
+| DELEG-05 | Phase 38 | Pending |
+| DELEG-06 | Phase 38 | Pending |
+| DELEG-07 | Phase 38 | Pending |
+| DELEG-08 | Phase 38 | Pending |
+| CHAN-01 | Phase 37 | Pending |
+| CHAN-02 | Phase 37 | Pending |
+| CHAN-03 | Phase 35 | Pending |
+| CHAN-04 | Phase 37 | Pending |
+| CHAN-05 | Phase 37 | Pending |
+| CHAN-06 | Phase 33 | Pending |
+| IDEMP-01 | Phase 38 | Pending |
+| IDEMP-02 | Phase 38 | Pending |
+| IDEMP-03 | Phase 38 | Pending |
+| PLAY-01 | Phase 39 | Pending |
+| PLAY-02 | Phase 39 | Pending |
+| PLAY-03 | Phase 39 | Pending |
+| PLAY-04 | Phase 39 | Pending |
+| PLAY-05 | Phase 39 | Pending |
+| OBS-01 | Phase 33 | Pending |
+| OBS-02 | Phase 33 | Pending |
+| OBS-03 | Phase 33 | Pending |
+| OBS-04 | Phase 40 | Pending |
+| OBS-05 | Phase 40 | Pending |
+| OBS-06 | Phase 40 | Pending |
+| OBS-07 | Phase 40 | Pending |
+| OBS-08 | Phase 40 | Pending |
+| GATE-01 | Phase 35 | Pending |
+| GATE-02 | Phase 38 | Pending |
+| GATE-03 | Phase 34 | Pending |
+| GATE-04 | Phase 38 | Pending |
+| GATE-05 | Phase 38 | Pending |
+| GATE-06 | Phase 38 | Pending |
+| GATE-07 | Phase 33 | Pending |
+
+### Coverage Summary by Phase
+
+| Phase | REQ Count | Gate Count | REQs |
+|-------|----------:|-----------:|------|
+| Phase 33 | 7 | 1 | AGENT-09, TOOL-01, DELEG-01, OBS-01, OBS-02, OBS-03, CHAN-06 + GATE-07 |
+| Phase 34 | 17 | 1 | AGENT-04, AGENT-05, AGENT-06, AGENT-07, AGENT-10, TOOL-05, TOOL-06, RUNTIME-01..10 + GATE-03 |
+| Phase 35 | 1 | 1 | CHAN-03 + GATE-01 |
+| Phase 36 | 7 | 0 | AGENT-01, AGENT-02, AGENT-03, AGENT-08, TOOL-02, TOOL-03, TOOL-04 |
+| Phase 37 | 4 | 0 | CHAN-01, CHAN-02, CHAN-04, CHAN-05 |
+| Phase 38 | 11 | 4 | DELEG-02..08, IDEMP-01, IDEMP-02, IDEMP-03 + GATE-02, GATE-04, GATE-05, GATE-06 |
+| Phase 39 | 5 | 0 | PLAY-01..05 |
+| Phase 40 | 5 | 0 | OBS-04..08 |
+| Phase 41 | 5 | 0 | AGENT-11..15 |
+| **Total** | **52** | **7** | All requirements + gates mapped |
 
 ---
 
 *Requirements defined: 2026-05-16*
-*Last updated: 2026-05-16 — initial v2.0 definition (52 requirements + 7 acceptance gates)*
+*Last updated: 2026-05-16 — initial v2.0 definition (52 requirements + 7 acceptance gates) + traceability populated by gsd-roadmapper (9 phases, 33-41)*
