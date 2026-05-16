@@ -20,6 +20,11 @@ export type CampaignContactStatus = 'pending' | 'calling' | 'completed' | 'faile
 export type ConversationChannel = 'widget' | 'messenger' | 'instagram'
 export type MetaChannelType = 'messenger' | 'instagram'
 
+// v2.0 (Phase 33) — agent runtime enums
+export type AgentChannel = 'web_widget' | 'whatsapp' | 'messenger' | 'instagram' | 'manychat' | 'telegram'
+export type AgentInvocationStatus = 'success' | 'error' | 'aborted' | 'skipped' | 'denied'
+export type AgentInvocationMode = 'production' | 'playground'
+
 export interface Database {
   public: {
     Tables: {
@@ -327,6 +332,9 @@ export interface Database {
           response_payload: Json
           error_detail: string | null
           created_at: string
+          // v2.0 (Phase 33, migration 037 — OBS-02 additive): NULL = legacy v1.x action
+          agent_invocation_id: string | null
+          trace_id: string | null
         }
         Insert: {
           id?: string
@@ -340,6 +348,8 @@ export interface Database {
           response_payload?: Json
           error_detail?: string | null
           created_at?: string
+          agent_invocation_id?: string | null
+          trace_id?: string | null
         }
         Update: Record<string, never>
         Relationships: [
@@ -358,6 +368,390 @@ export interface Database {
             referencedColumns: ['id']
           }
         ]
+      }
+      // ----------------------------------------------------------------------
+      // v2.0 (Phase 33) — agent runtime tables (migrations 034-038)
+      // ----------------------------------------------------------------------
+      agents: {
+        Row: {
+          id: string
+          organization_id: string
+          name: string
+          slug: string
+          description: string | null
+          system_prompt: string
+          model: string
+          fallback_message: string
+          max_history: number
+          kb_scope: string[] | null
+          channel_overrides: Json
+          allowed_channels: AgentChannel[]
+          is_active: boolean
+          created_by: string | null
+          updated_by: string | null
+          created_at: string
+          updated_at: string
+          active_prompt_version_id: string | null
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          name: string
+          slug: string
+          description?: string | null
+          system_prompt: string
+          model?: string
+          fallback_message?: string
+          max_history?: number
+          kb_scope?: string[] | null
+          channel_overrides?: Json
+          allowed_channels?: AgentChannel[]
+          is_active?: boolean
+          created_by?: string | null
+          updated_by?: string | null
+          created_at?: string
+          updated_at?: string
+          active_prompt_version_id?: string | null
+        }
+        Update: {
+          name?: string
+          slug?: string
+          description?: string | null
+          system_prompt?: string
+          model?: string
+          fallback_message?: string
+          max_history?: number
+          kb_scope?: string[] | null
+          channel_overrides?: Json
+          allowed_channels?: AgentChannel[]
+          is_active?: boolean
+          updated_by?: string | null
+          updated_at?: string
+          active_prompt_version_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'agents_organization_id_fkey'
+            columns: ['organization_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'agents_active_prompt_version_id_fkey'
+            columns: ['active_prompt_version_id']
+            isOneToOne: false
+            referencedRelation: 'agent_prompt_versions'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      agent_tools: {
+        Row: {
+          id: string
+          organization_id: string
+          agent_id: string
+          tool_config_id: string
+          allowed_channels: AgentChannel[] | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          agent_id: string
+          tool_config_id: string
+          allowed_channels?: AgentChannel[] | null
+          created_at?: string
+        }
+        Update: {
+          allowed_channels?: AgentChannel[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'agent_tools_organization_id_fkey'
+            columns: ['organization_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'agent_tools_agent_id_fkey'
+            columns: ['agent_id']
+            isOneToOne: false
+            referencedRelation: 'agents'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'agent_tools_tool_config_id_fkey'
+            columns: ['tool_config_id']
+            isOneToOne: false
+            referencedRelation: 'tool_configs'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      agent_partners: {
+        Row: {
+          id: string
+          organization_id: string
+          agent_id: string
+          partner_agent_id: string
+          invocation_description: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          agent_id: string
+          partner_agent_id: string
+          invocation_description: string
+          created_at?: string
+        }
+        Update: {
+          invocation_description?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'agent_partners_organization_id_fkey'
+            columns: ['organization_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'agent_partners_agent_id_fkey'
+            columns: ['agent_id']
+            isOneToOne: false
+            referencedRelation: 'agents'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'agent_partners_partner_agent_id_fkey'
+            columns: ['partner_agent_id']
+            isOneToOne: false
+            referencedRelation: 'agents'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      agent_prompt_versions: {
+        Row: {
+          id: string
+          organization_id: string
+          agent_id: string
+          version: number
+          system_prompt: string
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          agent_id: string
+          version: number
+          system_prompt: string
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: Record<string, never>
+        Relationships: [
+          {
+            foreignKeyName: 'agent_prompt_versions_organization_id_fkey'
+            columns: ['organization_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'agent_prompt_versions_agent_id_fkey'
+            columns: ['agent_id']
+            isOneToOne: false
+            referencedRelation: 'agents'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      agent_channel_defaults: {
+        Row: {
+          id: string
+          organization_id: string
+          channel: AgentChannel
+          agent_id: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          channel: AgentChannel
+          agent_id: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'agent_channel_defaults_organization_id_fkey'
+            columns: ['organization_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'agent_channel_defaults_agent_id_fkey'
+            columns: ['agent_id']
+            isOneToOne: false
+            referencedRelation: 'agents'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      agent_invocations: {
+        Row: {
+          id: string
+          organization_id: string
+          agent_id: string
+          parent_invocation_id: string | null
+          trace_id: string
+          channel: AgentChannel
+          conversation_id: string | null
+          session_id: string | null
+          depth: number
+          status: AgentInvocationStatus
+          mode: AgentInvocationMode
+          user_message: string | null
+          assistant_reply: string | null
+          tool_calls: Json
+          partner_calls: Json
+          tokens_in: number | null
+          tokens_out: number | null
+          cost_usd: number | null
+          model: string | null
+          duration_ms: number | null
+          error_detail: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          agent_id: string
+          parent_invocation_id?: string | null
+          trace_id: string
+          channel: AgentChannel
+          conversation_id?: string | null
+          session_id?: string | null
+          depth?: number
+          status: AgentInvocationStatus
+          mode?: AgentInvocationMode
+          user_message?: string | null
+          assistant_reply?: string | null
+          tool_calls?: Json
+          partner_calls?: Json
+          tokens_in?: number | null
+          tokens_out?: number | null
+          cost_usd?: number | null
+          model?: string | null
+          duration_ms?: number | null
+          error_detail?: string | null
+          created_at?: string
+        }
+        Update: Record<string, never>
+        Relationships: [
+          {
+            foreignKeyName: 'agent_invocations_organization_id_fkey'
+            columns: ['organization_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'agent_invocations_agent_id_fkey'
+            columns: ['agent_id']
+            isOneToOne: false
+            referencedRelation: 'agents'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'agent_invocations_parent_invocation_id_fkey'
+            columns: ['parent_invocation_id']
+            isOneToOne: false
+            referencedRelation: 'agent_invocations'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      tool_idempotency_keys: {
+        Row: {
+          id: string
+          organization_id: string
+          agent_invocation_id: string | null
+          idempotency_key: string
+          tool_name: string
+          request_hash: string
+          response: Json
+          created_at: string
+          expires_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          agent_invocation_id?: string | null
+          idempotency_key: string
+          tool_name: string
+          request_hash: string
+          response: Json
+          created_at?: string
+          expires_at?: string
+        }
+        Update: {
+          response?: Json
+          expires_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'tool_idempotency_keys_organization_id_fkey'
+            columns: ['organization_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'tool_idempotency_keys_agent_invocation_id_fkey'
+            columns: ['agent_invocation_id']
+            isOneToOne: false
+            referencedRelation: 'agent_invocations'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      agent_model_pricing: {
+        Row: {
+          model: string
+          source: string
+          input_per_1m_usd: number
+          output_per_1m_usd: number
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          model: string
+          source: string
+          input_per_1m_usd: number
+          output_per_1m_usd: number
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          source?: string
+          input_per_1m_usd?: number
+          output_per_1m_usd?: number
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       ghl_reengagement_sent: {
         Row: {
@@ -925,6 +1319,8 @@ export interface Database {
           config: Json
           created_at: string
           updated_at: string
+          // v2.0 (Phase 33, migration 039 — CHAN-06): NULL = legacy tool_config_id dispatch
+          agent_id: string | null
         }
         Insert: {
           id?: string
@@ -944,6 +1340,7 @@ export interface Database {
           config?: Json
           created_at?: string
           updated_at?: string
+          agent_id?: string | null
         }
         Update: {
           channel_type?: MetaChannelType
@@ -959,6 +1356,7 @@ export interface Database {
           automation_id?: string | null
           config?: Json
           updated_at?: string
+          agent_id?: string | null
         }
         Relationships: [
           {
@@ -1033,6 +1431,8 @@ export interface Database {
           priority: number
           created_at: string
           updated_at: string
+          // v2.0 (Phase 33, migration 039 — CHAN-06): NULL = legacy tool_config_id dispatch
+          agent_id: string | null
         }
         Insert: {
           id?: string
@@ -1045,6 +1445,7 @@ export interface Database {
           priority?: number
           created_at?: string
           updated_at?: string
+          agent_id?: string | null
         }
         Update: {
           channel_id?: string
@@ -1054,6 +1455,7 @@ export interface Database {
           is_active?: boolean
           priority?: number
           updated_at?: string
+          agent_id?: string | null
         }
         Relationships: [
           {
@@ -1165,6 +1567,10 @@ export interface Database {
       user_role: UserRole
       action_type: 'create_contact' | 'get_availability' | 'create_appointment' | 'send_sms' | 'knowledge_base' | 'custom_webhook' | 'manychat_set_field' | 'manychat_add_tag' | 'manychat_trigger_flow' | 'manychat_send_message' | 'google_contacts_create' | 'google_contacts_update' | 'google_contacts_find' | 'google_contacts_delete'
       integration_provider: 'gohighlevel' | 'twilio' | 'calcom' | 'custom_webhook' | 'openai' | 'anthropic' | 'openrouter' | 'vapi' | 'manychat' | 'google_contacts'
+      // v2.0 (Phase 33) — agent runtime enums (migrations 034, 037)
+      agent_channel: AgentChannel
+      agent_invocation_status: AgentInvocationStatus
+      agent_invocation_mode: AgentInvocationMode
     }
   }
 }
