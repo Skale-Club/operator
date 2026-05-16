@@ -12,7 +12,12 @@ Operator is not meant to encode one universal agency workflow. It is the shared 
 
 That business logic may differ by client. The invariant is the reliability of the execution path, not that every tenant follows the same pattern.
 
-## Current Milestone: v2.0 Multi-Bot Platform — Channel-Agnostic Agent Abstraction
+## Current Milestone: v2.0 Multi-Bot Platform — Phase 35 (Web Widget Canary Cutover) next
+
+**Phase 33 (Schema Foundation):** ✅ Complete 2026-05-16 — 7 migrations (034-040) live, Main Agent seeded per org, 13/13 tests GREEN.
+**Phase 34 (Agent Runtime Skeleton):** ✅ Complete 2026-05-16 — `runAgent()` entry point + all 5 guardrails + ai@^6 adopted + 44/44 tests GREEN.
+
+### v2.0 Multi-Bot Platform — Channel-Agnostic Agent Abstraction
 
 **Goal:** Promote agent to a first-class entity in Operator with its own prompt, scoped tools, knowledge base scope, and per-channel overrides — and add multi-bot composition (an agent can delegate to specialist "partner" agents). Chat reaches feature-parity with voice.
 
