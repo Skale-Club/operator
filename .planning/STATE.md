@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.9
 milestone_name: GHL Lost-Lead Reengagement (SMS)
 status: executing
-stopped_at: Completed Plan 32-03 — runReengagement orchestrator shipped (244 LOC, 19 tests GREEN). Wave 4 ready (Plan 32-04 route + GH Action)
-last_updated: "2026-05-16T00:06:11.474Z"
+stopped_at: Completed Plan 32-04 — Phase 32 delivery surface shipped (route + workflow + docs + gate). 53 tests GREEN, all 4 plans complete. Phase 32 ready for /gsd-verify-work
+last_updated: "2026-05-16T00:19:52.962Z"
 last_activity: 2026-05-16
 progress:
   total_phases: 1
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 4
-  completed_plans: 3
+  completed_plans: 4
 ---
 
 # Operator - State
@@ -18,7 +18,7 @@ progress:
 ## Current Position
 
 Phase: 32 (ghl-lost-lead-reengagement-sms-automation) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 Status: Ready to execute
 Last activity: 2026-05-16
 
@@ -94,6 +94,9 @@ Reserved for future milestone (não fazer agora):
 - [Phase 32]: [v1.9 / 32-02] Migration 033 (automation_schedules) shipped in this plan per D-32-13 — single-tenant, RLS with NO policy (service-role only), seeded ghl_reengagement_sms row with next_run_at=next 14:00 UTC + interval_minutes=1440
 - [Phase 32]: [v1.9 / 32-03] Runner is env-agnostic (no process.env reads); route handler in Plan 04 owns env parsing — keeps runner unit-testable
 - [Phase 32]: [v1.9 / 32-03] Claim-first INSERT BEFORE sendSmsViaGhl with DELETE rollback on GHL throw (D-32-10); UNIQUE-violation from concurrent run caught and counted as skipped, not failed
+- [Phase 32]: [v1.9 / 32-04] Route handler returns 401/500 (not webhook) so GH Action surfaces failed runs; bearer auth via crypto.timingSafeEqual; ?force=1 query bypasses DB schedule check (D-32-09)
+- [Phase 32]: [v1.9 / 32-04] GitHub Actions cron '*/15 * * * *' (15-min pulse) — actual cadence lives in automation_schedules.interval_minutes (D-32-06/08); workflow_dispatch force input maps to ?force=1 URL
+- [Phase 32]: [v1.9 / 32-04] Skipped 'npm run lint' in phase gate — next lint removed in Next.js 16; project script broken project-wide (pre-existing); npm run build's TS-strict type-check is the effective gate
 
 ## Pending Todos
 
@@ -101,8 +104,8 @@ Reserved for future milestone (não fazer agora):
 
 ## Session Continuity
 
-Last session: 2026-05-16T00:06:07.244Z
-Stopped at: Completed Plan 32-03 — runReengagement orchestrator shipped (244 LOC, 19 tests GREEN). Wave 4 ready (Plan 32-04 route + GH Action)
+Last session: 2026-05-16T00:19:52.958Z
+Stopped at: Completed Plan 32-04 — Phase 32 delivery surface shipped (route + workflow + docs + gate). 53 tests GREEN, all 4 plans complete. Phase 32 ready for /gsd-verify-work
 
 ## Performance Metrics
 
@@ -112,3 +115,4 @@ Stopped at: Completed Plan 32-03 — runReengagement orchestrator shipped (244 L
 | 31 | 01 | 12 min | 1/1 | 2 |
 | Phase 32 P02 | 25 min | 4/4 tasks | 6 files |
 | Phase 32 P03 | 30 min | 1/1 tasks | 2 files |
+| Phase 32 P04 | 12 min | 4/4 tasks | 5 files |
