@@ -89,19 +89,19 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REENG-02 | Phase 32 | Complete |
 | REENG-03 | Phase 32 | Complete |
 | REENG-04 | Phase 32 | Complete |
-| REENG-05 | Phase 32 | Pending |
-| REENG-06 | Phase 32 | Pending |
-| REENG-07 | Phase 32 | Pending |
+| REENG-05 | Phase 32 | Complete |
+| REENG-06 | Phase 32 | Complete |
+| REENG-07 | Phase 32 | Complete |
 | REENG-08 | Phase 32 | Complete |
 | REENG-09 | Phase 32 | Complete |
 | REENG-10 | Phase 32 | Complete |
 | REENG-11 | Phase 32 | Complete |
 | REENG-12 | Phase 32 | Complete |
-| REENG-13 | Phase 32 | Pending |
-| REENG-14 | Phase 32 | Pending |
-| REENG-15 | Phase 32 | Pending |
-| REENG-16 | Phase 32 | Pending |
-| REENG-17 | Phase 32 | Pending |
+| REENG-13 | Phase 32 | Complete |
+| REENG-14 | Phase 32 | Complete |
+| REENG-15 | Phase 32 | Complete |
+| REENG-16 | Phase 32 | Complete |
+| REENG-17 | Phase 32 | Complete |
 
 **Coverage:**
 - v1.9 requirements: 17 total
