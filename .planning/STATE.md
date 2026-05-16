@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.9
 milestone_name: GHL Lost-Lead Reengagement (SMS)
 status: executing
-stopped_at: Completed Plan 32-02 — substrate live (listOpportunities + renderMessage + migrations 032/033 applied to remote). Wave 3 ready (Plan 32-03 runner)
-last_updated: "2026-05-15T23:55:14.669Z"
-last_activity: 2026-05-15
+stopped_at: Completed Plan 32-03 — runReengagement orchestrator shipped (244 LOC, 19 tests GREEN). Wave 4 ready (Plan 32-04 route + GH Action)
+last_updated: "2026-05-16T00:06:11.474Z"
+last_activity: 2026-05-16
 progress:
   total_phases: 1
   completed_phases: 0
   total_plans: 4
-  completed_plans: 2
+  completed_plans: 3
 ---
 
 # Operator - State
@@ -18,9 +18,9 @@ progress:
 ## Current Position
 
 Phase: 32 (ghl-lost-lead-reengagement-sms-automation) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
-Last activity: 2026-05-15
+Last activity: 2026-05-16
 
 ## Milestone Progress
 
@@ -92,6 +92,8 @@ Reserved for future milestone (não fazer agora):
 - [v1.9] BATCH_LIMIT default reduced from documented 100 → 20 in implementation. Reason: Vercel Hobby 10s function timeout + Twilio ~500ms latency + Promise.allSettled fan-out makes 100 unsafe; operator can raise via env var on Pro plan.
 - [Phase 32]: [v1.9 / 32-02] GHL date-filter param kept as 'date' constant — JS-side date guard provides defense in depth against silent param-name mismatch (Pitfall 1); staging probe deferred
 - [Phase 32]: [v1.9 / 32-02] Migration 033 (automation_schedules) shipped in this plan per D-32-13 — single-tenant, RLS with NO policy (service-role only), seeded ghl_reengagement_sms row with next_run_at=next 14:00 UTC + interval_minutes=1440
+- [Phase 32]: [v1.9 / 32-03] Runner is env-agnostic (no process.env reads); route handler in Plan 04 owns env parsing — keeps runner unit-testable
+- [Phase 32]: [v1.9 / 32-03] Claim-first INSERT BEFORE sendSmsViaGhl with DELETE rollback on GHL throw (D-32-10); UNIQUE-violation from concurrent run caught and counted as skipped, not failed
 
 ## Pending Todos
 
@@ -99,8 +101,8 @@ Reserved for future milestone (não fazer agora):
 
 ## Session Continuity
 
-Last session: 2026-05-15T23:55:14.665Z
-Stopped at: Completed Plan 32-02 — substrate live (listOpportunities + renderMessage + migrations 032/033 applied to remote). Wave 3 ready (Plan 32-03 runner)
+Last session: 2026-05-16T00:06:07.244Z
+Stopped at: Completed Plan 32-03 — runReengagement orchestrator shipped (244 LOC, 19 tests GREEN). Wave 4 ready (Plan 32-04 route + GH Action)
 
 ## Performance Metrics
 
@@ -109,3 +111,4 @@ Stopped at: Completed Plan 32-02 — substrate live (listOpportunities + renderM
 | 30 | 04 | 8 min | 2/2 | 3 |
 | 31 | 01 | 12 min | 1/1 | 2 |
 | Phase 32 P02 | 25 min | 4/4 tasks | 6 files |
+| Phase 32 P03 | 30 min | 1/1 tasks | 2 files |
