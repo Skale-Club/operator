@@ -1,0 +1,127 @@
+// tests/agent-schema-prompt-byte-equal.test.ts
+// Phase 33 Plan 01 — Wave 1 RED scaffold.
+// Pins the byte-equal v1.4 prompt contract per D-33-04.
+//
+// Currently RED. Wave 3 (migration 040_seed_main_agent.sql) flips these GREEN.
+//
+// SOURCE OF TRUTH for the template literal: src/lib/chat/stream.ts:107
+//   `You are a helpful assistant for ${orgName}. Answer questions accurately and concisely using the provided context. If you don't know the answer, say so.${kb_context_runtime_suffix}`
+//
+// The seed must reproduce the template byte-for-byte after ${orgName} substitution
+// AND with the runtime kb_context suffix REMOVED (it is appended at LLM call time
+// per D-33-03, never stored in agents.system_prompt).
+
+import { describe, it, expect, beforeAll } from 'vitest'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '../src/types/database'
+
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!
+
+let admin: SupabaseClient<Database>
+
+beforeAll(() => {
+  admin = createClient<Database>(SUPABASE_URL, SERVICE_ROLE_KEY, {
+    auth: { persistSession: false },
+  })
+})
+
+/**
+ * Verbatim copy of the v1.4 system prompt template from src/lib/chat/stream.ts:107
+ * with the runtime KB-context suffix removed (per D-33-03 the suffix is appended
+ * at runtime, NOT stored in agents.system_prompt).
+ *
+ * If the v1.4 template ever changes upstream, this constant must be updated in
+ * lockstep — that is the byte-equal contract this file pins.
+ */
+const v14Template = (orgName: string) =>
+  `You are a helpful assistant for ${orgName}. Answer questions accurately and concisely using the provided context. If you don't know the answer, say so.`
+
+describe('D-33-04 byte-equal v1.4 prompt: seeded Main Agent.system_prompt', () => {
+  it('every Main Agent system_prompt equals v14Template(org.name) byte-for-byte', async () => {
+    // Wave 3 will migrate this assertion live. Until then: explicit RED.
+    throw new Error(
+      'MISSING — Wave 3 must seed system_prompt per D-33-04 (byte-equal)',
+    )
+
+    // Reference implementation (uncomment in Wave 3):
+    // const { data: orgs, error: orgsErr } = await admin
+    //   .from('organizations')
+    //   .select('id, name')
+    // expect(orgsErr).toBeNull()
+    //
+    // for (const org of orgs ?? []) {
+    //   // @ts-expect-error - Wave 2 will regenerate types after migration 034
+    //   const { data: agent, error } = await admin
+    //     .from('agents')
+    //     .select('system_prompt')
+    //     .eq('organization_id', org.id)
+    //     .eq('name', 'Main Agent')
+    //     .single()
+    //   expect(error).toBeNull()
+    //
+    //   const expected = v14Template(org.name ?? 'your team')
+    //   expect(agent!.system_prompt).toBe(expected)
+    // }
+  })
+
+  it('orgs with NULL or empty name use the literal fallback "your team" (D-33-05)', async () => {
+    // Wave 3 will migrate this assertion live. Until then: explicit RED.
+    throw new Error(
+      'MISSING — Wave 3 must apply "your team" fallback per D-33-05',
+    )
+
+    // Reference implementation (uncomment in Wave 3):
+    // const { data: orgs, error: orgsErr } = await admin
+    //   .from('organizations')
+    //   .select('id, name')
+    //   .or('name.is.null,name.eq.')
+    // expect(orgsErr).toBeNull()
+    //
+    // // If no nameless orgs exist in this DB, the test passes vacuously — but the
+    // // assertion MUST be present so the contract holds for future inserts.
+    // if ((orgs ?? []).length === 0) {
+    //   expect(orgs).toHaveLength(0)
+    //   return
+    // }
+    //
+    // for (const org of orgs!) {
+    //   // @ts-expect-error - Wave 2 will regenerate types after migration 034
+    //   const { data: agent, error } = await admin
+    //     .from('agents')
+    //     .select('system_prompt')
+    //     .eq('organization_id', org.id)
+    //     .eq('name', 'Main Agent')
+    //     .single()
+    //   expect(error).toBeNull()
+    //
+    //   expect(agent!.system_prompt).toBe(v14Template('your team'))
+    // }
+  })
+
+  it('NO seeded prompt contains unresolved template interpolation tokens (substitution complete)', async () => {
+    // Wave 3 will migrate this assertion live. Until then: explicit RED.
+    throw new Error(
+      'MISSING — Wave 3 must complete ${orgName} substitution per D-33-03 (byte-equal)',
+    )
+
+    // Reference implementation (uncomment in Wave 3):
+    // // @ts-expect-error - Wave 2 will regenerate types after migration 034
+    // const { data: agents, error } = await admin
+    //   .from('agents')
+    //   .select('system_prompt')
+    //   .eq('name', 'Main Agent')
+    // expect(error).toBeNull()
+    //
+    // for (const agent of agents ?? []) {
+    //   const prompt = agent.system_prompt as string
+    //   // Reject any unresolved JS template-literal interpolation marker.
+    //   // The literal two-character sequence "$" + "{" must NOT appear in seeded prompts.
+    //   const interpMarker = '$' + '{'
+    //   expect(prompt.includes(interpMarker)).toBe(false)
+    //   // Also reject the literal identifier name to be doubly safe.
+    //   expect(prompt.toLowerCase().includes('kbcontext')).toBe(false)
+    //   expect(prompt.includes('orgName')).toBe(false)
+    // }
+  })
+})
