@@ -12,9 +12,11 @@
 //   https://www.twilio.com/docs/iam/access-tokens
 //   https://www.twilio.com/docs/voice/sdks/javascript/get-started#generate-access-tokens
 //
-// In dev, where TWILIO_API_KEY_SID/SECRET aren't configured, generateVoiceToken
-// throws — surface it as a 400 in /api/twilio/token so the UI shows a helpful
-// banner explaining how to finish setup.
+// If the per-org Twilio integration is missing the Voice SDK fields
+// (`api_key_sid`, `api_key_secret`, `twiml_app_sid`), generateVoiceToken throws.
+// /api/twilio/token surfaces that as a 400 so the UI can guide the admin to
+// /integrations/twilio to finish setup. No env vars are read here — all
+// credentials come from the per-org integration row.
 
 function base64url(input: string | Uint8Array): string {
   const bytes = typeof input === 'string' ? new TextEncoder().encode(input) : input
@@ -49,10 +51,10 @@ export interface VoiceTokenParams {
 
 export async function generateVoiceToken(p: VoiceTokenParams): Promise<{ token: string; identity: string; expiresAt: number }> {
   if (!p.apiKeySid || !p.apiKeySecret) {
-    throw new Error('Twilio API Key (TWILIO_API_KEY_SID + TWILIO_API_KEY_SECRET) is not configured. Add an API Key in the Twilio console and store it on the integration before generating Voice tokens.')
+    throw new Error('Twilio API Key is not configured for this organization. Create an API Key in the Twilio console and paste it into Integrations → Twilio before generating Voice tokens.')
   }
   if (!p.twimlAppSid) {
-    throw new Error('Twilio TwiML App SID is not configured on the integration. Create a TwiML App pointing at /api/twilio/voice and store its SID in the integration config (`twiml_app_sid`).')
+    throw new Error('TwiML App SID is not configured for this organization. Create a TwiML App pointing at /api/twilio/voice and paste its SID into Integrations → Twilio.')
   }
 
   const now = Math.floor(Date.now() / 1000)

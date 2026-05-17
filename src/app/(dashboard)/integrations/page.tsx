@@ -43,6 +43,7 @@ export default async function IntegrationsPage() {
   // Best-effort connection state for dedicated integrations
   const hasManychat = integrations.some((i) => i.provider === 'manychat' && i.is_active)
   const hasGoogleContacts = integrations.some((i) => i.provider === 'google_contacts' && i.is_active)
+  const hasTwilio = integrations.some((i) => i.provider === 'twilio' && i.is_active)
   const { getEvolutionInstance } = await import('./evolution/actions')
   const evolutionInstance = await getEvolutionInstance()
   const hasEvolution = evolutionInstance !== null && evolutionInstance.status === 'connected'
@@ -85,6 +86,14 @@ export default async function IntegrationsPage() {
       name: 'Google Reviews',
       description: 'Scrape your Google Business reviews daily and serve them via embeddable widget.',
       tone: 'amber',
+    },
+    {
+      href: '/integrations/twilio',
+      icon: Phone,
+      name: 'Twilio (SMS + Voice)',
+      description: 'Per-org SMS + browser voice + SIP credentials. Each client uses their own Twilio account and phone number.',
+      connected: hasTwilio,
+      tone: 'sky',
     },
   ]
 
