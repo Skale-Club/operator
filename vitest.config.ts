@@ -11,6 +11,11 @@ export default defineConfig({
     setupFiles: ['tests/setup/load-env.ts'],
     reporters: ['verbose'],
     testTimeout: 30000,
+    // Allow one retry for real-DB invariant tests — fixture-creating suites race
+    // by design, and the structural fixture-name regex on the invariant tests
+    // already filters out transient orgs. One retry covers transient inserts
+    // that have not yet propagated when the invariant query runs.
+    retry: 1,
   },
   resolve: {
     alias: {

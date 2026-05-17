@@ -53,10 +53,12 @@ function buildDailyCostMock(opts: {
         return {
           select: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
-              gte: vi.fn().mockReturnValue({
-                not: vi.fn().mockResolvedValue({
-                  data: opts.invocationCostRows,
-                  error: null,
+              eq: vi.fn().mockReturnValue({
+                gte: vi.fn().mockReturnValue({
+                  not: vi.fn().mockResolvedValue({
+                    data: opts.invocationCostRows,
+                    error: null,
+                  }),
                 }),
               }),
             }),

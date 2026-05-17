@@ -6,13 +6,17 @@
 // NOTE: If ANTHROPIC_API_KEY is not in .env.local, runAgent() will return status='error'
 // (no_anthropic_key). Tests assert invocation rows are still written correctly.
 
-import { describe, it, expect, beforeAll } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '../src/types/database'
 import { runAgent } from '../src/lib/agent-runtime'
 
 // ---------------------------------------------------------------------------
-// Setup — connect to real Supabase and find Main Agent
+// Setup — connect to real Supabase and create an isolated org for this suite.
+// Previously this suite reused the live Skale Club Main Agent which caused
+// flakes (other parallel suites cascade-deleted orgs and toggled is_active).
+// Now we create a dedicated fixture org seeded with a Main Agent + prompt
+// version + web_widget channel default and tear it down in afterAll.
 // ---------------------------------------------------------------------------
 
 let admin: SupabaseClient<Database>
@@ -32,23 +36,73 @@ beforeAll(async () => {
 
   admin = createClient<Database>(url, key, { auth: { persistSession: false } })
 
-  // Fetch a real org + Main Agent from Phase 33 seed
-  const { data: agentRow, error } = await admin
-    .from('agents')
-    .select('id, organization_id')
-    .eq('name', 'Main Agent')
-    .limit(1)
+  // Use the same fixture-name convention as tests/agents/fixtures.ts so the
+  // schema-seed / byte-equal global-invariant suites filter this org out.
+  const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
+  const orgName = `p34-runtime-${suffix}`
+
+  const { data: org, error: orgErr } = await admin
+    .from('organizations')
+    .insert({
+      name: orgName,
+      slug: orgName,
+      widget_token: `wt-${Math.random().toString(36).slice(2, 12)}`,
+    })
+    .select('id')
     .single()
+  if (orgErr || !org) throw orgErr ?? new Error('org create failed')
+  orgId = org.id
 
-  if (error || !agentRow) {
-    throw new Error(
-      'No Main Agent found in Supabase — Phase 33 seed missing.\n' +
-      `Supabase error: ${error?.message ?? 'no row returned'}`
-    )
+  const systemPrompt =
+    'You are a helpful assistant for integration test. Answer questions accurately and concisely.'
+
+  const { data: agent, error: agentErr } = await admin
+    .from('agents')
+    .insert({
+      organization_id: orgId,
+      name: 'Main Agent',
+      slug: 'main-agent',
+      system_prompt: systemPrompt,
+      model: 'anthropic/claude-haiku-4-5',
+      fallback_message: 'Test fallback.',
+      max_history: 10,
+      is_active: true,
+      allowed_channels: ['web_widget'],
+    })
+    .select('id')
+    .single()
+  if (agentErr || !agent) throw agentErr ?? new Error('agent create failed')
+  agentId = agent.id
+
+  const { data: pv, error: pvErr } = await admin
+    .from('agent_prompt_versions')
+    .insert({
+      organization_id: orgId,
+      agent_id: agentId,
+      version: 1,
+      system_prompt: systemPrompt,
+    })
+    .select('id')
+    .single()
+  if (pvErr || !pv) throw pvErr ?? new Error('prompt version create failed')
+
+  const { error: updErr } = await admin
+    .from('agents')
+    .update({ active_prompt_version_id: pv.id })
+    .eq('id', agentId)
+  if (updErr) throw updErr
+
+  const { error: cdErr } = await admin
+    .from('agent_channel_defaults')
+    .insert({ organization_id: orgId, channel: 'web_widget', agent_id: agentId })
+  if (cdErr) throw cdErr
+})
+
+afterAll(async () => {
+  if (orgId) {
+    // cascade clears agents, prompt versions, channel defaults, invocations
+    await admin.from('organizations').delete().eq('id', orgId)
   }
-
-  orgId = agentRow.organization_id
-  agentId = agentRow.id
 })
 
 // ---------------------------------------------------------------------------

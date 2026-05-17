@@ -37,9 +37,10 @@ const v14Template = (orgName: string) =>
 
 // Phase 36 Plan 05: exclude transient test-fixture orgs (seedTestOrg naming
 // + rls-isolation.test.ts naming) from this global invariant so the assertion
-// only runs against real seeded orgs.
+// only runs against real seeded orgs. Structural match: any prefix followed by
+// a 10+ digit timestamp and a random suffix is treated as transient.
 const TEST_FIXTURE_NAME =
-  /^(p\d+[a-z0-9-]*-\d{10,}-[a-z0-9]+|RLS [AB] [a-z0-9]{6,})$/i
+  /^([a-z0-9][a-z0-9-]*-\d{10,}-[a-z0-9]+|RLS [AB] [a-z0-9]{6,})$/i
 
 describe('D-33-04 byte-equal v1.4 prompt: seeded Main Agent.system_prompt', () => {
   it('every Main Agent system_prompt equals v14Template(org.name) byte-for-byte', async () => {

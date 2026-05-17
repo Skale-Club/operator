@@ -16,13 +16,16 @@ import type { Database } from '../src/types/database'
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
-// Matches transient test-fixture org names. Two patterns coexist in the suite:
-//   1. seedTestOrg (tests/agents/fixtures.ts): `p\d+...-<timestamp>-<rand5>`
-//      e.g. `p36-rls-a-1778974271234-abc12`
+// Matches transient test-fixture org names. Patterns coexist across the suite:
+//   1. seedTestOrg (tests/agents/fixtures.ts): `<prefix>-<timestamp>-<rand5>`
+//      Prefixes used in callers include `p36-*`, `contacts-*`, `pipe-*`,
+//      `metrics`, `opp-move`, `p34-runtime`, ...
 //   2. rls-isolation.test.ts: `RLS A <rand8>` / `RLS B <rand8>`
 // Real seeded orgs have human-readable names without trailing random suffixes.
+// The structural test is: any name ending in `-<10+ digit timestamp>-<rand>` is
+// transient (matches Date.now() + Math.random() output of seedTestOrg).
 const TEST_FIXTURE_NAME =
-  /^(p\d+[a-z0-9-]*-\d{10,}-[a-z0-9]+|RLS [AB] [a-z0-9]{6,})$/i
+  /^([a-z0-9][a-z0-9-]*-\d{10,}-[a-z0-9]+|RLS [AB] [a-z0-9]{6,})$/i
 
 let admin: SupabaseClient<Database>
 
