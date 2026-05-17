@@ -34,7 +34,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { ChannelBadge, type Channel } from '@/components/design-system/channel-badge'
 import { getContact, type ContactDetail } from '@/app/(dashboard)/contacts/actions'
 import { NewContactDialog } from '@/components/contacts/new-contact-dialog'
-import { LinkContactDialog } from '@/components/chat/link-contact-dialog'
+import { InlineContactPicker } from '@/components/chat/inline-contact-picker'
 import { formatCurrency } from '@/lib/pipeline/format'
 import { cn } from '@/lib/utils'
 
@@ -488,14 +488,7 @@ function UnregisteredCard({
               trigger={<Button size="sm">Create contact</Button>}
             />
             {conversationId && (
-              <LinkContactDialog
-                conversationId={conversationId}
-                trigger={
-                  <Button size="sm" variant="secondary">
-                    Link existing contact
-                  </Button>
-                }
-              />
+              <InlineContactPicker conversationId={conversationId} />
             )}
           </div>
         </div>
