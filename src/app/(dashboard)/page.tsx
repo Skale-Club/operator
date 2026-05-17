@@ -1,5 +1,7 @@
 import { Suspense } from 'react'
+import { cookies } from 'next/headers'
 
+import { createClient, getUser } from '@/lib/supabase/server'
 import { PageContainer } from '@/components/layout/page-header'
 import { WidgetErrorBoundary } from '@/components/dashboard/widget-error-boundary'
 import { WidgetError } from '@/components/dashboard/widget-error'
@@ -20,8 +22,82 @@ import { RecentCalls } from '@/components/dashboard/widgets/recent-calls'
 import { IntegrationsStatus } from '@/components/dashboard/widgets/integrations-status'
 import { ActivitySnapshot } from '@/components/dashboard/widgets/activity-snapshot'
 import { ActivityFeed } from '@/components/dashboard/widgets/activity-feed'
+import { WelcomeWizard } from '@/components/dashboard/welcome-wizard'
 
 export const dynamic = 'force-dynamic'
+
+interface FreshOrgSignals {
+  isFresh: boolean
+  hasIntegration: boolean
+  hasContacts: boolean
+  hasAgent: boolean
+  hasDeals: boolean
+  hasReviews: boolean
+}
+
+/**
+ * Detect whether the active org has ANY meaningful data yet. Sequential
+ * (no Promise.all) — each call is a head:exact count, very cheap. Any
+ * failure short-circuits to "not fresh" so the user sees the normal
+ * dashboard rather than getting locked in the wizard.
+ */
+async function detectFreshOrg(): Promise<FreshOrgSignals> {
+  const fallback: FreshOrgSignals = {
+    isFresh: false,
+    hasIntegration: true,
+    hasContacts: true,
+    hasAgent: true,
+    hasDeals: true,
+    hasReviews: true,
+  }
+  try {
+    const supabase = await createClient()
+
+    const { count: conv } = await supabase.from('conversations').select('id', { count: 'exact', head: true })
+    const { count: contacts } = await supabase.from('contacts').select('id', { count: 'exact', head: true })
+    const { count: calls } = await supabase.from('call_logs').select('id', { count: 'exact', head: true })
+    const { count: deals } = await supabase.from('opportunities').select('id', { count: 'exact', head: true })
+    const { count: ints } = await supabase
+      .from('integrations')
+      .select('id', { count: 'exact', head: true })
+      .eq('is_active', true)
+    const { count: evos } = await supabase
+      .from('evolution_instances')
+      .select('id', { count: 'exact', head: true })
+      .eq('is_active', true)
+    const { count: agents } = await supabase.from('agents').select('id', { count: 'exact', head: true })
+    const { count: gbps } = await supabase
+      .from('google_business_profiles')
+      .select('id', { count: 'exact', head: true })
+      .eq('is_active', true)
+
+    const hasConversations = (conv ?? 0) > 0
+    const hasContacts = (contacts ?? 0) > 0
+    const hasCalls = (calls ?? 0) > 0
+    const hasDeals = (deals ?? 0) > 0
+    const hasIntegration = (ints ?? 0) > 0 || (evos ?? 0) > 0
+    const hasAgent = (agents ?? 0) > 0
+    const hasReviews = (gbps ?? 0) > 0
+
+    return {
+      isFresh:
+        !hasConversations &&
+        !hasContacts &&
+        !hasCalls &&
+        !hasDeals &&
+        !hasIntegration,
+      hasIntegration,
+      hasContacts,
+      hasAgent,
+      hasDeals,
+      hasReviews,
+    }
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('[dashboard:fresh-org] detection failed', err)
+    return fallback
+  }
+}
 
 /**
  * Home dashboard orchestrator.
@@ -32,18 +108,57 @@ export const dynamic = 'force-dynamic'
  *   `src/components/dashboard/widgets/`.
  * - Each widget is wrapped at THIS layer in
  *   `<WidgetErrorBoundary><Suspense fallback={...}>...</Suspense></WidgetErrorBoundary>`.
- * - No `Promise.all` and no shared data fetch — every widget queries its own
- *   slice of data. Killing any single query leaves the rest of the page
- *   intact.
+ * - No `Promise.all` and no shared data fetch — every widget queries its
+ *   own slice of data. Killing any single query leaves the rest of the
+ *   page intact.
+ * - Fresh-org detection (above) decides whether to show the WelcomeWizard
+ *   instead of the normal dashboard for first-session users; failure of
+ *   that detection falls back to the normal dashboard.
  *
- * This file intentionally stays declarative — it composes the grid, the
- * boundaries, the skeletons, the empty/error fallbacks. The widget files
- * own the rendering.
- *
- * Wave D1 ships only the skeleton scaffolding (this file + the wrappers).
- * Subsequent waves replace each placeholder with a real Server Component.
+ * Reads the `dashboard_welcome_dismissed=1` cookie or `?welcome=skip`
+ * search-param hint to permanently switch the user off the wizard.
  */
-export default function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ welcome?: string }>
+}) {
+  // Honour an explicit dismiss either via cookie or query-param.
+  const cookieStore = await cookies()
+  const dismissedCookie = cookieStore.get('dashboard_welcome_dismissed')?.value === '1'
+  const sp = (await searchParams) ?? {}
+  const dismissedNow = sp.welcome === 'skip'
+
+  let signals: FreshOrgSignals | null = null
+  if (!dismissedCookie && !dismissedNow) {
+    signals = await detectFreshOrg()
+  }
+
+  if (signals?.isFresh) {
+    let userName = 'there'
+    try {
+      const user = await getUser()
+      if (user?.user_metadata?.full_name && typeof user.user_metadata.full_name === 'string') {
+        userName = user.user_metadata.full_name.trim().split(/\s+/)[0]
+      } else if (user?.email) {
+        userName = user.email.split('@')[0]
+      }
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('[dashboard:welcome] getUser failed', err)
+    }
+    return (
+      <WelcomeWizard
+        userName={userName}
+        hasIntegration={signals.hasIntegration}
+        hasContacts={signals.hasContacts}
+        hasAgent={signals.hasAgent}
+        hasDeals={signals.hasDeals}
+        hasReviews={signals.hasReviews}
+      />
+    )
+  }
+
   return (
     <PageContainer>
       {/* Hero — greeting + cost ticker + workspace status */}
