@@ -14,7 +14,7 @@ export default async function MembersPage() {
   ])
 
   return (
-    <PageContainer size="narrow">
+    <PageContainer>
       <PageHeader
         eyebrow="Team"
         eyebrowIcon={UsersRound}

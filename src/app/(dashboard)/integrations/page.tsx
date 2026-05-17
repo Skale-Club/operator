@@ -211,7 +211,7 @@ function DedicatedCard({ item, index }: { item: DedicatedIntegration; index: num
 
 function ProviderClusterIcon() {
   return (
-    <span className="inline-flex items-center -space-x-1">
+    <span className="inline-flex items-center gap-2">
       <Brain className="h-3.5 w-3.5 text-accent" />
       <Phone className="h-3.5 w-3.5 text-info" />
       <CalendarClock className="h-3.5 w-3.5 text-success" />

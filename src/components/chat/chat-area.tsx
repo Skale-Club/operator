@@ -99,7 +99,7 @@ export function ChatArea({
   const isBotActive = conversation.botStatus === 'active'
 
   return (
-    <div className="flex h-full flex-col bg-bg-primary">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-bg-primary">
       <ChatHeader
         conversation={conversation}
         onBack={onBack}
@@ -117,7 +117,7 @@ export function ChatArea({
       />
 
       {/* Internal/debug toggle — small, optional, off by default */}
-      <div className="flex items-center justify-end gap-2 border-b border-border-subtle bg-bg-secondary/30 px-4 py-1.5">
+      <div className="flex shrink-0 items-center justify-end gap-2 border-b border-border-subtle bg-bg-secondary/30 px-4 py-1.5">
         <label className="flex items-center gap-1.5 text-[11px] text-text-tertiary cursor-pointer">
           <input
             type="checkbox"

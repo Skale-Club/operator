@@ -452,11 +452,14 @@ export function ChatLayout({ currentOrgId, currentUserId, agentMap }: ChatLayout
   // ───────────────────────── Render ─────────────────────────
 
   return (
-    <div className="flex h-full flex-col bg-bg-primary">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-bg-primary">
       {/* Desktop — 3-column grid */}
       <div
         className={cn(
-          'hidden md:grid h-full w-full',
+          'hidden md:grid h-full min-h-0 w-full overflow-hidden',
+          // grid-rows-[minmax(0,1fr)] keeps the row bounded by the parent so
+          // each column can scroll internally instead of stretching the row.
+          'grid-rows-[minmax(0,1fr)]',
           infoOpen
             ? 'grid-cols-[320px_minmax(0,1fr)_360px]'
             : 'grid-cols-[320px_minmax(0,1fr)]',
@@ -522,9 +525,9 @@ export function ChatLayout({ currentOrgId, currentUserId, agentMap }: ChatLayout
       </div>
 
       {/* Mobile — single-column with drawer-style navigation */}
-      <div className="md:hidden flex h-full w-full">
+      <div className="md:hidden flex h-full min-h-0 w-full overflow-hidden">
         {mobileView === 'list' && (
-          <div className="w-full">
+          <div className="h-full min-h-0 w-full">
             <ConversationList
               conversations={conversations}
               pinned={pinned}
@@ -560,7 +563,7 @@ export function ChatLayout({ currentOrgId, currentUserId, agentMap }: ChatLayout
           </div>
         )}
         {mobileView === 'chat' && (
-          <div className="w-full">
+          <div className="h-full min-h-0 w-full">
             <ChatArea
               conversation={selected}
               messages={messages}
@@ -584,7 +587,7 @@ export function ChatLayout({ currentOrgId, currentUserId, agentMap }: ChatLayout
           </div>
         )}
         {mobileView === 'info' && (
-          <div className="w-full">
+          <div className="h-full min-h-0 w-full">
             <ContactInfoPanel
               contactId={selected?.contactId ?? null}
               fallbackName={selected?.visitorName ?? null}
