@@ -59,7 +59,7 @@ export async function MetricAvgRating() {
           Avg rating
         </div>
         <WidgetEmpty
-          icon="star"
+          icon={Star}
           title="No reviews tracked"
           description="Connect a Google Business profile to monitor your reputation."
           cta={{ label: 'Connect Reviews', href: '/integrations/google-reviews' }}

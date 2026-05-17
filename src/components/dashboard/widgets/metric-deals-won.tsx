@@ -73,7 +73,7 @@ export async function MetricDealsWon() {
           Deals won (mo)
         </div>
         <WidgetEmpty
-          icon="trophy"
+          icon={Trophy}
           title="No deals yet"
           description="Create your first opportunity to start tracking pipeline value."
           cta={{ label: 'Open pipeline', href: '/pipeline' }}

@@ -80,7 +80,7 @@ export async function MetricCallsToday() {
           Calls today
         </div>
         <WidgetEmpty
-          icon="phone"
+          icon={Phone}
           title="No calls yet"
           description="Connect Twilio to handle SMS + voice from one inbox."
           cta={{ label: 'Connect Twilio', href: '/integrations/twilio' }}
