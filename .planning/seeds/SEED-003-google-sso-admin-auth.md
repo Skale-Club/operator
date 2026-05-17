@@ -1,8 +1,9 @@
 ---
 id: SEED-003
-status: dormant
+status: partial
 planted: 2026-05-16
 planted_during: post-v2.0 Phase 36 (Agent CRUD Dashboard completed)
+partial_note: Fase 42 executada (org_invites, OAuth callback, /dashboard/members) — pendente apenas 42-02 (config manual Google Cloud Console + Supabase OAuth provider + NEXT_PUBLIC_SITE_URL no Vercel)
 trigger_when: planejamento de milestone com tema "auth", "SSO", "onboarding de novos admins", "compliance", "convites", "team management"; OU pedido explícito de um cliente que exige Google Workspace SSO; OU primeiro suporte ticket sobre senha esquecida que vire fricção real; OU operator alcançar 5+ usuários admin ativos
 scope: Medium
 ---

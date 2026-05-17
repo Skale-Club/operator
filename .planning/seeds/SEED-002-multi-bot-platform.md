@@ -1,8 +1,10 @@
 ---
 id: SEED-002
-status: dormant
+status: shipped
 planted: 2026-05-15
 planted_during: post-v1.8 (Executor Completeness completed)
+shipped: 2026-05-17
+shipped_as: v2.0 Multi-Bot Platform (Phases 33-42)
 trigger_when: planejamento de v2.0; OU chegada de cliente que peça especialização por domínio; OU qualquer milestone que toque "agent", "assistant", "bot", "prompt", "delegação", "channel-agnostic"; OU pedido explícito
 scope: Large
 ---
