@@ -1,16 +1,21 @@
 'use client'
 /**
- * Twilio integration UI (v2.1 — per-org credentials panel).
+ * Twilio integration UI (v2.3 — per-org credentials panel + multi-number).
  *
- * Three sections:
- *   1. SMS & basics       — account_sid, auth_token, from_number
- *   2. Voice SDK          — api_key_sid, api_key_secret, twiml_app_sid (+ webhook URL hint)
- *   3. SIP / Zoiper       — sip_domain
+ * Sections:
+ *   1. Connection status   — summary pills (SMS / Voice SDK / SIP)
+ *   2. SMS & basics        — account_sid, auth_token, SMS webhook URL
+ *   3. Phone numbers       — list + CRUD dialog (TwilioPhoneNumbers component)
+ *   4. Voice SDK           — api_key_sid, api_key_secret, twiml_app_sid (+ webhook URL hint)
+ *   5. SIP / Zoiper        — sip_domain
  *
  * Secrets are NEVER returned to the client — the parent server component passes
  * a "view" object with masked hints + boolean presence flags. The user types a
  * new value into an empty input to rotate; leaving it blank keeps the previous
  * value.
+ *
+ * Phone numbers are managed via numbers-actions.ts and the TwilioPhoneNumbers
+ * client component — independent of the credentials save flow.
  */
 
 import * as React from 'react'
@@ -41,6 +46,7 @@ import {
   testSipConfig,
   type TwilioIntegrationView,
 } from '@/app/(dashboard)/integrations/twilio/actions'
+import { TwilioPhoneNumbers } from '@/components/integrations/twilio-phone-numbers'
 
 interface TwilioSettingsProps {
   initial: TwilioIntegrationView
@@ -53,7 +59,6 @@ export function TwilioSettings({ initial }: TwilioSettingsProps) {
   // Form fields — secrets start blank (placeholder shows masked hint).
   const [accountSid, setAccountSid] = React.useState('')
   const [authToken, setAuthToken] = React.useState('')
-  const [fromNumber, setFromNumber] = React.useState(initial.fromNumber ?? '')
   const [apiKeySid, setApiKeySid] = React.useState('')
   const [apiKeySecret, setApiKeySecret] = React.useState('')
   const [twimlAppSid, setTwimlAppSid] = React.useState(initial.twimlAppSid ?? '')
@@ -68,7 +73,6 @@ export function TwilioSettings({ initial }: TwilioSettingsProps) {
       const res = await saveTwilioIntegration({
         accountSid,
         authToken,
-        fromNumber,
         apiKeySid,
         apiKeySecret,
         twimlAppSid,
@@ -84,27 +88,33 @@ export function TwilioSettings({ initial }: TwilioSettingsProps) {
       setAuthToken('')
       setApiKeySid('')
       setApiKeySecret('')
-      // Optimistically update boolean flags so the status pills flip without a reload
-      setView((prev) => ({
-        ...prev,
-        hasAccountSid: prev.hasAccountSid || accountSid.trim().length > 0,
-        hasAuthToken: prev.hasAuthToken || authToken.trim().length > 0,
-        hasApiKeySid: prev.hasApiKeySid || apiKeySid.trim().length > 0,
-        hasApiKeySecret: prev.hasApiKeySecret || apiKeySecret.trim().length > 0,
-        fromNumber: fromNumber.trim() || prev.fromNumber,
-        twimlAppSid: twimlAppSid.trim() || prev.twimlAppSid,
-        sipDomain: sipDomain.trim() || prev.sipDomain,
-        smsConfigured:
-          (prev.hasAccountSid || accountSid.trim().length > 0) &&
-          (prev.hasAuthToken || authToken.trim().length > 0) &&
-          Boolean(fromNumber.trim() || prev.fromNumber),
-        voiceConfigured:
-          (prev.hasAccountSid || accountSid.trim().length > 0) &&
-          (prev.hasApiKeySid || apiKeySid.trim().length > 0) &&
-          (prev.hasApiKeySecret || apiKeySecret.trim().length > 0) &&
-          Boolean(twimlAppSid.trim() || prev.twimlAppSid),
-        sipConfigured: Boolean(sipDomain.trim() || prev.sipDomain),
-      }))
+      // Optimistically update boolean flags so the status pills flip without a reload.
+      // smsConfigured / voiceConfigured also need at least one capable active number;
+      // numbers state is managed separately (see TwilioPhoneNumbers component) so
+      // we keep the prev.numbers slice intact.
+      setView((prev) => {
+        const hasAccountSid = prev.hasAccountSid || accountSid.trim().length > 0
+        const hasAuthToken = prev.hasAuthToken || authToken.trim().length > 0
+        const hasApiKeySid = prev.hasApiKeySid || apiKeySid.trim().length > 0
+        const hasApiKeySecret = prev.hasApiKeySecret || apiKeySecret.trim().length > 0
+        const newTwimlAppSid = twimlAppSid.trim() || prev.twimlAppSid
+        const newSipDomain = sipDomain.trim() || prev.sipDomain
+        const hasSmsCapableNumber = prev.numbers.some((n) => n.is_active && n.capability_sms)
+        const hasVoiceCapableNumber = prev.numbers.some((n) => n.is_active && n.capability_voice)
+        return {
+          ...prev,
+          hasAccountSid,
+          hasAuthToken,
+          hasApiKeySid,
+          hasApiKeySecret,
+          twimlAppSid: newTwimlAppSid,
+          sipDomain: newSipDomain,
+          smsConfigured: hasAccountSid && hasAuthToken && hasSmsCapableNumber,
+          voiceConfigured:
+            hasAccountSid && hasApiKeySid && hasApiKeySecret && Boolean(newTwimlAppSid) && hasVoiceCapableNumber,
+          sipConfigured: Boolean(newSipDomain),
+        }
+      })
     } finally {
       setSaving(false)
     }
@@ -160,15 +170,7 @@ export function TwilioSettings({ initial }: TwilioSettingsProps) {
             onToggle={() => setShowAuthToken((v) => !v)}
             hint="Used to validate webhook signatures on inbound SMS and voice calls."
           />
-          <Field
-            label="From number (E.164)"
-            placeholder="+14155551234"
-            value={fromNumber}
-            onChange={setFromNumber}
-            mono
-            hint="Your Twilio phone number — used both as the SMS sender and to match inbound calls/messages to this org."
-          />
-          <div className="space-y-1.5">
+          <div className="md:col-span-2 space-y-1.5">
             <Label>Inbound SMS webhook</Label>
             <CopyRow value={view.smsWebhookUrl} />
             <p className="text-[11.5px] text-text-tertiary">
@@ -177,8 +179,11 @@ export function TwilioSettings({ initial }: TwilioSettingsProps) {
           </div>
         </div>
 
-        <TestSmsRow defaultTo={view.fromNumber ?? ''} disabled={!view.smsConfigured} />
+        <TestSmsRow defaultTo={getDefaultE164(view) ?? ''} disabled={!view.smsConfigured} />
       </SectionCard>
+
+      {/* ── 2. Phone numbers ────────────────────────────────────────────── */}
+      <TwilioPhoneNumbers initial={view.numbers} />
 
       {/* ── 2. Voice SDK ─────────────────────────────────────────────────── */}
       <SectionCard
@@ -277,6 +282,13 @@ export function TwilioSettings({ initial }: TwilioSettingsProps) {
       </div>
     </div>
   )
+}
+
+// ── helpers ─────────────────────────────────────────────────────────────────
+
+function getDefaultE164(view: TwilioIntegrationView): string | null {
+  const def = view.numbers.find((n) => n.is_default && n.is_active)
+  return def?.e164 ?? view.fromNumber ?? null
 }
 
 // ── building blocks ─────────────────────────────────────────────────────────
