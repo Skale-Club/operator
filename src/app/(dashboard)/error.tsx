@@ -1,15 +1,21 @@
 'use client'
 
 import { useEffect } from 'react'
-import { AlertTriangle, RotateCcw } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 
 /**
  * Dashboard segment error boundary.
- * Catches any Server Component render error that escapes the page-level
- * guards and offers a soft recovery instead of the bare Next.js error page.
  *
- * Next.js routes any uncaught error in (dashboard)/** here (client component).
+ * IMPORTANT — this file is intentionally pure HTML + inline styles.
+ * It MUST NOT import anything from the dashboard tree (no Button,
+ * no PageHeader, no design-system components, no provider hooks).
+ *
+ * Why: a render error in the dashboard tree bubbles up here. If the
+ * error boundary itself depends on the same providers / tokens that
+ * threw, it will re-throw immediately and Next will re-mount this
+ * boundary in a tight loop — producing the "thousands of `i4 → us`
+ * recursive frames" we saw in digest 1621801304.
+ *
+ * Keep it dumb. Keep it dependency-free.
  */
 export default function DashboardError({
   error,
@@ -19,32 +25,73 @@ export default function DashboardError({
   reset: () => void
 }) {
   useEffect(() => {
-    // Surface the digest in the browser console for production debugging.
-    // The original error message is stripped on prod builds, but the digest
-    // can be cross-referenced with server logs.
     // eslint-disable-next-line no-console
-    console.error('[dashboard error boundary]', { digest: error.digest, message: error.message })
+    console.error('[dashboard error boundary]', {
+      digest: error.digest,
+      message: error.message,
+      stack: error.stack,
+    })
   }, [error])
 
   return (
-    <div className="mx-auto flex min-h-[60vh] w-full max-w-2xl flex-col items-center justify-center gap-4 px-6 text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--danger-muted)] text-danger">
-        <AlertTriangle className="h-6 w-6" />
+    <div
+      style={{
+        padding: 24,
+        color: '#FAFAFA',
+        backgroundColor: '#0A0A0B',
+        minHeight: '100vh',
+        fontFamily:
+          '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif',
+      }}
+    >
+      <div style={{ maxWidth: 560, margin: '4rem auto' }}>
+        <h1 style={{ fontSize: 22, marginBottom: 12, fontWeight: 600 }}>
+          Dashboard error
+        </h1>
+        <p style={{ color: '#A1A1AA', marginBottom: 16, fontSize: 14, lineHeight: 1.5 }}>
+          We hit an unexpected error rendering this page. The team has been
+          notified.
+        </p>
+        <p style={{ color: '#71717A', marginBottom: 24, fontSize: 12 }}>
+          Digest:{' '}
+          <code style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
+            {error.digest ?? 'unknown'}
+          </code>
+        </p>
+        <button
+          type="button"
+          onClick={() => reset()}
+          style={{
+            padding: '8px 16px',
+            backgroundColor: '#6366F1',
+            border: 'none',
+            borderRadius: 8,
+            color: '#FFFFFF',
+            fontSize: 13,
+            fontWeight: 500,
+            cursor: 'pointer',
+          }}
+        >
+          Try again
+        </button>
+        <div style={{ marginTop: 32, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+          <a href="/chat" style={{ color: '#818CF8', fontSize: 13 }}>
+            Chat
+          </a>
+          <a href="/contacts" style={{ color: '#818CF8', fontSize: 13 }}>
+            Contacts
+          </a>
+          <a href="/pipeline" style={{ color: '#818CF8', fontSize: 13 }}>
+            Pipeline
+          </a>
+          <a href="/agents" style={{ color: '#818CF8', fontSize: 13 }}>
+            Agents
+          </a>
+          <a href="/integrations" style={{ color: '#818CF8', fontSize: 13 }}>
+            Integrations
+          </a>
+        </div>
       </div>
-      <h1 className="text-[20px] font-semibold tracking-tight text-text-primary">
-        Something went off the rails
-      </h1>
-      <p className="max-w-md text-[13.5px] text-text-secondary">
-        We hit an unexpected error rendering this page. The team has been notified —
-        try refreshing in a moment.
-      </p>
-      {error.digest && (
-        <p className="text-[11px] font-mono text-text-tertiary">digest: {error.digest}</p>
-      )}
-      <Button onClick={reset} size="sm" variant="secondary">
-        <RotateCcw className="h-3.5 w-3.5" />
-        Try again
-      </Button>
     </div>
   )
 }
