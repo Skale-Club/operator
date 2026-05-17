@@ -31,24 +31,24 @@ export function stripMarkdown(text: string): string {
   return text
     // Headings (# ## ###)
     .replace(/^#{1,6}\s+/gm, '')
-    // Bold+italic: ***text***
-    .replace(/\*{3}(.+?)\*{3}/gs, '$1')
-    // Bold: **text**
-    .replace(/\*{2}(.+?)\*{2}/gs, '$1')
-    // Italic: *text*
-    .replace(/\*(.+?)\*/gs, '$1')
-    // Bold+italic: ___text___
-    .replace(/_{3}(.+?)_{3}/gs, '$1')
-    // Bold: __text__
-    .replace(/_{2}(.+?)_{2}/gs, '$1')
-    // Italic: _text_
-    .replace(/(?<![a-zA-Z0-9])_(.+?)_(?![a-zA-Z0-9])/gs, '$1')
-    // Strikethrough: ~~text~~
-    .replace(/~~(.+?)~~/gs, '$1')
-    // Inline code: `code`
-    .replace(/`(.+?)`/gs, '$1')
-    // Code blocks: ```...```
+    // Code blocks: ```...``` (must come before inline code to avoid partial matches)
     .replace(/```[\s\S]*?```/g, '')
+    // Bold+italic: ***text*** ([\s\S] instead of . with s-flag for ES2017 compat)
+    .replace(/\*{3}([\s\S]+?)\*{3}/g, '$1')
+    // Bold: **text**
+    .replace(/\*{2}([\s\S]+?)\*{2}/g, '$1')
+    // Italic: *text*
+    .replace(/\*([\s\S]+?)\*/g, '$1')
+    // Bold+italic: ___text___
+    .replace(/_{3}([\s\S]+?)_{3}/g, '$1')
+    // Bold: __text__
+    .replace(/_{2}([\s\S]+?)_{2}/g, '$1')
+    // Italic: _text_ (word-boundary guard — no lookbehind needed for non-word chars)
+    .replace(/(^|[^a-zA-Z0-9])_([\s\S]+?)_(?=[^a-zA-Z0-9]|$)/gm, '$1$2')
+    // Strikethrough: ~~text~~
+    .replace(/~~([\s\S]+?)?~~/g, '$1')
+    // Inline code: `code`
+    .replace(/`([\s\S]+?)`/g, '$1')
     // Links: [label](url) → label
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
     // Remaining bare URLs (http/https)
