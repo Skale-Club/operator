@@ -14,8 +14,12 @@ name: GHL Lost-Lead Reengagement (SMS) — pulse
 #   - GHL_REENGAGEMENT_TRIGGER_SECRET   matches the env var on Vercel
 
 on:
-  schedule:
-    - cron: '*/15 * * * *'
+  # schedule disabled — GHL integration is not configured in production
+  # (no `integrations` row, missing GHL_REENGAGEMENT_* env vars). Re-enable
+  # once the GHL provider is wired up in the Operator UI and the 3 env vars
+  # GHL_REENGAGEMENT_LOCATION_ID / _INTEGRATION_ID / _MESSAGE are set on Vercel.
+  # schedule:
+  #   - cron: '*/15 * * * *'
   workflow_dispatch:
     inputs:
       force:
