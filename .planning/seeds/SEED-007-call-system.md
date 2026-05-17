@@ -4,84 +4,170 @@ status: dormant
 planted: 2026-05-17
 planted_during: post-v2.0 Multi-Bot Platform
 trigger_when: milestone de CRM; OU pedido explícito de substituir sistema de chamadas do GHL
-scope: Medium
+scope: Medium-Large
 depends_on: SEED-006 (Contacts)
 ---
 
-# SEED-007: Call System — Ligações via Twilio + Gravação + R2
+# SEED-007: Call System — Ligações via Twilio + 3 Modos de Atendimento + Gravação + R2
 
-Sistema completo de chamadas dentro do Operator: receber e fazer ligações usando número Twilio, gravação automática salva no R2, histórico vinculado ao contato, e player de áudio no painel.
+Sistema completo de chamadas dentro do Operator. Cada usuário/org escolhe como prefere atender e ligar — os 3 modos coexistem e são configuráveis por usuário nas settings.
 
-**Substitui o sistema de ligações do GHL.** Sem ferramentas externas de softphone além do Zoiper (app gratuito) para áudio — toda a lógica fica no Operator.
+**Substitui o sistema de ligações do GHL.** Toda a lógica de roteamento, gravação e histórico fica no Operator.
 
-## Arquitetura
+---
+
+## Os 3 modos de atendimento (todos obrigatórios)
+
+### Modo A — Encaminhar para celular real
+```
+Cliente liga → Twilio → POST /api/twilio/voice → TwiML <Dial><Number>+55119...</Number></Dial>
+→ toca no celular do admin → admin atende normalmente
+```
+- Configuração: admin cadastra seu número pessoal nas settings
+- Zero setup extra — funciona imediatamente
+- Twilio grava e manda webhook quando termina
+
+### Modo B — Zoiper / SIP (ramal VoIP)
+```
+Cliente liga → Twilio SIP Domain → Zoiper no PC/celular do admin toca
+→ admin atende no app Zoiper
+```
+- Configuração: admin configura Twilio SIP Domain + credenciais SIP no Zoiper
+- Mais barato (um trecho de chamada só)
+- Operator gera as credenciais SIP por usuário automaticamente
+- Twilio SIP domain com `record=true` para gravar
+
+### Modo C — Atender no browser (Twilio Voice SDK)
+```
+Cliente liga → Twilio → Operator notifica via WebSocket → 
+banner "Chamada recebida de [Nome do Contato]" aparece no painel →
+admin clica "Atender" → áudio WebRTC no browser
+```
+- Configuração: zero — funciona no browser sem instalar nada
+- Mais integrado: nome do contato aparece antes de atender, histórico automático
+- Requer Twilio Voice SDK (`@twilio/voice-sdk`) no frontend
+- `POST /api/twilio/token` gera Access Token por sessão
+
+---
+
+## Arquitetura de roteamento
 
 ```
-Inbound:  Twilio → POST /api/twilio/voice (TwiML) → grava → POST /api/twilio/recording → R2 + call_logs
-Outbound: Admin clica "Ligar" no painel → Twilio Voice SDK (WebRTC) ou Zoiper via SIP
-Gravação: Twilio grava → webhook → Operator baixa áudio → salva no R2 → salva URL no call_logs
+POST /api/twilio/voice (webhook Twilio)
+  ↓
+Operator lê routing_mode do usuário responsável pela org/número
+  ↓
+  ├── Modo A → TwiML <Dial><Number>{phone_forward}</Number></Dial>
+  ├── Modo B → TwiML <Dial><Sip>{sip_uri}</Sip></Dial>
+  └── Modo C → TwiML <Dial><Client>{user_identity}</Client></Dial>
+        ↑
+        Twilio Voice SDK registrado no browser do admin
 ```
+
+**Um único webhook, TwiML gerado dinamicamente** com base no modo configurado por usuário/org.
+
+---
 
 ## Schema
 
 ```sql
+-- Configuração de chamadas por usuário/org
+call_settings (
+  id uuid PK,
+  org_id uuid FK (RLS),
+  user_id uuid FK → auth.users,
+  routing_mode text,          -- 'phone_forward' | 'sip' | 'browser'
+  phone_forward text,         -- número real (+5511999...) para Modo A
+  sip_username text,          -- gerado automaticamente para Modo B
+  sip_password_encrypted text,-- AES-256-GCM para Modo B
+  twilio_client_identity text,-- gerado automaticamente para Modo C
+  record_calls boolean DEFAULT true,
+  updated_at
+)
+
+-- Histórico de chamadas
 call_logs (
   id uuid PK,
   org_id uuid FK (RLS),
   contact_id uuid FK → contacts (nullable),
   opportunity_id uuid FK → opportunities (nullable, SEED-008),
-  call_sid text UNIQUE,       -- Twilio CallSid
+  call_sid text UNIQUE,
   direction text,             -- 'inbound' | 'outbound'
+  routing_mode text,          -- qual modo foi usado
   from_number text,
   to_number text,
-  status text,                -- 'completed' | 'no-answer' | 'busy' | 'failed'
+  status text,                -- 'completed' | 'no-answer' | 'busy' | 'failed' | 'canceled'
   duration_seconds int,
   recording_url text,         -- URL no R2
   recording_duration int,
   started_at timestamptz,
   ended_at timestamptz,
-  notes text,                 -- anotação manual pós-chamada
+  notes text,
   created_by uuid FK → auth.users
 )
 ```
 
+---
+
 ## O que precisa ser construído
 
-**Inbound (receber chamadas):**
-1. `POST /api/twilio/voice` — retorna TwiML com `<Dial record="record-from-answer">` + `<Number>` do número real do admin
-2. `POST /api/twilio/recording` — webhook pós-gravação → baixa áudio → salva no R2 → insere `call_logs`
-3. Twilio console: configurar webhook URL no número Twilio
+**Infraestrutura base:**
+1. Migration `call_settings` + `call_logs` + RLS + tipos
+2. `POST /api/twilio/voice` — roteamento dinâmico (lê `call_settings`, gera TwiML por modo)
+3. `POST /api/twilio/recording` — webhook pós-gravação → baixa áudio → R2 → insere `call_logs`
+4. `POST /api/twilio/status` — webhook de status (answered, no-answer, busy) → atualiza `call_logs`
 
-**Outbound — Opção A (Zoiper, sem dev):**
-4. Documentação de setup: Twilio SIP Domain + Zoiper config por org
-5. Twilio SIP domain com `record=true` para gravar outbound também
+**Modo A — Encaminhar para celular:**
+5. Settings UI — campo "Encaminhar para" com validação E.164
+6. TwiML `<Dial><Number>` com record ativo
 
-**Outbound — Opção B (click-to-call no painel, com dev):**
-6. `POST /api/twilio/token` — gera Access Token para Twilio Voice SDK
-7. Componente `<DialerButton phone={contact.phone}>` usando `@twilio/voice-sdk`
-8. Botão "Ligar" na página de contato e na oportunidade
+**Modo B — SIP / Zoiper:**
+7. Geração automática de credenciais SIP por usuário (username + password criptografado)
+8. Twilio SIP Domain configurado por org (lib ou manual com documentação)
+9. Settings UI — exibe credenciais SIP para copiar no Zoiper + QR de config
+10. Guia de setup Zoiper (iOS, Android, Windows, Mac) na docs do Operator
+
+**Modo C — Browser / Twilio Voice SDK:**
+11. `POST /api/twilio/token` — gera Access Token com identity do usuário
+12. Hook `useTwilioDevice()` — registra o Device no browser, gerencia estado (ready/on-call/offline)
+13. Componente `<IncomingCallBanner>` — aparece no topo do dashboard quando chega chamada
+14. Componente `<Dialer>` — input de número + botão ligar para outbound
+15. Notificação em tempo real (Supabase Realtime ou WebSocket) para o banner de chamada entrando
+
+**Outbound (ligar para cliente) — os 3 modos:**
+16. Modo A: `POST /api/twilio/outbound` → Twilio REST API inicia chamada → conecta os dois números
+17. Modo B: admin disca direto no Zoiper (número do contato)
+18. Modo C: `<DialerButton phone={contact.phone}>` no painel → Twilio SDK inicia chamada WebRTC
 
 **Histórico e UI:**
-9. `/dashboard/calls` — lista de chamadas com filtros (data, status, direção, contato)
-10. Player de áudio inline na lista e no detalhe do contato
-11. `/dashboard/contacts/[id]` — aba "Chamadas" com histórico + player
-12. Anotação pós-chamada — campo de notas editável após encerrar
+19. `/dashboard/calls` — lista unificada (inbound + outbound), filtros, status, duração
+20. Player de áudio inline com waveform simples
+21. `/dashboard/contacts/[id]` — aba "Chamadas" com histórico + player + notas
+22. Anotação pós-chamada — modal após encerrar com campo de notas
+
+**Settings:**
+23. `/settings/calls` — escolha de modo por usuário, configuração de cada modo, toggle de gravação
 
 **Testes:**
-13. Webhook inbound TwiML correto
-14. Recording webhook → R2 upload → call_logs insert
-15. RLS: org A não vê chamadas da org B
+24. TwiML correto para cada modo
+25. Recording webhook → R2 → call_logs
+26. Token endpoint retorna identity correto
+27. RLS: org A não vê chamadas da org B
+
+---
 
 ## Decisões travadas
-- **Gravação sempre ativa** — `record=true` por padrão; admin pode desativar por org via settings
-- **R2 para storage** — baixar do Twilio imediatamente (Twilio cobra por minuto de armazenamento)
-- **Opção A (Zoiper) primeiro** — menos dev, funciona hoje; Opção B (click-to-call) como segunda fase
+- **Os 3 modos são obrigatórios** — admin escolhe por usuário nas settings
+- **Gravação ativa por padrão** — toggle por org nas settings
+- **R2 para storage** — download imediato do Twilio (evita custo de storage Twilio)
+- **TwiML dinâmico** — um único webhook, comportamento determinado pelo `call_settings` do usuário
 - **Sem Chatwoot** — call logs ficam no Operator
 
 ## Scope
-**Medium — 3 fases, ~10 plans**
+**Medium-Large — 4-5 fases, ~14 plans**
 
 ## Referências de código existente
-- [`src/lib/twilio/`](src/lib/twilio/) — cliente Twilio existente (`send_sms`)
-- [`src/lib/crypto.ts`](src/lib/crypto.ts) — credenciais criptografadas
-- Cloudflare R2 — já decidido para storage (SEED-004)
+- [`src/lib/twilio/`](src/lib/twilio/) — cliente Twilio (`send_sms`)
+- [`src/lib/crypto.ts`](src/lib/crypto.ts) — AES-256-GCM para senha SIP
+- Supabase Realtime — já usado em conversations para notificações em tempo real
+- Cloudflare R2 — storage definido (SEED-004)
