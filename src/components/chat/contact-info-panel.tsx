@@ -25,6 +25,7 @@ import {
   Plus,
   ChevronDown,
   X,
+  PanelRightClose,
 } from 'lucide-react'
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -41,8 +42,10 @@ interface ContactInfoPanelProps {
   fallbackName?: string | null
   fallbackPhone?: string | null
   fallbackEmail?: string | null
-  /** Mobile sheet close button. Desktop ignores this. */
+  /** Mobile sheet close button (X). Renders on mobile only. */
   onClose?: () => void
+  /** Desktop collapse button. Renders on md+ when provided. */
+  onCollapse?: () => void
 }
 
 function initialsOf(name: string | null, phone: string | null, email: string | null): string {
@@ -73,6 +76,7 @@ export function ContactInfoPanel({
   fallbackPhone,
   fallbackEmail,
   onClose,
+  onCollapse,
 }: ContactInfoPanelProps) {
   const [contact, setContact] = React.useState<ContactDetail | null>(null)
   const [loading, setLoading] = React.useState(false)
@@ -101,6 +105,7 @@ export function ContactInfoPanel({
         phone={fallbackPhone ?? null}
         email={fallbackEmail ?? null}
         onClose={onClose}
+        onCollapse={onCollapse}
       />
     )
   }
@@ -129,16 +134,31 @@ export function ContactInfoPanel({
     <div className="flex h-full flex-col border-l border-border-subtle bg-bg-secondary/40">
       {/* Header */}
       <div className="border-b border-border-subtle px-5 py-5 relative">
-        {onClose && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute right-3 top-3 h-7 w-7 md:hidden"
-            onClick={onClose}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        )}
+        <div className="absolute right-3 top-3 flex items-center gap-1">
+          {onCollapse && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 hidden md:inline-flex"
+              onClick={onCollapse}
+              title="Collapse contact panel"
+              aria-label="Collapse contact panel"
+            >
+              <PanelRightClose className="h-4 w-4" />
+            </Button>
+          )}
+          {onClose && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 md:hidden"
+              onClick={onClose}
+              aria-label="Close contact panel"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
         <div className="flex items-start gap-3">
           <Avatar className="h-14 w-14">
             <AvatarFallback className="bg-accent-muted text-accent text-[15px] font-semibold">
@@ -404,11 +424,13 @@ function UnregisteredCard({
   phone,
   email,
   onClose,
+  onCollapse,
 }: {
   name: string | null
   phone: string | null
   email: string | null
   onClose?: () => void
+  onCollapse?: () => void
 }) {
   const params = new URLSearchParams()
   if (name) params.set('name', name)
@@ -419,13 +441,31 @@ function UnregisteredCard({
 
   return (
     <div className="flex h-full flex-col border-l border-border-subtle bg-bg-secondary/40">
-      {onClose && (
-        <div className="md:hidden flex justify-end p-2">
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}>
+      <div className="flex justify-end gap-1 p-2">
+        {onCollapse && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 hidden md:inline-flex"
+            onClick={onCollapse}
+            title="Collapse contact panel"
+            aria-label="Collapse contact panel"
+          >
+            <PanelRightClose className="h-4 w-4" />
+          </Button>
+        )}
+        {onClose && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 md:hidden"
+            onClick={onClose}
+            aria-label="Close contact panel"
+          >
             <X className="h-4 w-4" />
           </Button>
-        </div>
-      )}
+        )}
+      </div>
       <div className="p-5">
         <div className="rounded-[12px] border border-dashed border-border-subtle bg-bg-primary p-5 text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-bg-tertiary ring-1 ring-border-subtle text-text-tertiary">

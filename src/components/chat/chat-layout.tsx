@@ -527,6 +527,7 @@ export function ChatLayout({ currentOrgId, currentUserId, agentMap }: ChatLayout
               fallbackName={selected?.visitorName ?? null}
               fallbackPhone={selected?.visitorPhone ?? null}
               fallbackEmail={selected?.visitorEmail ?? null}
+              onCollapse={() => setInfoOpen(false)}
             />
           </div>
         )}
