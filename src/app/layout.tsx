@@ -6,16 +6,23 @@ import { ThemeProvider } from '@/components/theme-provider'
 import { APP_NAME } from '@/lib/config'
 import './globals.css'
 
+// Only preload the Inter weights actually used in the dashboard shell on first
+// paint. The browser will lazy-fetch any additional weights as needed.
 const inter = Inter({
   subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
   display: 'swap',
   variable: '--font-sans',
 })
 
+// JetBrains Mono is only used in code/log views and rarely visible on first
+// paint — skip preloading to stop the "preloaded but not used" console warning.
 const mono = JetBrains_Mono({
   subsets: ['latin'],
+  weight: ['400', '500'],
   display: 'swap',
   variable: '--font-mono',
+  preload: false,
 })
 
 export const metadata: Metadata = {

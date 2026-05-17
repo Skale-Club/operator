@@ -34,24 +34,37 @@ export default async function DashboardLayout({ children }: { children: React.Re
     }
   }
 
-  // First load (no cookie): seed from DB
+  // First load (no cookie): seed from DB. Any failure here is non-fatal —
+  // the user can still navigate; we just won't pre-fill the org switcher.
   if (!activeOrgId) {
-    const supabase = await createClient()
-    const { data: orgId } = await supabase.rpc('get_current_org_id')
-    if (orgId) {
-      const { data: org } = await supabase
-        .from('organizations')
-        .select('id, name')
-        .eq('id', orgId as string)
-        .single()
-      if (org) {
-        activeOrgId = org.id
-        activeOrgName = org.name
+    try {
+      const supabase = await createClient()
+      const { data: orgId } = await supabase.rpc('get_current_org_id')
+      if (orgId) {
+        const { data: org } = await supabase
+          .from('organizations')
+          .select('id, name')
+          .eq('id', orgId as string)
+          .maybeSingle()
+        if (org) {
+          activeOrgId = org.id
+          activeOrgName = org.name
+        }
       }
+    } catch {
+      // ignore — fall back to default-shell render
     }
   }
 
-  const branding = await getOrgBranding(activeOrgId)
+  // getOrgBranding already swallows errors internally, but keep a belt
+  // here too in case the import-time client construction fails.
+  let branding
+  try {
+    branding = await getOrgBranding(activeOrgId)
+  } catch {
+    const { DEFAULT_BRANDING } = await import('@/lib/branding')
+    branding = DEFAULT_BRANDING
+  }
 
   const isPlatformAdmin = user.email === process.env.PLATFORM_ADMIN_EMAIL
 

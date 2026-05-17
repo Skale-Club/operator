@@ -74,8 +74,8 @@ function SuccessRateValue({ rate }: { rate: number | null }) {
 function MetricSparkline({ data, color }: { data: any[]; color: string }) {
   const id = useId()
   return (
-    <div className="h-[40px] mt-2">
-      <ResponsiveContainer width="100%" height="100%">
+    <div className="h-[40px] mt-2 min-w-0">
+      <ResponsiveContainer width="100%" height={40} minWidth={0}>
         <BarChart data={data}>
           <RechartsTooltip
             cursor={{ fill: 'transparent' }}

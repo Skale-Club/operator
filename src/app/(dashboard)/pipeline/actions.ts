@@ -580,7 +580,6 @@ export interface PipelineMetrics {
 }
 
 export async function getPipelineMetrics(pipelineId?: string): Promise<PipelineMetrics> {
-  const user = await getUser()
   const empty: PipelineMetrics = {
     totalOpenValue: 0,
     wonThisMonth: { count: 0, value: 0 },
@@ -588,37 +587,39 @@ export async function getPipelineMetrics(pipelineId?: string): Promise<PipelineM
     conversionRate: 0,
     perStage: [],
   }
-  if (!user) return empty
-  const supabase = await createClient()
+  try {
+    const user = await getUser()
+    if (!user) return empty
+    const supabase = await createClient()
 
-  // Resolve a pipeline (defaults to is_default)
-  let pipId = pipelineId
-  if (!pipId) {
-    const { data } = await supabase
-      .from('pipelines')
-      .select('id')
-      .order('is_default', { ascending: false })
+    // Resolve a pipeline (defaults to is_default)
+    let pipId = pipelineId
+    if (!pipId) {
+      const { data } = await supabase
+        .from('pipelines')
+        .select('id')
+        .order('is_default', { ascending: false })
+        .order('position', { ascending: true })
+        .limit(1)
+        .maybeSingle()
+      pipId = data?.id
+    }
+    if (!pipId) return empty
+
+    // Stages for the chart
+    const { data: stages } = await supabase
+      .from('pipeline_stages')
+      .select('id, name, color, is_won, is_lost')
+      .eq('pipeline_id', pipId)
       .order('position', { ascending: true })
-      .limit(1)
-      .maybeSingle()
-    pipId = data?.id
-  }
-  if (!pipId) return empty
 
-  // Stages for the chart
-  const { data: stages } = await supabase
-    .from('pipeline_stages')
-    .select('id, name, color, is_won, is_lost')
-    .eq('pipeline_id', pipId)
-    .order('position', { ascending: true })
-
-  // Pull all opps in this pipeline — counts are small at the per-org scale we
-  // optimise for (thousands not millions). Worth revisiting if this widget
-  // ever lives in a high-traffic dashboard.
-  const { data: opps } = await supabase
-    .from('opportunities')
-    .select('id, value, status, stage_id, created_at, updated_at')
-    .eq('pipeline_id', pipId)
+    // Pull all opps in this pipeline — counts are small at the per-org scale we
+    // optimise for (thousands not millions). Worth revisiting if this widget
+    // ever lives in a high-traffic dashboard.
+    const { data: opps } = await supabase
+      .from('opportunities')
+      .select('id, value, status, stage_id, created_at, updated_at')
+      .eq('pipeline_id', pipId)
 
   const list = opps ?? []
   const monthStart = new Date()
@@ -657,12 +658,17 @@ export async function getPipelineMetrics(pipelineId?: string): Promise<PipelineM
     }
   })
 
-  return {
-    totalOpenValue: totalOpen,
-    wonThisMonth: { count: wonCount, value: wonValue },
-    lostThisMonth: { count: lostCount, value: lostValue },
-    conversionRate,
-    perStage,
+    return {
+      totalOpenValue: totalOpen,
+      wonThisMonth: { count: wonCount, value: wonValue },
+      lostThisMonth: { count: lostCount, value: lostValue },
+      conversionRate,
+      perStage,
+    }
+  } catch {
+    // Pipeline tables missing / RLS error — render the empty state instead
+    // of crashing the home dashboard.
+    return empty
   }
 }
 

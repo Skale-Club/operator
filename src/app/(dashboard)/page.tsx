@@ -29,13 +29,17 @@ import { MetricSkeleton } from '@/components/skeletons/metric-skeleton'
 import { ListSkeleton } from '@/components/skeletons/list-skeleton'
 
 async function hasVapiIntegration(): Promise<boolean> {
-  const supabase = await createClient()
-  const { count } = await supabase
-    .from('integrations')
-    .select('*', { count: 'exact', head: true })
-    .eq('provider', 'vapi')
-    .eq('is_active', true)
-  return (count ?? 0) > 0
+  try {
+    const supabase = await createClient()
+    const { count } = await supabase
+      .from('integrations')
+      .select('*', { count: 'exact', head: true })
+      .eq('provider', 'vapi')
+      .eq('is_active', true)
+    return (count ?? 0) > 0
+  } catch {
+    return false
+  }
 }
 
 interface WorkspaceSetupState {
@@ -52,19 +56,25 @@ interface WorkspaceSetupState {
 async function getWorkspaceSetupState(): Promise<WorkspaceSetupState> {
   const supabase = await createClient()
 
-  const [whatsappRes, twilioRes, agentsRes, contactsRes, reviewsRes] = await Promise.all([
-    supabase.from('evolution_instances').select('id', { count: 'exact', head: true }).eq('is_active', true),
-    supabase.from('integrations').select('id', { count: 'exact', head: true }).eq('provider', 'twilio').eq('is_active', true),
-    supabase.from('assistant_mappings').select('id', { count: 'exact', head: true }).eq('is_active', true),
-    supabase.from('contacts').select('id', { count: 'exact', head: true }),
-    supabase.from('google_business_profiles').select('id', { count: 'exact', head: true }).eq('is_active', true),
-  ])
+  // Each fetch is independently fail-soft: if any single table query throws
+  // (e.g. a migration didn't apply, transient RLS hiccup) we still render
+  // the dashboard with a best-effort checklist instead of crashing the page.
+  const safeCount = async (p: PromiseLike<{ count: number | null }>) => {
+    try {
+      const r = await p
+      return r.count ?? 0
+    } catch {
+      return 0
+    }
+  }
 
-  const whatsappCount = whatsappRes.count ?? 0
-  const twilioCount = twilioRes.count ?? 0
-  const agentsCount = agentsRes.count ?? 0
-  const contactsCount = contactsRes.count ?? 0
-  const reviewsCount = reviewsRes.count ?? 0
+  const [whatsappCount, twilioCount, agentsCount, contactsCount, reviewsCount] = await Promise.all([
+    safeCount(supabase.from('evolution_instances').select('id', { count: 'exact', head: true }).eq('is_active', true)),
+    safeCount(supabase.from('integrations').select('id', { count: 'exact', head: true }).eq('provider', 'twilio').eq('is_active', true)),
+    safeCount(supabase.from('assistant_mappings').select('id', { count: 'exact', head: true }).eq('is_active', true)),
+    safeCount(supabase.from('contacts').select('id', { count: 'exact', head: true })),
+    safeCount(supabase.from('google_business_profiles').select('id', { count: 'exact', head: true }).eq('is_active', true)),
+  ])
 
   const items: WelcomeChecklistItem[] = [
     {

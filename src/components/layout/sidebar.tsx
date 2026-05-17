@@ -21,6 +21,8 @@ import {
   Users,
   PanelLeftClose,
   PanelLeftOpen,
+  TrendingUp,
+  Contact,
 } from 'lucide-react'
 
 import { createClient } from '@/lib/supabase/client'
@@ -51,6 +53,8 @@ const nav: NavItem[] = [
   { icon: MessageSquare,   label: 'Chat',         href: '/chat',         group: 'engage' },
   { icon: Phone,           label: 'Phone',        href: '/phone',        group: 'engage' },
   { icon: PhoneCall,       label: 'Voice',        href: '/voice',        group: 'engage' },
+  { icon: Contact,         label: 'Contacts',     href: '/contacts',     group: 'sales' },
+  { icon: TrendingUp,      label: 'Pipeline',     href: '/pipeline',     group: 'sales' },
   { icon: Bot,             label: 'Agents',       href: '/agents',       group: 'build' },
   { icon: Zap,             label: 'Tools',        href: '/tools',        group: 'build' },
   { icon: BookOpen,        label: 'Knowledge',    href: '/knowledge',    group: 'build' },
@@ -62,6 +66,7 @@ const nav: NavItem[] = [
 const groups: { id: string; label: string }[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'engage',   label: 'Engage' },
+  { id: 'sales',    label: 'Sales' },
   { id: 'build',    label: 'Build' },
   { id: 'manage',   label: 'Manage' },
 ]
