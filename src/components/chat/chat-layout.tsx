@@ -524,6 +524,7 @@ export function ChatLayout({ currentOrgId, currentUserId, agentMap }: ChatLayout
           <div className="hidden lg:block h-full min-h-0 overflow-hidden">
             <ContactInfoPanel
               contactId={selected?.contactId ?? null}
+              conversationId={selected?.id ?? null}
               fallbackName={selected?.visitorName ?? null}
               fallbackPhone={selected?.visitorPhone ?? null}
               fallbackEmail={selected?.visitorEmail ?? null}

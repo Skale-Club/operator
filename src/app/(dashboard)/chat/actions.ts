@@ -174,3 +174,69 @@ export async function listOrgMembers(): Promise<OrgMember[]> {
     displayName: id === user.id ? (user.email ?? null) : null,
   }))
 }
+
+/**
+ * Link an existing contact to a conversation. Used from the chat panel
+ * when the visitor isn't tracked yet but matches a contact already in
+ * the CRM (e.g. recurring customer reaching out from a new device).
+ */
+export async function linkContactToConversation(
+  conversationId: string,
+  contactId: string,
+): Promise<{ error?: string }> {
+  const user = await getUser()
+  if (!user) return { error: 'Not authenticated' }
+  const supabase = await createClient()
+
+  // RLS will reject cross-org updates — both rows must belong to the current org.
+  const { error } = await supabase
+    .from('conversations')
+    .update({ contact_id: contactId })
+    .eq('id', conversationId)
+
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error('[chat:link-contact]', error)
+    return { error: error.message }
+  }
+  return {}
+}
+
+/**
+ * Lightweight contact search for the link-contact picker. Returns up to 10
+ * matches by name / phone / email. Excludes the result count for speed —
+ * the picker is single-select, not a paginated list.
+ */
+export async function searchContactsForLink(query: string): Promise<Array<{
+  id: string
+  name: string | null
+  phone: string | null
+  email: string | null
+  company: string | null
+}>> {
+  const user = await getUser()
+  if (!user) return []
+  const supabase = await createClient()
+
+  const q = query.trim()
+  let builder = supabase
+    .from('contacts')
+    .select('id, name, phone, email, company')
+    .order('updated_at', { ascending: false })
+    .limit(10)
+
+  if (q) {
+    const safe = q.replace(/[%_]/g, ' ')
+    builder = builder.or(
+      `name.ilike.%${safe}%,phone.ilike.%${safe}%,email.ilike.%${safe}%,company.ilike.%${safe}%`,
+    )
+  }
+
+  const { data, error } = await builder
+  if (error) {
+    // eslint-disable-next-line no-console
+    console.error('[chat:search-contacts]', error)
+    return []
+  }
+  return data ?? []
+}

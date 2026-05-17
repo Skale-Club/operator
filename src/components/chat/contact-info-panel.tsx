@@ -34,11 +34,14 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { ChannelBadge, type Channel } from '@/components/design-system/channel-badge'
 import { getContact, type ContactDetail } from '@/app/(dashboard)/contacts/actions'
 import { NewContactDialog } from '@/components/contacts/new-contact-dialog'
+import { LinkContactDialog } from '@/components/chat/link-contact-dialog'
 import { formatCurrency } from '@/lib/pipeline/format'
 import { cn } from '@/lib/utils'
 
 interface ContactInfoPanelProps {
   contactId: string | null
+  /** Used for the "Link existing contact" picker when contactId is null. */
+  conversationId?: string | null
   /** Fallback values when the conversation isn't linked to a contact yet. */
   fallbackName?: string | null
   fallbackPhone?: string | null
@@ -73,6 +76,7 @@ function relativeTime(iso: string | null): string {
 
 export function ContactInfoPanel({
   contactId,
+  conversationId,
   fallbackName,
   fallbackPhone,
   fallbackEmail,
@@ -102,6 +106,7 @@ export function ContactInfoPanel({
   if (!contactId) {
     return (
       <UnregisteredCard
+        conversationId={conversationId ?? null}
         name={fallbackName ?? null}
         phone={fallbackPhone ?? null}
         email={fallbackEmail ?? null}
@@ -421,12 +426,14 @@ function EmptyMini({ text }: { text: string }) {
 }
 
 function UnregisteredCard({
+  conversationId,
   name,
   phone,
   email,
   onClose,
   onCollapse,
 }: {
+  conversationId: string | null
   name: string | null
   phone: string | null
   email: string | null
@@ -471,7 +478,7 @@ function UnregisteredCard({
           <p className="mt-1 text-[12px] text-text-secondary">
             Create a contact to unlock notes, deals, and call history alongside this conversation.
           </p>
-          <div className="mt-4 flex justify-center">
+          <div className="mt-4 flex flex-col items-stretch gap-2">
             <NewContactDialog
               defaultValues={{
                 name: name ?? '',
@@ -480,6 +487,16 @@ function UnregisteredCard({
               }}
               trigger={<Button size="sm">Create contact</Button>}
             />
+            {conversationId && (
+              <LinkContactDialog
+                conversationId={conversationId}
+                trigger={
+                  <Button size="sm" variant="secondary">
+                    Link existing contact
+                  </Button>
+                }
+              />
+            )}
           </div>
         </div>
 
