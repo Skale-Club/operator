@@ -414,7 +414,8 @@ function UnregisteredCard({
   if (name) params.set('name', name)
   if (phone) params.set('phone', phone)
   if (email) params.set('email', email)
-  const href = `/contacts?new=1&${params.toString()}`
+  params.set('from', '/chat')
+  const href = `/contacts/new?${params.toString()}`
 
   return (
     <div className="flex h-full flex-col border-l border-border-subtle bg-bg-secondary/40">
