@@ -9,6 +9,7 @@ import { X } from 'lucide-react'
 import { contactSchema, type ContactFormInput } from '@/lib/contacts/zod-schemas'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { PhoneInput } from '@/components/ui/phone-input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
@@ -83,7 +84,13 @@ export function ContactForm({
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field label="Phone" htmlFor="contact-phone" error={errors.phone?.message}>
-          <Input id="contact-phone" placeholder="+55 11 99999-9999" {...register('phone')} />
+          <PhoneInput
+            id="contact-phone"
+            value={watch('phone') ?? ''}
+            onChange={(v) => setValue('phone', v, { shouldDirty: true })}
+            placeholder="Phone number"
+            aria-invalid={Boolean(errors.phone)}
+          />
         </Field>
         <Field label="Email" htmlFor="contact-email" error={errors.email?.message}>
           <Input id="contact-email" type="email" placeholder="jane@example.com" {...register('email')} />
