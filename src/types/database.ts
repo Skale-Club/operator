@@ -40,6 +40,7 @@ export interface Database {
           widget_primary_color: string | null
           widget_welcome_message: string | null
           daily_cost_cap_usd_override: number | null
+          delegation_visibility: string
           created_at: string
           updated_at: string
         }
@@ -54,6 +55,7 @@ export interface Database {
           widget_primary_color?: string | null
           widget_welcome_message?: string | null
           daily_cost_cap_usd_override?: number | null
+          delegation_visibility?: string
           created_at?: string
           updated_at?: string
         }
@@ -68,6 +70,7 @@ export interface Database {
           widget_primary_color?: string | null
           widget_welcome_message?: string | null
           daily_cost_cap_usd_override?: number | null
+          delegation_visibility?: string
           updated_at?: string
         }
         Relationships: []
