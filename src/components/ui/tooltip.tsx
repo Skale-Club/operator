@@ -17,30 +17,32 @@ const TooltipContent = React.forwardRef<
     kbd?: string
   }
 >(({ className, sideOffset = 6, children, kbd, ...props }, ref) => (
-  <TooltipPrimitive.Content
-    ref={ref}
-    sideOffset={sideOffset}
-    className={cn(
-      "z-50 inline-flex items-center gap-2 overflow-hidden",
-      "rounded-[6px] border border-border-strong bg-bg-elevated px-2.5 py-1.5",
-      "text-[12px] font-medium text-text-primary",
-      "shadow-elevation-md",
-      "animate-in fade-in-0 zoom-in-95 duration-150",
-      "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
-      "data-[side=bottom]:slide-in-from-top-1 data-[side=left]:slide-in-from-right-1",
-      "data-[side=right]:slide-in-from-left-1 data-[side=top]:slide-in-from-bottom-1",
-      "origin-[--radix-tooltip-content-transform-origin]",
-      className
-    )}
-    {...props}
-  >
-    {children}
-    {kbd && (
-      <kbd className="font-mono text-[10.5px] tracking-wider text-text-tertiary bg-bg-tertiary border border-border-subtle rounded-[4px] px-1.5 py-0.5">
-        {kbd}
-      </kbd>
-    )}
-  </TooltipPrimitive.Content>
+  <TooltipPrimitive.Portal>
+    <TooltipPrimitive.Content
+      ref={ref}
+      sideOffset={sideOffset}
+      className={cn(
+        "z-50 inline-flex items-center gap-2 overflow-hidden",
+        "rounded-[6px] border border-border-strong bg-bg-elevated px-2.5 py-1.5",
+        "text-[12px] font-medium text-text-primary",
+        "shadow-elevation-md",
+        "animate-in fade-in-0 zoom-in-95 duration-150",
+        "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
+        "data-[side=bottom]:slide-in-from-top-1 data-[side=left]:slide-in-from-right-1",
+        "data-[side=right]:slide-in-from-left-1 data-[side=top]:slide-in-from-bottom-1",
+        "origin-[--radix-tooltip-content-transform-origin]",
+        className
+      )}
+      {...props}
+    >
+      {children}
+      {kbd && (
+        <kbd className="font-mono text-[10.5px] tracking-wider text-text-tertiary bg-bg-tertiary border border-border-subtle rounded-[4px] px-1.5 py-0.5">
+          {kbd}
+        </kbd>
+      )}
+    </TooltipPrimitive.Content>
+  </TooltipPrimitive.Portal>
 ))
 TooltipContent.displayName = TooltipPrimitive.Content.displayName
 
