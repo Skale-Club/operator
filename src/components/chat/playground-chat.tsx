@@ -13,6 +13,7 @@ interface Message {
   role: 'user' | 'assistant'
   content: string
   streaming?: boolean
+  isPartnerBadge?: boolean  // Phase 38 DELEG-08: true for partner delegation status badges
 }
 
 interface PlaygroundChatProps {
@@ -99,6 +100,27 @@ export function PlaygroundChat({ widgetToken, displayName, avatarUrl }: Playgrou
                 prev.map((m) =>
                   m.id === assistantMsgId
                     ? { ...m, content: accumulated }
+                    : m
+                )
+              )
+            } else if (event.event === 'partner_start' && typeof event.partnerName === 'string') {
+              // DELEG-08: Insert a delegation badge when partner invocation starts
+              const badgeId = crypto.randomUUID()
+              setMessages((prev) => [
+                ...prev,
+                {
+                  id: badgeId,
+                  role: 'assistant' as const,
+                  content: `Asking ${event.partnerName}...`,
+                  isPartnerBadge: true,
+                },
+              ])
+            } else if (event.event === 'partner_done' && typeof event.partnerName === 'string') {
+              // DELEG-08: Update the badge to show completion
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.isPartnerBadge && m.content === `Asking ${event.partnerName}...`
+                    ? { ...m, content: `${event.partnerName} responded` }
                     : m
                 )
               )
@@ -189,7 +211,22 @@ export function PlaygroundChat({ widgetToken, displayName, avatarUrl }: Playgrou
             </div>
           )}
 
-          {messages.map((msg) => (
+          {messages.map((msg) => {
+            // DELEG-08: Partner delegation badge rendering
+            if (msg.isPartnerBadge) {
+              return (
+                <div key={msg.id} className="flex justify-center my-2">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-violet-50 text-violet-700 border border-violet-200 dark:bg-violet-950/30 dark:text-violet-300 dark:border-violet-800/50">
+                    <svg className="w-3 h-3 animate-pulse" fill="currentColor" viewBox="0 0 8 8">
+                      <circle cx="4" cy="4" r="3" />
+                    </svg>
+                    {msg.content}
+                  </span>
+                </div>
+              )
+            }
+
+            return (
             <div
               key={msg.id}
               className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
@@ -230,7 +267,7 @@ export function PlaygroundChat({ widgetToken, displayName, avatarUrl }: Playgrou
                 )}
               </div>
             </div>
-          ))}
+          )})}
           <div ref={bottomRef} />
         </div>
       </ScrollArea>
