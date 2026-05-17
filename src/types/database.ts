@@ -107,6 +107,47 @@ export interface Database {
           }
         ]
       }
+      org_invites: {
+        Row: {
+          id: string
+          org_id: string
+          email: string
+          role: UserRole
+          invited_by: string | null
+          invited_at: string
+          accepted_at: string | null
+          expires_at: string | null
+        }
+        Insert: {
+          id?: string
+          org_id: string
+          email: string
+          role?: UserRole
+          invited_by?: string | null
+          invited_at?: string
+          accepted_at?: string | null
+          expires_at?: string | null
+        }
+        Update: {
+          id?: string
+          org_id?: string
+          email?: string
+          role?: UserRole
+          invited_by?: string | null
+          invited_at?: string
+          accepted_at?: string | null
+          expires_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'org_invites_org_id_fkey'
+            columns: ['org_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          }
+        ]
+      }
       user_active_org: {
         Row: {
           user_id: string
