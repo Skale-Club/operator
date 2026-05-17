@@ -1214,6 +1214,9 @@ export interface Database {
           agent_id: string | null
           contact_id: string | null
           evolution_instance_id: string | null
+          pinned: boolean
+          priority: string
+          typing_at: string | null
         }
         Insert: {
           id?: string
@@ -1239,6 +1242,9 @@ export interface Database {
           agent_id?: string | null
           contact_id?: string | null
           evolution_instance_id?: string | null
+          pinned?: boolean
+          priority?: string
+          typing_at?: string | null
         }
         Update: {
           status?: string
@@ -1258,6 +1264,9 @@ export interface Database {
           agent_id?: string | null
           contact_id?: string | null
           evolution_instance_id?: string | null
+          pinned?: boolean
+          priority?: string
+          typing_at?: string | null
         }
         Relationships: [
           {

@@ -1,8 +1,8 @@
 // GET /api/chat/conversations
-// Returns all conversations for the active org, ordered by last activity.
+// Returns all conversations for the active org, ordered by pinned then activity.
 // Auth-gated: returns 401 if no user session.
 import { createClient, getUser } from '@/lib/supabase/server'
-import type { ConversationSummary } from '@/types/chat'
+import type { ConversationSummary, ConversationPriority } from '@/types/chat'
 
 export const runtime = 'nodejs'
 
@@ -14,9 +14,14 @@ export async function GET(): Promise<Response> {
 
   const supabase = await createClient()
 
+  // v2.2: pinned conversations float to the top (DESC = true first), then by
+  // last_message_at. The pinned partial index makes this cheap.
   const { data, error } = await supabase
     .from('conversations')
-    .select('id, status, created_at, updated_at, last_message_at, visitor_name, visitor_email, visitor_phone, last_message, channel, channel_metadata, bot_status')
+    .select(
+      'id, status, created_at, updated_at, last_message_at, visitor_name, visitor_email, visitor_phone, last_message, channel, channel_metadata, bot_status, pinned, priority, contact_id, assigned_user_id'
+    )
+    .order('pinned', { ascending: false, nullsFirst: false })
     .order('last_message_at', { ascending: false, nullsFirst: false })
     .order('created_at', { ascending: false })
 
@@ -35,7 +40,7 @@ export async function GET(): Promise<Response> {
     ),
   ]
 
-  let pageNameMap: Record<string, string> = {}
+  const pageNameMap: Record<string, string> = {}
   if (pageIds.length > 0) {
     const { data: channels } = await supabase
       .from('meta_channels')
@@ -63,6 +68,10 @@ export async function GET(): Promise<Response> {
       channelMetadata: meta,
       botStatus: (row.bot_status as string) ?? 'active',
       channelAccountName: pageId ? (pageNameMap[pageId] ?? pageId) : null,
+      pinned: Boolean(row.pinned),
+      priority: ((row.priority as string) ?? 'normal') as ConversationPriority,
+      contactId: row.contact_id ?? null,
+      assignedUserId: row.assigned_user_id ?? null,
     }
   })
 
