@@ -73,7 +73,7 @@ google_reviews (
   profile_id uuid FK → google_business_profiles,
   review_id text NOT NULL,            -- ID nativo do Google via SerpAPI
   reviewer_name text,
-  reviewer_photo_url text,
+  reviewer_photo_url text,            -- URL no R2 (baixado do Google CDN)
   reviewer_profile_url text,
   rating int CHECK (rating BETWEEN 1 AND 5),
   text text,
@@ -88,6 +88,19 @@ google_reviews (
   first_seen_at timestamptz DEFAULT now(),
   last_seen_at timestamptz DEFAULT now(),
   UNIQUE (profile_id, review_id)
+)
+
+-- Fotos anexadas ao review pelo cliente
+google_review_photos (
+  id uuid PK,
+  org_id uuid FK (RLS),
+  review_id uuid FK → google_reviews,
+  position int,                       -- ordem das fotos no review
+  original_url text,                  -- URL original do Google CDN (lh5.googleusercontent.com)
+  r2_url text,                        -- URL permanente no R2 (baixada no momento do scraping)
+  width int,
+  height int,
+  created_at timestamptz DEFAULT now()
 )
 ```
 
@@ -114,7 +127,13 @@ google_reviews (
    - Mapeia payload → schema `google_reviews`
    - Detecta review_id nativo do SerpAPI response
 
-5. `src/lib/serpapi/upsert-reviews.ts`:
+5. `src/lib/serpapi/download-photos.ts`:
+   - Para cada review novo: baixa `user.thumbnail` (foto do reviewer) → salva no R2 → atualiza `reviewer_photo_url`
+   - Para cada imagem em `review.images[]`: baixa → salva no R2 → insere em `google_review_photos`
+   - Nomeia os arquivos: `reviews/{org_id}/{review_id}/reviewer.jpg` e `reviews/{org_id}/{review_id}/photo-{n}.jpg`
+   - Skip se já existe no R2 (idempotente)
+
+6. `src/lib/serpapi/upsert-reviews.ts`:
    - Para cada review retornado: `INSERT ... ON CONFLICT (profile_id, review_id) DO UPDATE`
    - Marca `last_seen_at = now()` nos encontrados
    - Após scrape: `UPDATE SET is_removed = true WHERE last_seen_at < scrape_start AND is_removed = false`
@@ -140,6 +159,8 @@ google_reviews (
    - Ordenação: mais recentes | melhor nota | mais úteis
    - 3 layouts: **Grid** (cards em colunas), **Lista** (vertical), **Carrossel** (slider)
    - Mostra: foto do reviewer, nome, nota (estrelas), data, texto (com "ver mais"), resposta do dono
+- **Galeria de fotos do review** — miniaturas clicáveis das fotos anexadas pelo cliente
+- Lightbox para visualizar fotos em tamanho maior
    - Tema claro/escuro configurável
 
 9. `/api/reviews/[token]` — endpoint público:
@@ -214,6 +235,8 @@ google_reviews (
 - **SerpAPI gratuito por cliente** — cada org tem sua própria conta e quota; zero custo compartilhado
 - **Place ID obrigatório** — identificador estável do Google; helper de busca no painel
 - **review_id nativo do SerpAPI** — mais estável que hash derivado
+- **Fotos baixadas para R2** — URLs do Google CDN expiram; R2 é permanente e serve do edge
+- **Foto do reviewer + fotos do review** — ambos baixados e armazenados no R2
 - **Remoção suave** — `is_removed = true`, nunca DELETE (histórico preservado)
 - **Cache de 1h no widget** — protege o banco de carregamentos frequentes
 - **GitHub Action** — padrão do projeto (como o reengagement SMS do v1.9)
