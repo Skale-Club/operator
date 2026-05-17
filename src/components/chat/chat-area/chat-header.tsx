@@ -1,16 +1,83 @@
 'use client'
 
-import { useState } from 'react'
-import { ArrowLeft, Archive, ArchiveRestore, MoreVertical, Pause, Play, Trash2 } from 'lucide-react'
+/**
+ * Redesigned chat header (v2.2 / SEED-011).
+ *
+ * Slots:
+ *   - 48px avatar with online/idle dot
+ *   - Contact name + ChannelBadge + formatted phone/email + StatusPill row
+ *   - Action cluster: pause/resume bot, assign, pin, priority cycle, info-panel toggle, more
+ *
+ * Pin/priority/assign mutations are optimistic via parent callbacks; bot toggle
+ * stays on its own path because it has loading state.
+ */
 
-import { ConversationSummary } from '@/types/chat'
+import { useState } from 'react'
+import {
+  ArrowLeft,
+  Archive,
+  ArchiveRestore,
+  MoreHorizontal,
+  Pause,
+  Play,
+  Trash2,
+  Pin,
+  Flag,
+  PanelRight,
+  PanelRightClose,
+  UserPlus,
+  Phone,
+  CheckCheck,
+} from 'lucide-react'
+import Link from 'next/link'
+
+import { ConversationSummary, ConversationPriority } from '@/types/chat'
+import { ChannelBadge, type Channel } from '@/components/design-system/channel-badge'
+import { StatusPill } from '@/components/design-system/status-pill'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
-import { ChannelIcon, channelLabel } from '@/components/chat/channel-icon'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { cn } from '@/lib/utils'
+import type { OrgMember } from '@/app/(dashboard)/chat/actions'
+
+const CHANNEL_MAP: Record<string, Channel> = {
+  whatsapp: 'whatsapp',
+  instagram: 'instagram',
+  messenger: 'messenger',
+  sms: 'sms',
+  voice: 'voice',
+  widget: 'web',
+  web: 'web',
+}
+
+const PRIORITY_CYCLE: Record<ConversationPriority, ConversationPriority> = {
+  normal: 'high',
+  high: 'urgent',
+  urgent: 'normal',
+}
 
 interface ChatHeaderProps {
   conversation: ConversationSummary
@@ -19,92 +86,278 @@ interface ChatHeaderProps {
   onDelete: () => void
   onBotStatusToggle: (id: string, currentStatus: string) => void
   isBotToggling: boolean
-  showDebug: boolean
-  onShowDebugChange: (next: boolean) => void
+  onPinToggle: (id: string, pinned: boolean) => void
+  onPriorityCycle: (id: string, next: ConversationPriority) => void
+  onAssign: (id: string, userId: string | null) => void
+  members: OrgMember[]
+  /** Right contact-info panel visible? */
+  infoPanelOpen: boolean
+  onToggleInfoPanel: () => void
+  /** Phone for the "Call" quick-action — null hides the button. */
+  callPhone?: string | null
 }
 
-export function ChatHeader({ conversation, onBack, onStatusChange, onDelete, onBotStatusToggle, isBotToggling, showDebug, onShowDebugChange }: ChatHeaderProps) {
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-  const displayName = conversation.visitorName ?? conversation.visitorEmail ?? 'Anonymous'
-  const avatarInitial = displayName.charAt(0).toUpperCase()
+export function ChatHeader({
+  conversation,
+  onBack,
+  onStatusChange,
+  onDelete,
+  onBotStatusToggle,
+  isBotToggling,
+  onPinToggle,
+  onPriorityCycle,
+  onAssign,
+  members,
+  infoPanelOpen,
+  onToggleInfoPanel,
+  callPhone,
+}: ChatHeaderProps) {
+  const [showDelete, setShowDelete] = useState(false)
+  const name = conversation.visitorName ?? conversation.visitorPhone ?? conversation.visitorEmail ?? 'Anonymous'
+  const initial = name.replace(/[^a-zA-Z0-9]/g, '').charAt(0).toUpperCase() || '?'
+  const channel = (CHANNEL_MAP[conversation.channel] ?? 'unknown') as Channel
   const isBotActive = conversation.botStatus === 'active'
   const isOpen = conversation.status === 'open'
+  const priority = conversation.priority ?? 'normal'
+
+  // Subtitle: phone OR email if available
+  const subtitle =
+    conversation.visitorPhone ??
+    conversation.visitorEmail ??
+    (conversation.channelAccountName ? `· ${conversation.channelAccountName}` : '')
 
   return (
-    <div className="flex items-center justify-between px-6 py-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-10 shrink-0">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" className="h-9 w-9 md:hidden shrink-0 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors rounded-full" onClick={onBack}>
-          <ArrowLeft className="h-5 w-5" />
+    <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border-subtle bg-bg-primary/95 px-4 py-3 backdrop-blur">
+      {/* Left cluster — back + avatar + identity */}
+      <div className="flex min-w-0 items-center gap-3">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden h-8 w-8 shrink-0"
+          onClick={onBack}
+        >
+          <ArrowLeft className="h-4 w-4" />
         </Button>
-        <div className="relative">
-          <Avatar className="h-10 w-10 shrink-0 ring-2 ring-background shadow-sm">
-            <AvatarFallback className="text-sm font-semibold bg-gradient-to-br from-indigo-500 to-purple-600 text-white">{avatarInitial}</AvatarFallback>
+        <div className="relative shrink-0">
+          <Avatar className="h-10 w-10">
+            <AvatarFallback className="bg-accent-muted text-accent text-[13px] font-semibold">
+              {initial}
+            </AvatarFallback>
           </Avatar>
-          <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-background rounded-full"></span>
-        </div>
-        <div className="flex flex-col min-w-0 justify-center gap-0.5">
-          <div className="flex items-center gap-2 flex-wrap">
-            <ChannelIcon channel={conversation.channel} className="h-4 w-4 text-muted-foreground shrink-0" />
-            <span className="text-sm font-semibold tracking-tight leading-tight">{channelLabel(conversation.channel)}</span>
-            {conversation.channelAccountName && (
-              <>
-                <span className="text-muted-foreground text-xs">·</span>
-                <span className="text-xs text-muted-foreground font-medium truncate max-w-[140px]">{conversation.channelAccountName}</span>
-              </>
+          {/* Status dot — defaults to success when conversation is open + bot active */}
+          <span
+            className={cn(
+              'absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-bg-primary',
+              isOpen ? 'bg-success' : 'bg-text-tertiary',
             )}
-            <span className="text-muted-foreground text-xs">·</span>
-            <Badge variant="outline" className={isBotActive ? 'text-[10px] px-1.5 py-0 h-4 bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800/50' : 'text-[10px] px-1.5 py-0 h-4 bg-neutral-100 text-neutral-500 border-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:border-neutral-700/50'}>
-              {isBotActive ? 'Bot active' : 'Bot paused'}
-            </Badge>
+            aria-hidden
+          />
+        </div>
+        <div className="flex min-w-0 flex-col">
+          <div className="flex items-center gap-2">
+            <span className="truncate text-[14px] font-semibold tracking-tight text-text-primary">
+              {name}
+            </span>
+            {channel !== 'unknown' && <ChannelBadge channel={channel} size="sm" />}
+            {priority !== 'normal' && (
+              <StatusPill tone={priority === 'urgent' ? 'danger' : 'warning'} className="!py-0 !text-[10px]">
+                {priority === 'urgent' ? 'Urgent' : 'High'}
+              </StatusPill>
+            )}
           </div>
-          {displayName !== 'Anonymous' && <p className="text-xs text-muted-foreground truncate">{displayName}</p>}
+          {subtitle && (
+            <span className="truncate text-[11.5px] text-text-tertiary">
+              {subtitle}
+            </span>
+          )}
         </div>
       </div>
 
-      <div className="flex items-center gap-3 z-20 shrink-0">
-        <TooltipProvider>
+      {/* Right cluster — actions */}
+      <div className="flex shrink-0 items-center gap-1">
+        <TooltipProvider delayDuration={200}>
+          {callPhone && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                >
+                  <Link href={`/voice?to=${encodeURIComponent(callPhone)}`}>
+                    <Phone className="h-4 w-4" />
+                  </Link>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Call this contact</TooltipContent>
+            </Tooltip>
+          )}
+
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors rounded-full" onClick={() => onBotStatusToggle(conversation.id, conversation.botStatus)} disabled={isBotToggling} aria-label={isBotActive ? 'Pause bot' : 'Resume bot'}>
-                {isBotActive ? <Pause className="h-4 w-4 text-muted-foreground" /> : <Play className="h-4 w-4 text-muted-foreground" />}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                disabled={isBotToggling}
+                onClick={() => onBotStatusToggle(conversation.id, conversation.botStatus)}
+                aria-label={isBotActive ? 'Pause bot' : 'Resume bot'}
+              >
+                {isBotActive ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
               </Button>
             </TooltipTrigger>
             <TooltipContent>{isBotActive ? 'Pause bot' : 'Resume bot'}</TooltipContent>
           </Tooltip>
+
+          <DropdownMenu>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <UserPlus className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent>Assign</TooltipContent>
+            </Tooltip>
+            <DropdownMenuContent align="end" className="min-w-[200px]">
+              <DropdownMenuLabel className="text-[11px] uppercase tracking-wide text-text-tertiary">
+                Assign conversation
+              </DropdownMenuLabel>
+              <DropdownMenuItem
+                onClick={() => onAssign(conversation.id, null)}
+                className={cn(!conversation.assignedUserId && 'text-accent')}
+              >
+                {!conversation.assignedUserId && <CheckCheck className="h-3.5 w-3.5 mr-2" />}
+                <span className={cn(!conversation.assignedUserId ? '' : 'ml-[18px]')}>
+                  Unassigned
+                </span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {members.length === 0 ? (
+                <DropdownMenuItem disabled>No org members</DropdownMenuItem>
+              ) : (
+                members.map((m) => (
+                  <DropdownMenuItem
+                    key={m.userId}
+                    onClick={() => onAssign(conversation.id, m.userId)}
+                    className={cn(conversation.assignedUserId === m.userId && 'text-accent')}
+                  >
+                    {conversation.assignedUserId === m.userId && (
+                      <CheckCheck className="h-3.5 w-3.5 mr-2" />
+                    )}
+                    <span className={cn(conversation.assignedUserId === m.userId ? '' : 'ml-[18px]')}>
+                      {m.displayName ?? m.email}
+                    </span>
+                  </DropdownMenuItem>
+                ))
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn('h-8 w-8', conversation.pinned && 'text-accent')}
+                onClick={() => onPinToggle(conversation.id, !conversation.pinned)}
+                aria-label={conversation.pinned ? 'Unpin' : 'Pin'}
+              >
+                <Pin className="h-4 w-4" fill={conversation.pinned ? 'currentColor' : 'none'} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{conversation.pinned ? 'Unpin' : 'Pin to top'}</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  'h-8 w-8',
+                  priority === 'urgent' && 'text-danger',
+                  priority === 'high' && 'text-warning',
+                )}
+                onClick={() => onPriorityCycle(conversation.id, PRIORITY_CYCLE[priority])}
+                aria-label="Cycle priority"
+              >
+                <Flag className="h-4 w-4" fill={priority !== 'normal' ? 'currentColor' : 'none'} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              Priority: {priority === 'normal' ? 'Normal' : priority === 'high' ? 'High' : 'Urgent'}
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 hidden md:inline-flex"
+                onClick={onToggleInfoPanel}
+                aria-label={infoPanelOpen ? 'Hide contact info' : 'Show contact info'}
+              >
+                {infoPanelOpen ? <PanelRightClose className="h-4 w-4" /> : <PanelRight className="h-4 w-4" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{infoPanelOpen ? 'Hide contact info' : 'Show contact info'}</TooltipContent>
+          </Tooltip>
         </TooltipProvider>
-        <label className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-100/80 hover:bg-neutral-200/80 dark:bg-neutral-800/80 dark:hover:bg-neutral-700/80 text-xs font-medium cursor-pointer transition-colors shadow-sm">
-          <input type="checkbox" checked={showDebug} onChange={(e) => onShowDebugChange(e.target.checked)} className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-600" />
-          <span>Debug</span>
-        </label>
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors rounded-full focus:ring-2 focus:ring-indigo-500/20 z-20 pointer-events-auto">
-              <MoreVertical className="h-5 w-5 text-muted-foreground hover:text-foreground transition-colors" />
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => onStatusChange(isOpen ? 'closed' : 'open')}>
-              {isOpen ? <><Archive className="h-4 w-4 mr-2" />Archive conversation</> : <><ArchiveRestore className="h-4 w-4 mr-2" />Reopen conversation</>}
+              {isOpen ? (
+                <>
+                  <Archive className="h-3.5 w-3.5 mr-2" />
+                  Archive
+                </>
+              ) : (
+                <>
+                  <ArchiveRestore className="h-3.5 w-3.5 mr-2" />
+                  Reopen
+                </>
+              )}
             </DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setShowDeleteDialog(true)}>
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete conversation
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => setShowDelete(true)}
+              className="text-rose-500 focus:text-rose-500"
+            >
+              <Trash2 className="h-3.5 w-3.5 mr-2" />
+              Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
 
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+      <AlertDialog open={showDelete} onOpenChange={setShowDelete}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete conversation?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the conversation with <strong>{displayName}</strong> and all its messages. This action cannot be undone.
+              This will permanently delete the conversation with <strong>{name}</strong> and all its
+              messages. This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => { setShowDeleteDialog(false); onDelete() }}>
+            <AlertDialogAction
+              className="bg-danger text-white hover:bg-danger/90"
+              onClick={() => {
+                setShowDelete(false)
+                onDelete()
+              }}
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

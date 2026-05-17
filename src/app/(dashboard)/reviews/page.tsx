@@ -56,7 +56,7 @@ export default async function ReviewsPage({ searchParams }: PageProps) {
             <div className="rounded-full bg-amber-100 p-3 dark:bg-amber-900/40">
               <Star className="h-6 w-6 text-amber-600 dark:text-amber-300" />
             </div>
-            <h2 className="font-serif text-xl font-semibold">No reviews yet</h2>
+            <h2 className="text-xl font-semibold">No reviews yet</h2>
             <p className="max-w-md text-sm text-muted-foreground">
               Connect your Google Business via SerpAPI to start capturing reviews automatically.
             </p>

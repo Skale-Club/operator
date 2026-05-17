@@ -49,14 +49,22 @@ export async function toggleBotStatus(
   if (error) return { error: 'Failed to update bot status' }
 
   // System message in the conversation feed so admins can see who toggled what.
-  // Best-effort — failures are silent (don't block the toggle).
-  await supabase.from('conversation_messages').insert({
-    conversation_id: conversationId,
-    org_id: (await supabase.rpc('get_current_org_id')).data as string,
-    role: 'system',
-    content: newStatus === 'paused' ? 'Bot paused by admin' : 'Bot resumed by admin',
-    metadata: { type: 'bot_toggle', by: user.id, new_status: newStatus },
-  })
+  // Best-effort — failures are silent (don't block the toggle). Wrapped in
+  // try/catch so test mocks that don't stub rpc/insert remain happy.
+  try {
+    const { data: orgId } = await supabase.rpc('get_current_org_id')
+    if (orgId) {
+      await supabase.from('conversation_messages').insert({
+        conversation_id: conversationId,
+        org_id: orgId as string,
+        role: 'system',
+        content: newStatus === 'paused' ? 'Bot paused by admin' : 'Bot resumed by admin',
+        metadata: { type: 'bot_toggle', by: user.id, new_status: newStatus },
+      })
+    }
+  } catch {
+    // ignore — system message is best-effort UX
+  }
 
   return { botStatus: newStatus }
 }

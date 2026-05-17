@@ -1,5 +1,7 @@
 'use client'
 
+import { AlertTriangle } from 'lucide-react'
+
 import { ConversationSummary } from '@/types/chat'
 
 interface MessageBannerProps {
@@ -8,8 +10,7 @@ interface MessageBannerProps {
 
 /**
  * 24h Meta reply window warning banner.
- * Renders when the channel is non-widget and channel_metadata.window_expired === 'true'
- * (string comparison — preserved exactly from chat-area.tsx).
+ * Renders when the channel is non-widget and channel_metadata.window_expired === 'true'.
  */
 export function MessageBanner({ conversation }: MessageBannerProps) {
   if (
@@ -20,9 +21,9 @@ export function MessageBanner({ conversation }: MessageBannerProps) {
   }
 
   return (
-    <div className="shrink-0 mx-4 mb-2 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 dark:bg-amber-950/20 dark:border-amber-800/30 dark:text-amber-300 flex items-start gap-2.5">
-      <span className="text-base leading-none mt-0.5" aria-hidden="true">⚠</span>
-      <p className="text-xs leading-relaxed font-medium">
+    <div className="mx-4 mb-2 shrink-0 flex items-start gap-2.5 rounded-[8px] border border-warning/30 bg-[var(--warning-muted)] px-3 py-2.5">
+      <AlertTriangle className="h-4 w-4 shrink-0 text-warning mt-0.5" />
+      <p className="text-[12px] font-medium leading-relaxed text-warning">
         The 24-hour Meta messaging window has expired. Automated replies are paused.
       </p>
     </div>

@@ -4,9 +4,9 @@
 import Link from 'next/link'
 import { FlaskConical, Inbox } from 'lucide-react'
 
-import { AdminChatLayout } from '@/components/chat/admin-chat-layout'
+import { ChatLayout } from '@/components/chat/chat-layout'
 import { PlaygroundChat } from '@/components/chat/playground-chat'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, getUser } from '@/lib/supabase/server'
 import { cn } from '@/lib/utils'
 import { getPlaygroundConfig } from './actions'
 import { getActiveAgents } from '@/app/(dashboard)/agents/actions'
@@ -21,7 +21,10 @@ export default async function ChatPage({
 
   // Resolve active org for Realtime subscription filter (defense-in-depth alongside RLS)
   const supabase = await createClient()
-  const { data: activeOrgId } = await supabase.rpc('get_current_org_id')
+  const [{ data: activeOrgId }, user] = await Promise.all([
+    supabase.rpc('get_current_org_id'),
+    getUser(),
+  ])
 
   // OBS-08: Build agentMap (id → name) for message-level agent badges
   const agentList = await getActiveAgents()
@@ -33,7 +36,7 @@ export default async function ChatPage({
   return (
     <div className="flex h-full flex-col">
       {/* Tab bar */}
-      <div className="flex shrink-0 items-center gap-1 border-b border-border bg-bg-secondary/40 px-4 pt-3">
+      <div className="flex shrink-0 items-center gap-1 border-b border-border-subtle bg-bg-secondary/40 px-4 pt-3">
         <ChatTab href="/chat?tab=inbox" active={tab === 'inbox'} icon={Inbox}>
           Inbox
         </ChatTab>
@@ -45,7 +48,11 @@ export default async function ChatPage({
       {/* Tab content */}
       <div className="flex-1 overflow-hidden">
         {tab === 'inbox' ? (
-          <AdminChatLayout currentOrgId={activeOrgId ?? null} agentMap={agentMap} />
+          <ChatLayout
+            currentOrgId={(activeOrgId as string | null) ?? null}
+            currentUserId={user?.id ?? null}
+            agentMap={agentMap}
+          />
         ) : (
           <PlaygroundTab />
         )}
