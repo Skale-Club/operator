@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { Suspense } from 'react'
 import { AgentForm } from '@/components/agents/agent-form'
+import { AgentMetricsWidget } from '@/components/agents/agent-metrics-widget'
 import { Button } from '@/components/ui/button'
 import { getAgentById, getToolPickerData } from '../actions'
 import type { AgentChannel } from '@/lib/agents/channels'
@@ -43,6 +45,11 @@ export default async function EditAgentPage({ params }: Props) {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" asChild>
+            <Link href={`/dashboard/agents/${id}/invocations`}>
+              Invocations
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
             <Link href={`/dashboard/agents/${id}/playground`}>
               Playground
             </Link>
@@ -54,6 +61,14 @@ export default async function EditAgentPage({ params }: Props) {
           </Button>
         </div>
       </div>
+
+      {/* OBS-04: Per-agent metrics widget */}
+      <div className="mb-6">
+        <Suspense fallback={<div className="h-36 bg-muted/30 rounded-lg animate-pulse" />}>
+          <AgentMetricsWidget agentId={id} />
+        </Suspense>
+      </div>
+
       <AgentForm
         mode="edit"
         agentId={agent.id}
