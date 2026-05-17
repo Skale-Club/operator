@@ -1,5 +1,4 @@
 import { Suspense } from 'react'
-import { Sparkles } from 'lucide-react'
 
 import { PageContainer } from '@/components/layout/page-header'
 import { WidgetErrorBoundary } from '@/components/dashboard/widget-error-boundary'
@@ -10,6 +9,11 @@ import {
   MetricSkeleton,
   PanelSkeleton,
 } from '@/components/dashboard/widget-skeleton'
+import { HeroSection } from '@/components/dashboard/widgets/hero-section'
+import { MetricOpenConversations } from '@/components/dashboard/widgets/metric-open-conversations'
+import { MetricCallsToday } from '@/components/dashboard/widgets/metric-calls-today'
+import { MetricDealsWon } from '@/components/dashboard/widgets/metric-deals-won'
+import { MetricAvgRating } from '@/components/dashboard/widgets/metric-avg-rating'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,7 +43,7 @@ export default function DashboardPage() {
       {/* Hero — greeting + cost ticker + workspace status */}
       <WidgetErrorBoundary name="hero" fallback={<WidgetError title="Overview" />}>
         <Suspense fallback={<HeroSkeleton />}>
-          <PlaceholderHero />
+          <HeroSection />
         </Suspense>
       </WidgetErrorBoundary>
 
@@ -47,22 +51,22 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <WidgetErrorBoundary name="metric-conversations" fallback={<WidgetError title="Conversations" />}>
           <Suspense fallback={<MetricSkeleton />}>
-            <PlaceholderMetric label="Open conversations" />
+            <MetricOpenConversations />
           </Suspense>
         </WidgetErrorBoundary>
         <WidgetErrorBoundary name="metric-calls" fallback={<WidgetError title="Calls" />}>
           <Suspense fallback={<MetricSkeleton />}>
-            <PlaceholderMetric label="Calls today" />
+            <MetricCallsToday />
           </Suspense>
         </WidgetErrorBoundary>
         <WidgetErrorBoundary name="metric-deals" fallback={<WidgetError title="Deals" />}>
           <Suspense fallback={<MetricSkeleton />}>
-            <PlaceholderMetric label="Deals won (mo)" />
+            <MetricDealsWon />
           </Suspense>
         </WidgetErrorBoundary>
         <WidgetErrorBoundary name="metric-rating" fallback={<WidgetError title="Reviews" />}>
           <Suspense fallback={<MetricSkeleton />}>
-            <PlaceholderMetric label="Avg rating" />
+            <MetricAvgRating />
           </Suspense>
         </WidgetErrorBoundary>
       </div>
@@ -111,36 +115,6 @@ export default function DashboardPage() {
 }
 
 // ─── Placeholder components (replaced by real widgets in subsequent waves) ──
-
-function PlaceholderHero() {
-  return (
-    <div className="rounded-[12px] border border-border bg-bg-secondary p-6 shadow-elevation-sm">
-      <div className="flex items-center gap-2 text-[12px] font-medium uppercase tracking-[0.08em] text-text-tertiary">
-        <Sparkles className="h-3.5 w-3.5 text-accent" />
-        <span>Overview</span>
-      </div>
-      <h1 className="mt-2 text-[28px] font-semibold tracking-tight text-text-primary">
-        Dashboard
-      </h1>
-      <p className="mt-1 text-[13px] text-text-secondary">
-        Hero widget placeholder — wired in wave D2.
-      </p>
-    </div>
-  )
-}
-
-function PlaceholderMetric({ label }: { label: string }) {
-  return (
-    <div className="rounded-[12px] border border-border bg-bg-secondary p-5 shadow-elevation-sm">
-      <div className="text-[12px] font-medium uppercase tracking-[0.06em] text-text-tertiary">
-        {label}
-      </div>
-      <div className="mt-2 text-[20px] font-semibold tracking-tight text-text-tertiary">
-        Loading…
-      </div>
-    </div>
-  )
-}
 
 function PlaceholderPanel({ label }: { label: string }) {
   return (
