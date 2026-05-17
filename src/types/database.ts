@@ -290,6 +290,65 @@ export interface Database {
           }
         ]
       }
+      twilio_phone_numbers: {
+        Row: {
+          id: string
+          organization_id: string
+          e164: string
+          phone_sid: string | null
+          friendly_name: string
+          capability_sms: boolean
+          capability_mms: boolean
+          capability_voice: boolean
+          default_routing_mode: 'browser' | 'sip' | 'forward' | null
+          forward_to_number: string | null
+          is_default: boolean
+          is_active: boolean
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          organization_id: string
+          e164: string
+          phone_sid?: string | null
+          friendly_name: string
+          capability_sms?: boolean
+          capability_mms?: boolean
+          capability_voice?: boolean
+          default_routing_mode?: 'browser' | 'sip' | 'forward' | null
+          forward_to_number?: string | null
+          is_default?: boolean
+          is_active?: boolean
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          e164?: string
+          phone_sid?: string | null
+          friendly_name?: string
+          capability_sms?: boolean
+          capability_mms?: boolean
+          capability_voice?: boolean
+          default_routing_mode?: 'browser' | 'sip' | 'forward' | null
+          forward_to_number?: string | null
+          is_default?: boolean
+          is_active?: boolean
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'twilio_phone_numbers_organization_id_fkey'
+            columns: ['organization_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          }
+        ]
+      }
       tool_configs: {
         Row: {
           id: string
