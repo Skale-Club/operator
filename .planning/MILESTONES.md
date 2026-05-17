@@ -1,5 +1,15 @@
 # Milestones
 
+## v2.0 Multi-Bot Platform (Shipped: 2026-05-17)
+
+**Phases completed:** 1 phases, 5 plans, 0 tasks
+
+**Key accomplishments:**
+
+- (none recorded)
+
+---
+
 ## v1.8 Executor Completeness (Shipped: 2026-05-08)
 
 **Phases completed:** 9 phases, 26 plans, 43 tasks
