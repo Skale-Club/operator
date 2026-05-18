@@ -27,9 +27,12 @@ That business logic may differ by client. The invariant is the reliability of th
 - Naming discipline: `accounts` (DB) / "Companies" (UI). `organizations` is reserved for the multi-tenant boundary
 - Execution order: SEED-016 (Accounts) → SEED-017 (Custom Fields) → SEED-018 (Import Pipeline)
 
-**Phase progress (1/12 complete):**
-- ✅ **Phase 64 ACCOUNTS-SCHEMA** (shipped 2026-05-18) — Migration 064_accounts.sql live on remote Supabase. `accounts` table with 18 columns + RLS via `get_current_org_id()`. Nullable `account_id` FKs on contacts and opportunities, plus `opp_has_contact_or_account` CHECK. Idempotent data migration block (no-op on current empty contacts table; ready for future companies). 8/8 schema tests green. Validated: ACC-14, ACC-15, ACC-19.
-- ⏳ **Phase 65 ACCOUNTS-ACTIONS** — next up.
+**Phase progress (3/12 complete):**
+- ✅ **Phase 64 ACCOUNTS-SCHEMA** (shipped 2026-05-18) — Migration 064 live on remote Supabase. `accounts` table with 18 columns + RLS via `get_current_org_id()`. Nullable `account_id` FKs on contacts and opportunities, plus `opp_has_contact_or_account` CHECK. 8/8 schema tests green. Validated: ACC-14, ACC-15, ACC-19.
+- ✅ **Phase 65 ACCOUNTS-ACTIONS** (shipped 2026-05-18, **paralleled with 68**) — Full server-action layer for accounts: 10 actions (CRUD + merge + linking + CSV preview/import). Lib foundation in `src/lib/accounts/` (zod schemas, normalisers, types, csv parser). Delete blocks when referenced (ACC-03 LOCKED). Merge is 3-step sequential with `partial_state` recovery. CSV import dedups by `(org_id, lower(name))` and normalized domain. 53/53 tests green across 3 files. Validated: ACC-01, ACC-02, ACC-03, ACC-16, ACC-17.
+- ✅ **Phase 68 CUSTOMFIELDS-SCHEMA** (shipped 2026-05-18, **paralleled with 65**) — Migration 065 live on remote. `custom_field_definitions` table with 20 columns, per-entity reserved-key CHECK (CASE entity), 13-value `custom_field_type` ENUM, 3-value `custom_field_entity` ENUM, RLS via `get_current_org_id()`. 15/15 schema tests green. Validated: CF-11, CF-14.
+- ⏳ **Phase 66 ACCOUNTS-LIST-UI** — next up (frontend).
+- ⏳ **Phase 69 CUSTOMFIELDS-CORE-LIB** — next up (parallel track).
 
 ## Previous In-Flight: v2.3 Integrations Refactor + Twilio Multi-Number 🚧 human_uat
 
@@ -321,4 +324,4 @@ All v2.0 requirements shipped. Next milestone to be defined via `/gsd:new-milest
 
 Update this file whenever deployment assumptions, validated requirements, or core constraints change.
 
-*Last updated: 2026-05-18 — v2.4 Phase 64 ACCOUNTS-SCHEMA shipped. Migration 064 live on remote Supabase, 8/8 tests green. v2.3 Integrations Refactor still pending HUMAN-UAT.*
+*Last updated: 2026-05-18 — v2.4 Phases 64 + 65 + 68 shipped (3/12). Phase 65 + 68 ran in parallel via git worktrees. 76/76 tests green across the three phases. v2.3 Integrations Refactor still pending HUMAN-UAT.*
