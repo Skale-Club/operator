@@ -547,6 +547,55 @@ export async function createAccountFromContact(
   return okResult<AccountRow>(account)
 }
 
+// ─── Bulk actions (ACC-07) ───────────────────────────────────────────────────
+
+export async function bulkAssignOwner(
+  ids: string[],
+  assignedTo: string,
+): Promise<ActionResult<{ updated: number; errors: number }>> {
+  if (ids.length === 0) return okResult({ updated: 0, errors: 0 })
+  const user = await getUser()
+  if (!user) return errResult('Not authenticated')
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('accounts')
+    .update({ assigned_to: assignedTo || null, updated_at: new Date().toISOString() })
+    .in('id', ids)
+    .select('id')
+  if (error) return errResult(error.message)
+  revalidatePath('/accounts')
+  return okResult({ updated: data?.length ?? 0, errors: 0 })
+}
+
+export async function bulkAddTag(
+  ids: string[],
+  tag: string,
+): Promise<ActionResult<{ updated: number }>> {
+  if (ids.length === 0 || !tag.trim()) return okResult({ updated: 0 })
+  const user = await getUser()
+  if (!user) return errResult('Not authenticated')
+  const trimmed = tag.trim()
+  const supabase = await createClient()
+  // Fetch current tags for each selected account, append if missing, bulk update
+  const { data: rows, error: fetchErr } = await supabase
+    .from('accounts')
+    .select('id, tags')
+    .in('id', ids)
+  if (fetchErr || !rows) return errResult(fetchErr?.message ?? 'Fetch failed')
+  let updated = 0
+  for (const row of rows) {
+    const newTags = row.tags.includes(trimmed) ? row.tags : [...row.tags, trimmed]
+    if (newTags.length === row.tags.length) { updated++; continue } // already has tag
+    const { error } = await supabase
+      .from('accounts')
+      .update({ tags: newTags, updated_at: new Date().toISOString() })
+      .eq('id', row.id)
+    if (!error) updated++
+  }
+  revalidatePath('/accounts')
+  return okResult({ updated })
+}
+
 // ─── CSV import (ACC-17) ─────────────────────────────────────────────────────
 //
 // AccountCsvPreview is imported from @/lib/accounts (declared in

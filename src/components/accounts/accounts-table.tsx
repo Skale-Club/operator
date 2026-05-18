@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { formatCurrency } from '@/lib/pipeline/format'
 import { cn } from '@/lib/utils'
 import type { AccountRow } from '@/lib/accounts'
+import { AccountsBulkActions } from './accounts-bulk-actions'
 
 // Extended row type that includes counts populated by detail queries.
 // The list action (getAccounts) returns AccountRow[]; count fields default to 0
@@ -85,6 +86,15 @@ export function AccountsTable({
 
   return (
     <div className="space-y-4">
+      {/* Bulk-actions bar — visible when 1+ rows are selected */}
+      {selected.size > 0 && (
+        <AccountsBulkActions
+          selected={selected}
+          onClearSelection={() => setSelected(new Set())}
+          onRefresh={() => router.refresh()}
+        />
+      )}
+
       {/* Table */}
       <div className="rounded-[12px] border border-border bg-bg-secondary overflow-hidden">
         {/* Header */}
