@@ -12,6 +12,25 @@ Operator is not meant to encode one universal agency workflow. It is the shared 
 
 That business logic may differ by client. The invariant is the reliability of the execution path, not that every tenant follows the same pattern.
 
+## Current Milestone: v2.4 CRM Expansion 🚧 In Progress
+
+**Goal:** Promote contacts/opportunities into a complete CRM model — companies as a first-class entity, structured custom fields across all entities, and a production-grade bulk import pipeline.
+
+**Target features:**
+- **Accounts (Companies)** — new first-class entity (`accounts` in DB, "Companies" in UI), FK from contacts and opportunities, account detail with contacts/deals/activities tabs, lookup by email domain ([SEED-016](seeds/SEED-016-accounts-crm-companies.md))
+- **Custom Fields System** — structured metadata layer over `custom_fields jsonb` for contacts/opportunities/accounts, 13 field types (text/number/date/select/multi_select/boolean/url/email/phone/currency/...), settings UI with drag-reorder, server-side validation, dynamic columns + filters ([SEED-017](seeds/SEED-017-custom-fields-system.md))
+- **Contact Import Pipeline** — replaces the current 5MB sync import; 50MB/200k rows, queued background worker, real progress via Supabase Realtime, mapping wizard with custom-fields support, dedup preview, per-row errors + retry ([SEED-018](seeds/SEED-018-contact-import-pipeline.md))
+
+**Key context:**
+- v2.3 (Integrations Refactor + Twilio Multi-Number) still in `human_uat` in `workstreams/v23-integrations-multi-number` — runs in parallel, no overlap with this work
+- Hetzner migration is on the future roadmap — designs in this milestone must stay runtime-portable (worker behind an interface, storage abstracted via `@aws-sdk/client-s3` when needed, queue = status column not BullMQ in v1)
+- Naming discipline: `accounts` (DB) / "Companies" (UI). `organizations` is reserved for the multi-tenant boundary
+- Execution order: SEED-016 (Accounts) → SEED-017 (Custom Fields) → SEED-018 (Import Pipeline)
+
+## Previous In-Flight: v2.3 Integrations Refactor + Twilio Multi-Number 🚧 human_uat
+
+6/6 phases complete in `workstreams/v23-integrations-multi-number/`. Awaiting operator manual testing per `phases/63-polish/63-HUMAN-UAT.md` before close. Orthogonal to v2.4 — does not block.
+
 ## Current State: v2.1 CRM + Omnichannel + Complete Redesign ✅ Shipped 2026-05-17
 
 **5 waves, 8 migrations (048-055) applied to remote Supabase.**
@@ -298,4 +317,4 @@ All v2.0 requirements shipped. Next milestone to be defined via `/gsd:new-milest
 
 Update this file whenever deployment assumptions, validated requirements, or core constraints change.
 
-*Last updated: 2026-05-17 — v2.0 Multi-Bot Platform shipped (10 phases, 43 plans, migrations 042-047 live; agent runtime, multi-agent delegation, prompt versioning, observability UI, playground, Google SSO all complete)*
+*Last updated: 2026-05-18 — v2.4 CRM Expansion milestone started (accounts, custom fields system, structured contact import pipeline). v2.3 Integrations Refactor still pending HUMAN-UAT.*

@@ -13,14 +13,14 @@ Always run `npm run build` after changes to catch type errors before finishing.
 
 ## Architecture
 
-**Stack:** Next.js 15 (App Router) · TypeScript 5 (strict) · Supabase (PostgreSQL + pgvector + Auth) · Tailwind 4 · shadcn/ui
+**Stack:** Next.js 16 (App Router) · TypeScript 5 (strict) · Supabase (PostgreSQL + pgvector + Auth) · Tailwind 4 · shadcn/ui
 
 **Runtime split:**
 - Node.js - dashboard pages, server actions, and all webhook receivers (`/api/vapi/*`, `/api/meta/`, `/api/manychat/`, etc.)
 - Deno - `supabase/functions/process-embeddings/` (Supabase Edge Function)
 - GitHub Actions - auxiliary scheduled automation such as Supabase keepalive
 
-**Product framing:** Operator is a tenant-aware integration and orchestration platform. Client workflows can differ significantly, so prefer reusable platform capabilities over hardcoding one client's playbook as product-wide behavior.
+**Product framing:** Xphere is a tenant-aware integration and orchestration platform. Client workflows can differ significantly, so prefer reusable platform capabilities over hardcoding one client's playbook as product-wide behavior.
 
 **Canonical production origin:** `https://xphere.skale.club`. Use this host for first-party webhook construction and documentation examples unless an updated production host is explicitly documented.
 
