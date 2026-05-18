@@ -23,6 +23,8 @@ import {
   PanelLeftOpen,
   TrendingUp,
   Contact,
+  UserCog,
+  Building2,
 } from 'lucide-react'
 
 import { createClient } from '@/lib/supabase/client'
@@ -290,6 +292,25 @@ export function Sidebar({ user, isPlatformAdmin, activeOrgId, activeOrgName, bra
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent side="top" align="start" className="w-56">
+            <DropdownMenuItem asChild className="cursor-pointer">
+              <Link href="/settings/profile">
+                <UserCog className="h-4 w-4 mr-2" />
+                Profile
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild className="cursor-pointer">
+              <Link href="/settings/workspace">
+                <Building2 className="h-4 w-4 mr-2" />
+                Workspace
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild className="cursor-pointer">
+              <Link href="/settings">
+                <Settings className="h-4 w-4 mr-2" />
+                All settings
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem asChild className="cursor-pointer">
               <Link href="/organizations">
                 <Settings className="h-4 w-4 mr-2" />
