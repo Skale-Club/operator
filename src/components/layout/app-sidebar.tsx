@@ -18,6 +18,7 @@ import {
   Users,
   Contact2,
   TrendingUp,
+  Building2,
 } from 'lucide-react'
 import type { User } from '@supabase/supabase-js'
 
@@ -52,6 +53,7 @@ const navItems = [
   { icon: Plug2, label: 'Integrations', href: '/integrations', active: true },
   { icon: MessageSquare, label: 'Chat', href: '/chat', active: true },
   { icon: Contact2, label: 'Contacts', href: '/contacts', active: true },
+  { icon: Building2, label: 'Companies', href: '/accounts', active: true },
   { icon: TrendingUp, label: 'Pipeline', href: '/pipeline', active: true },
   { icon: Users, label: 'Members', href: '/members', active: true },
   { icon: Star, label: 'Reviews', href: '/reviews', active: true },
