@@ -122,7 +122,7 @@ Replace the current 5 MB synchronous CSV import with a queued, observable, runti
 | ACC-15 | 64 ACCOUNTS-SCHEMA | Complete |
 | ACC-16 | 65 ACCOUNTS-ACTIONS | Pending |
 | ACC-17 | 65 ACCOUNTS-ACTIONS | Pending |
-| ACC-18 | 66 ACCOUNTS-LIST-UI | Pending |
+| ACC-18 | 66 ACCOUNTS-LIST-UI | Complete |
 | ACC-19 | 64 ACCOUNTS-SCHEMA | Complete |
 | CF-01 | 70 CUSTOMFIELDS-SETTINGS-UI | Pending |
 | CF-02 | 70 CUSTOMFIELDS-SETTINGS-UI | Pending |

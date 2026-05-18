@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.4
 milestone_name: milestone
 status: executing
-stopped_at: Completed 66-04-PLAN.md (AccountCombobox + ContactForm wiring)
-last_updated: "2026-05-18T21:52:09.975Z"
+stopped_at: Completed 66-05-PLAN.md
+last_updated: "2026-05-18T22:06:43.049Z"
 last_activity: 2026-05-18
 progress:
   total_phases: 12
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 22
-  completed_plans: 21
+  completed_plans: 22
 ---
 
 # Xphere - State (v2.4 CRM Expansion)
@@ -120,6 +120,7 @@ Three coupled features that together promote contacts/opportunities into a full 
 - [Phase 66-03]: bulkAssignOwner uses .select('id') instead of { count, head } — Supabase JS v2 .update().in().select() does not accept second options argument; data.length is equivalent
 - [Phase 66-03]: ACC-07 complete — bulk assign/tag/delete wired with reference-blocking guard on delete
 - [Phase 66-accounts-list-ui]: account_id added to contactSchema alongside legacy company text for backward compat; AccountCombobox uses debounced getAccounts + inline quick-create
+- [Phase 66]: TopCompanies widget uses direct Supabase aggregation (2 calls) instead of getAccounts() because AccountRow lacks computed opportunity fields
 
 ## Pending Todos
 
@@ -128,5 +129,5 @@ Three coupled features that together promote contacts/opportunities into a full 
 
 ## Session Continuity
 
-Last session: 2026-05-18T21:52:06.201Z
-Stopped at: Completed 66-04-PLAN.md (AccountCombobox + ContactForm wiring)
+Last session: 2026-05-18T22:06:43.033Z
+Stopped at: Completed 66-05-PLAN.md
