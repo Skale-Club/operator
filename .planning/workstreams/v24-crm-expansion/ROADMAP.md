@@ -30,7 +30,7 @@ Accounts (SEED-016) → Custom Fields (SEED-017) → Import Pipeline (SEED-018).
 ## Phases
 
 - [x] **Phase 64: ACCOUNTS-SCHEMA** — `accounts` table + FKs from contacts/opportunities + CHECK constraint + idempotent data migration from `contacts.company` (completed 2026-05-18)
-- [ ] **Phase 65: ACCOUNTS-ACTIONS** — Server actions for account CRUD, merge, CSV import, and contact/opportunity wiring (no UI)
+- [x] **Phase 65: ACCOUNTS-ACTIONS** — Server actions for account CRUD, merge, CSV import, and contact/opportunity wiring (no UI) (completed 2026-05-18)
 - [ ] **Phase 66: ACCOUNTS-LIST-UI** — `/dashboard/accounts` list with filters/search/bulk actions, contact-form combobox, Top Companies dashboard widget
 - [ ] **Phase 67: ACCOUNTS-DETAIL-UI** — `/dashboard/accounts/[id]` with Contacts/Opportunities/Activities tabs, add-contact/add-opportunity flows, email-domain auto-suggest
 - [x] **Phase 68: CUSTOMFIELDS-SCHEMA** — ENUMs, `custom_field_definitions` table, RLS, reserved-keys list, derived TS types (completed 2026-05-18)
@@ -71,11 +71,11 @@ Accounts (SEED-016) → Custom Fields (SEED-017) → Import Pipeline (SEED-018).
   4. Merging duplicate accounts moves every contact and opportunity onto the surviving account and removes the duplicates atomically
   5. Importing an accounts CSV dedups by `(org_id, lower(name))` and by domain — running the same CSV twice never produces duplicates
 **Plans**: 5 plans
-- [ ] 65-01-PLAN.md — Lib foundation: zod schemas + types + normalise + barrel for src/lib/accounts/
-- [ ] 65-02-PLAN.md — CRUD server actions (getAccounts, getAccount, createAccount, updateAccount, deleteAccount with block-when-referenced per ACC-03)
-- [ ] 65-03-PLAN.md — Merge + contact-linking actions (mergeAccounts for ACC-16, linkContactToAccount, createAccountFromContact)
-- [ ] 65-04-PLAN.md — CSV import action (previewAccountsCsv + importAccountsCsv with app-layer dedup by name + domain for ACC-17)
-- [ ] 65-05-PLAN.md — Vitest suite: schema units + CRUD/merge/linking integration + CSV import end-to-end (covers ACC-01..03, ACC-16, ACC-17)
+- [x] 65-01-PLAN.md — Lib foundation: zod schemas + types + normalise + barrel for src/lib/accounts/
+- [x] 65-02-PLAN.md — CRUD server actions (getAccounts, getAccount, createAccount, updateAccount, deleteAccount with block-when-referenced per ACC-03)
+- [x] 65-03-PLAN.md — Merge + contact-linking actions (mergeAccounts for ACC-16, linkContactToAccount, createAccountFromContact)
+- [x] 65-04-PLAN.md — CSV import action (previewAccountsCsv + importAccountsCsv with app-layer dedup by name + domain for ACC-17)
+- [x] 65-05-PLAN.md — Vitest suite: schema units + CRUD/merge/linking integration + CSV import end-to-end (covers ACC-01..03, ACC-16, ACC-17)
 
 ### Phase 66: ACCOUNTS-LIST-UI
 **Goal**: Users can browse, filter, search, and bulk-act on Companies from a dedicated list page, choose a Company from any contact form, and see top accounts on the dashboard.
@@ -216,7 +216,7 @@ Accounts (SEED-016) → Custom Fields (SEED-017) → Import Pipeline (SEED-018).
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 64. ACCOUNTS-SCHEMA | 3/3 | Complete    | 2026-05-18 |
-| 65. ACCOUNTS-ACTIONS | 0/5 | Planned     | — |
+| 65. ACCOUNTS-ACTIONS | 5/5 | Complete   | 2026-05-18 |
 | 66. ACCOUNTS-LIST-UI | 0/0 | Not started | — |
 | 67. ACCOUNTS-DETAIL-UI | 0/0 | Not started | — |
 | 68. CUSTOMFIELDS-SCHEMA | 3/3 | Complete   | 2026-05-18 |
