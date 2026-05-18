@@ -51,7 +51,7 @@ export default async function AccountDetailPage({ params }: Props) {
           <AccountContactsTab contacts={contacts} accountId={id} />
         </TabsContent>
         <TabsContent value="opportunities">
-          <AccountOpportunitiesTab opportunities={opportunities} accountId={id} />
+          <AccountOpportunitiesTab opportunities={opportunities} accountId={id} contacts={contacts} />
         </TabsContent>
         <TabsContent value="activities">
           <AccountActivitiesTab activities={activities} />

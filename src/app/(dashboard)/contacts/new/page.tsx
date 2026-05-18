@@ -16,12 +16,15 @@ interface NewContactPageProps {
     email?: string
     company?: string
     from?: string // optional return URL after creation
+    account_id?: string // pre-link contact to a company (D-07)
   }>
 }
 
 export default async function NewContactPage({ searchParams }: NewContactPageProps) {
   const params = await searchParams
   const returnTo = params.from && params.from.startsWith('/') ? params.from : null
+  const accountId =
+    params.account_id && params.account_id.length > 0 ? params.account_id : undefined
 
   return (
     <PageContainer size="narrow">
@@ -52,6 +55,7 @@ export default async function NewContactPage({ searchParams }: NewContactPagePro
               phone: params.phone ?? '',
               email: params.email ?? '',
               company: params.company ?? '',
+              account_id: accountId ?? null,
             }}
             returnTo={returnTo}
           />

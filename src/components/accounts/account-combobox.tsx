@@ -51,7 +51,12 @@ export function AccountCombobox({
     return () => document.removeEventListener('mousedown', handleMouseDown)
   }, [])
 
-  // Debounced search
+  // Debounced search — with email-domain auto-suggest (ACC-12, D-09)
+  // When the user types something containing '@', extract the domain part and
+  // search by domain (via q= fallback — AccountListFilters has no separate
+  // domain key in v2.4, but getAccounts already searches domain via
+  // `domain.ilike.%${escaped}%` in the q filter). Domain-matched results are
+  // surfaced first, then merged with the name/q results, deduplicated by id.
   React.useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
 
@@ -64,12 +69,31 @@ export function AccountCombobox({
     debounceRef.current = setTimeout(async () => {
       setIsLoading(true)
       try {
-        const res = await getAccounts({ q: inputValue, pageSize: 20 })
-        if (res.ok) {
-          setResults(res.data.rows as AccountWithCounts[])
-        } else {
-          setResults([])
+        // Extract domain from email input (e.g. "alice@acme.com" → "acme.com")
+        const domainFromEmail = inputValue.includes('@')
+          ? (inputValue.split('@')[1]?.trim().toLowerCase() ?? '')
+          : ''
+
+        const [qResult, domainResult] = await Promise.all([
+          getAccounts({ q: inputValue, pageSize: 10 }),
+          domainFromEmail.length > 0
+            ? getAccounts({ q: domainFromEmail, pageSize: 5 })
+            : Promise.resolve({ ok: false as const, error: '' }),
+        ])
+
+        const qRows = qResult.ok ? (qResult.data.rows as AccountWithCounts[]) : []
+        const domainRows = domainResult.ok ? (domainResult.data.rows as AccountWithCounts[]) : []
+
+        // Merge: domain matches first, then q matches, deduplicated by id
+        const seen = new Set<string>()
+        const merged: AccountWithCounts[] = []
+        for (const r of [...domainRows, ...qRows]) {
+          if (!seen.has(r.id)) {
+            seen.add(r.id)
+            merged.push(r)
+          }
         }
+        setResults(merged.slice(0, 15))
       } catch {
         setResults([])
       } finally {

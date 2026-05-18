@@ -2,10 +2,19 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import type { OpportunityWithStage } from '@/app/(dashboard)/accounts/[id]/actions'
 import { formatCurrency, relativeTime } from '@/lib/pipeline/format'
+import { AddOpportunityDialog } from './add-opportunity-dialog'
+
+interface AccountContact {
+  id: string
+  name: string | null
+  phone: string | null
+  email: string | null
+}
 
 interface Props {
   opportunities: OpportunityWithStage[]
   accountId: string
+  contacts: AccountContact[]
 }
 
 function statusClass(status: string): string {
@@ -20,21 +29,18 @@ function statusLabel(status: string): string {
   return 'Open'
 }
 
-export function AccountOpportunitiesTab({ opportunities, accountId: _accountId }: Props) {
+export function AccountOpportunitiesTab({ opportunities, accountId, contacts }: Props) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-[13px] text-text-tertiary">
           {opportunities.length} {opportunities.length === 1 ? 'opportunity' : 'opportunities'}
         </p>
-        <Button
-          asChild
-          variant="secondary"
-          size="sm"
-          id="add-opportunity-btn"
-        >
-          <Link href="#">Add opportunity</Link>
-        </Button>
+        <AddOpportunityDialog accountId={accountId} accountContacts={contacts}>
+          <Button variant="secondary" size="sm" id="add-opportunity-btn">
+            Add opportunity
+          </Button>
+        </AddOpportunityDialog>
       </div>
 
       {opportunities.length === 0 ? (

@@ -431,6 +431,27 @@ export async function updateOpportunity(
   revalidatePath(`/pipeline/${id}`)
 }
 
+/**
+ * Link an opportunity to an account (account_id column).
+ * Used by AddOpportunityDialog after createOpportunity, because createOpportunity
+ * does not accept account_id in OpportunityFormInput (v2.4 compatibility).
+ */
+export async function setOpportunityAccount(
+  opportunityId: string,
+  accountId: string,
+): Promise<{ error?: string } | void> {
+  const user = await getUser()
+  if (!user) return { error: 'Not authenticated.' }
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('opportunities')
+    .update({ account_id: accountId })
+    .eq('id', opportunityId)
+  if (error) return { error: error.message }
+  revalidatePath('/pipeline')
+  revalidatePath(`/pipeline/${opportunityId}`)
+}
+
 export async function deleteOpportunity(
   id: string,
 ): Promise<{ error?: string } | void> {
