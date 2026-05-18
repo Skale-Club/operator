@@ -393,7 +393,7 @@ function PhoneNumberDialog({ open, onOpenChange, editing, onSaved }: PhoneNumber
         <DialogHeader>
           <DialogTitle>{isEdit ? 'Edit phone number' : 'Add phone number'}</DialogTitle>
           <DialogDescription>
-            Register a Twilio number already provisioned in your Twilio account. Operator does not purchase numbers — buy in the{' '}
+            Register a Twilio number already provisioned in your Twilio account. Xphere does not purchase numbers — buy in the{' '}
             <a
               href="https://console.twilio.com/us1/develop/phone-numbers/manage/incoming"
               target="_blank"
@@ -453,7 +453,7 @@ function PhoneNumberDialog({ open, onOpenChange, editing, onSaved }: PhoneNumber
               <CheckboxRow checked={capVoice} onChange={setCapVoice} label="Voice" />
             </div>
             <p className="text-[11.5px] text-text-tertiary">
-              Mark only the capabilities that are enabled on the Twilio side. Operator will refuse to send SMS from a non-SMS number.
+              Mark only the capabilities that are enabled on the Twilio side. Xphere will refuse to send SMS from a non-SMS number.
             </p>
           </div>
 

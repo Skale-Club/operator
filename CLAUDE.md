@@ -1,4 +1,4 @@
-# Operator - Claude Code Instructions
+# Xphere - Claude Code Instructions
 
 ## Commands
 
@@ -22,7 +22,7 @@ Always run `npm run build` after changes to catch type errors before finishing.
 
 **Product framing:** Operator is a tenant-aware integration and orchestration platform. Client workflows can differ significantly, so prefer reusable platform capabilities over hardcoding one client's playbook as product-wide behavior.
 
-**Canonical production origin:** `https://operator.skale.club`. Use this host for first-party webhook construction and documentation examples unless an updated production host is explicitly documented.
+**Canonical production origin:** `https://xphere.skale.club`. Use this host for first-party webhook construction and documentation examples unless an updated production host is explicitly documented.
 
 **Multi-tenancy:** Every table has RLS. `get_current_org_id()` (SECURITY DEFINER) resolves the active org. All queries are automatically scoped - never manually filter by `org_id` in queries that already go through the authenticated client.
 
@@ -57,9 +57,9 @@ export async function POST(request: Request) {
 
 Production webhook endpoints:
 
-- `https://operator.skale.club/api/vapi/tools`
-- `https://operator.skale.club/api/vapi/calls`
-- `https://operator.skale.club/api/vapi/campaigns`
+- `https://xphere.skale.club/api/vapi/tools`
+- `https://xphere.skale.club/api/vapi/calls`
+- `https://xphere.skale.club/api/vapi/campaigns`
 
 ### Components
 - Server components by default

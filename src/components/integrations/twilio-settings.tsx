@@ -214,7 +214,7 @@ export function TwilioSettings({ initial }: TwilioSettingsProps) {
             onChange={setApiKeySecret}
             visible={showApiKeySecret}
             onToggle={() => setShowApiKeySecret((v) => !v)}
-            hint="Twilio reveals this once. Store it here — Operator never displays it again."
+            hint="Twilio reveals this once. Store it here — Xphere never displays it again."
           />
           <Field
             label="TwiML App SID"

@@ -107,7 +107,7 @@ export function WelcomeWizard({
               Welcome
             </div>
             <h1 className="mt-3 text-[26px] font-semibold tracking-tight text-text-primary sm:text-[32px]">
-              Welcome to Operator, {userName}.
+              Welcome to Xphere, {userName}.
             </h1>
             <p className="mt-2 max-w-xl text-[14px] text-text-secondary leading-relaxed">
               Let&apos;s get your workspace running in 5 quick steps. You can always

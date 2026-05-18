@@ -71,7 +71,7 @@ describe('GET /api/reviews/[token]', () => {
   it('returns 404 when no profile matches the token', async () => {
     nextResults = [{ data: null, error: { message: 'not found' } }]
     const res = await GET(
-      new Request('https://operator.skale.club/api/reviews/bad-token'),
+      new Request('https://xphere.skale.club/api/reviews/bad-token'),
       { params: Promise.resolve({ token: 'bad-token' }) }
     )
     expect(res.status).toBe(404)
@@ -90,7 +90,7 @@ describe('GET /api/reviews/[token]', () => {
     ]
 
     const res = await GET(
-      new Request('https://operator.skale.club/api/reviews/abc?min_rating=4&sort=recent&limit=5'),
+      new Request('https://xphere.skale.club/api/reviews/abc?min_rating=4&sort=recent&limit=5'),
       { params: Promise.resolve({ token: 'abc' }) }
     )
 
@@ -120,7 +120,7 @@ describe('GET /api/reviews/[token]', () => {
       { data: [], error: null },
     ]
     const res = await GET(
-      new Request('https://operator.skale.club/api/reviews/abc'),
+      new Request('https://xphere.skale.club/api/reviews/abc'),
       { params: Promise.resolve({ token: 'abc' }) }
     )
     const cache = res.headers.get('cache-control') ?? ''
@@ -136,7 +136,7 @@ describe('GET /api/reviews/[token]', () => {
       { data: [], error: null },
     ]
     const res = await GET(
-      new Request('https://operator.skale.club/api/reviews/abc?min_rating=99&limit=9999&offset=-5'),
+      new Request('https://xphere.skale.club/api/reviews/abc?min_rating=99&limit=9999&offset=-5'),
       { params: Promise.resolve({ token: 'abc' }) }
     )
     expect(res.status).toBe(200)

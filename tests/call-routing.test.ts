@@ -21,7 +21,7 @@ import {
 } from '@/lib/calls/twiml-builder'
 import { buildSipUri } from '@/lib/calls/resolve-routing'
 
-const CTX = { baseUrl: 'https://operator.skale.club', recordCalls: true }
+const CTX = { baseUrl: 'https://xphere.skale.club', recordCalls: true }
 
 describe('TwiML builder', () => {
   it('ROUTE-01: forwards inbound to a phone number with recording enabled', () => {
@@ -42,12 +42,12 @@ describe('TwiML builder', () => {
 
   it('ROUTE-04: recording callback points at /api/twilio/recording', () => {
     const xml = twimlForwardToPhone('+14155551234', CTX)
-    expect(xml).toContain('recordingStatusCallback="https://operator.skale.club/api/twilio/recording"')
+    expect(xml).toContain('recordingStatusCallback="https://xphere.skale.club/api/twilio/recording"')
   })
 
   it('ROUTE-05: dial action points at /api/twilio/status', () => {
     const xml = twimlForwardToPhone('+14155551234', CTX)
-    expect(xml).toContain('action="https://operator.skale.club/api/twilio/status"')
+    expect(xml).toContain('action="https://xphere.skale.club/api/twilio/status"')
   })
 
   it('ROUTE-05b: disables recording when recordCalls is false', () => {

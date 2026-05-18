@@ -64,7 +64,7 @@ const MODES: ModeMeta[] = [
     label: 'In the browser',
     icon: Globe,
     tagline: 'Most integrated',
-    description: 'Pick up calls right inside Operator with WebRTC audio.',
+    description: 'Pick up calls right inside Xphere with WebRTC audio.',
     pros: ['One-click answer', 'Contact name shown', 'No external app'],
   },
 ]
@@ -273,7 +273,7 @@ export function CallSettingsForm({ initial, sipDomain }: CallSettingsFormProps) 
           <div className="space-y-3">
             <h3 className="text-[14px] font-medium text-text-primary">In-browser calling</h3>
             <p className="text-[12.5px] text-text-secondary">
-              Inbound calls show a banner inside Operator. Place outbound calls from any contact with one click.
+              Inbound calls show a banner inside Xphere. Place outbound calls from any contact with one click.
             </p>
             <div className="flex flex-wrap items-center gap-3">
               <BrowserTestButton />

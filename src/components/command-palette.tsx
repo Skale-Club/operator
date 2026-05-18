@@ -110,7 +110,7 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
       },
 
       // Help
-      { id: 'help-docs', label: 'Documentation', icon: HelpCircle, action: () => window.open('https://operator.skale.club', '_blank'), group: 'Help' },
+      { id: 'help-docs', label: 'Documentation', icon: HelpCircle, action: () => window.open('https://xphere.skale.club', '_blank'), group: 'Help' },
     ],
     [setTheme]
   )
@@ -190,7 +190,7 @@ export function CommandPaletteProvider({ children }: { children: React.ReactNode
             </Command.List>
             <div className="flex items-center justify-between border-t border-border-subtle px-4 py-2 text-[11px] text-text-tertiary">
               <span className="font-mono tracking-wide">
-                {theme === 'dark' ? 'DARK' : 'LIGHT'} · Operator v2.1
+                {theme === 'dark' ? 'DARK' : 'LIGHT'} · Xphere v2.1
               </span>
               <div className="flex items-center gap-3">
                 <span className="flex items-center gap-1">

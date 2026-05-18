@@ -217,7 +217,7 @@ function ServerConfigCard({
       <CardHeader>
         <CardTitle>1. Connect your Evolution Go server</CardTitle>
         <CardDescription>
-          Operator validates the server by listing your instances. Tokens are AES-256-GCM encrypted at rest.
+          Xphere validates the server by listing your instances. Tokens are AES-256-GCM encrypted at rest.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
@@ -322,7 +322,7 @@ function InstanceCreateCard({
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
         <p className="text-[13px] text-text-secondary">
-          Operator will register the instance on your Evolution Go server and subscribe it to inbound message and
+          Xphere will register the instance on your Evolution Go server and subscribe it to inbound message and
           connection events. The webhook URL is shown to the right — copy it into your Evolution Go dashboard if you
           prefer manual configuration.
         </p>
@@ -436,7 +436,7 @@ function ConnectedCard({
   onDisconnect: () => void
 }) {
   const [testTo, setTestTo] = useState('')
-  const [testText, setTestText] = useState('Hello from Operator!')
+  const [testText, setTestText] = useState('Hello from Xphere!')
   const [sending, start] = useTransition()
 
   function send() {
@@ -525,7 +525,7 @@ function WebhookCard({ webhookUrl }: { webhookUrl: string }) {
       <CardHeader>
         <CardTitle className="text-[14px]">Webhook URL</CardTitle>
         <CardDescription>
-          Operator configures this automatically when you create an instance.
+          Xphere configures this automatically when you create an instance.
           You can also paste it manually into the Evolution Go dashboard.
         </CardDescription>
       </CardHeader>

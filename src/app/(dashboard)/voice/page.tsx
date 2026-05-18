@@ -28,7 +28,7 @@ export default async function VoicePage({ searchParams }: VoicePageProps) {
         eyebrow="Voice"
         eyebrowIcon={PhoneCall}
         title="Calls"
-        description="Every inbound and outbound call you place through Operator — with recording, contact link, and notes."
+        description="Every inbound and outbound call you place through Xphere — with recording, contact link, and notes."
         actions={<NewCallButton />}
       />
       <CallTimeline rows={rows} filter={filter} />

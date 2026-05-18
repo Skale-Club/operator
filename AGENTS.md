@@ -15,7 +15,7 @@ If you are unsure how to prioritize a change, protect that path first.
 
 Operator should be treated as a shared integration and orchestration platform for many tenant-specific workflows. Example automations for one client should not be assumed to be universal product behavior unless the planning docs explicitly say so.
 
-The canonical production host is `https://operator.skale.club`. When documenting or wiring first-party webhooks, callbacks, or Vapi server URLs, use that origin unless the repository docs explicitly state a new production host.
+The canonical production host is `https://xphere.skale.club`. When documenting or wiring first-party webhooks, callbacks, or Vapi server URLs, use that origin unless the repository docs explicitly state a new production host.
 
 ## Read First
 
@@ -52,7 +52,7 @@ For Vapi-facing routes:
 - do not block on non-essential work
 - preserve the "always return HTTP 200" behavior unless product requirements explicitly change
 - prefer deferred side effects with the established async pattern
-- construct public webhook targets against `https://operator.skale.club`
+- construct public webhook targets against `https://xphere.skale.club`
 
 Start with [`src/app/api/vapi/tools/route.ts`](/c:/Users/Vanildo/Dev/operator/src/app/api/vapi/tools/route.ts) when reasoning about this area.
 

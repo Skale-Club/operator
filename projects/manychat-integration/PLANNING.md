@@ -162,7 +162,7 @@ No new services needed. Add to `.env.local`:
 ### Production
 - Same Vercel deployment — new webhook route auto-deployed
 - New migrations pushed via `npx supabase db push`
-- Webhook URL to give admins: `https://operator.skale.club/api/manychat/webhook`
+- Webhook URL to give admins: `https://xphere.skale.club/api/manychat/webhook`
 
 ---
 
@@ -192,7 +192,7 @@ Tailwind 4 + shadcn/ui — consistent with existing dashboard. No new primitives
 
 ### Setup Page Details
 - API key input + test connection button (calls `GET /fb/page/getFlows` to verify)
-- Generated webhook URL (copyable): `https://operator.skale.club/api/manychat/webhook`
+- Generated webhook URL (copyable): `https://xphere.skale.club/api/manychat/webhook`
 - Generated secret (copyable): random token the admin pastes into ManyChat External Request headers
 - Payload template (copyable): JSON block admin pastes into ManyChat External Request body config
 - Active/inactive toggle

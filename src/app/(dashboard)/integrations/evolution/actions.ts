@@ -162,8 +162,8 @@ export async function createEvolutionInstance(): Promise<{ ok: true } | { ok: fa
   const instance = await resolveEvolutionInstance(orgId, undefined, supabase)
   if (!instance) return { ok: false, error: 'Save the server config first.' }
 
-  // Build webhook URL — defaults to operator.skale.club, overridable via env
-  const origin = process.env.OPERATOR_PUBLIC_ORIGIN ?? 'https://operator.skale.club'
+  // Build webhook URL — defaults to xphere.skale.club, overridable via env
+  const origin = process.env.XPHERE_PUBLIC_ORIGIN ?? 'https://xphere.skale.club'
   const webhookUrl = `${origin}/api/evolution/webhook`
 
   const res = await evoCreateInstance(instance.config, instance.instance_name, webhookUrl, true)

@@ -54,7 +54,7 @@ Set these in **Settings → Secrets and variables → Actions → Repository sec
 
 | Secret | Value |
 |--------|-------|
-| `OPERATOR_BASE_URL` | `https://operator.skale.club` (or the active production origin) |
+| `OPERATOR_BASE_URL` | `https://xphere.skale.club` (or the active production origin) |
 | `GHL_REENGAGEMENT_TRIGGER_SECRET` | Same value as the Vercel env var of the same name |
 
 If they diverge, the workflow will receive HTTP 401 from the runner.

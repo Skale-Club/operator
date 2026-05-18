@@ -26,7 +26,7 @@ export default async function PlatformSettingsPage() {
         eyebrow="Platform admin"
         eyebrowIcon={ShieldCheck}
         title="Platform settings"
-        description="Global configuration for the Operator platform. Changes take effect immediately."
+        description="Global configuration for the Xphere platform. Changes take effect immediately."
       />
       <PlatformSettingsForm settings={result.settings} />
     </PageContainer>

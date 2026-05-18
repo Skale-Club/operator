@@ -50,7 +50,7 @@ export interface TwilioIntegrationView {
 }
 
 const OPERATOR_ORIGIN =
-  process.env.OPERATOR_PUBLIC_ORIGIN ?? 'https://operator.skale.club'
+  process.env.XPHERE_PUBLIC_ORIGIN ?? 'https://xphere.skale.club'
 
 function maskSnippet(value: string | null | undefined): string | null {
   if (!value) return null
@@ -399,7 +399,7 @@ export async function testSendSms(
 
   const to = input.to.trim()
   if (!to) return { success: false, error: 'Provide a destination phone number.' }
-  const body = input.body?.trim() || 'Test SMS from Operator — Twilio integration is connected.'
+  const body = input.body?.trim() || 'Test SMS from Xphere — Twilio integration is connected.'
 
   const basicAuth = btoa(`${blob.account_sid}:${blob.auth_token}`)
   const url = `https://api.twilio.com/2010-04-01/Accounts/${blob.account_sid}/Messages.json`

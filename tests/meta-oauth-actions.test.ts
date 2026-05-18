@@ -4,7 +4,7 @@ describe('META-02: connectMeta', () => {
   it.todo('generates a CSRF state cookie before redirecting')
   it.todo('redirects to https://www.facebook.com/dialog/oauth')
   it.todo('requests pages_show_list, pages_messaging, instagram_manage_messages, and pages_read_engagement')
-  it.todo('uses https://operator.skale.club/api/meta/callback as the redirect URI')
+  it.todo('uses https://xphere.skale.club/api/meta/callback as the redirect URI')
 })
 
 describe('META-04: disconnectMetaChannel', () => {

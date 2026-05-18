@@ -30,7 +30,7 @@ import { EmptyState } from '@/components/empty-states/empty-state'
 
 export const dynamic = 'force-dynamic'
 
-const PRODUCTION_ORIGIN = 'https://operator.skale.club'
+const PRODUCTION_ORIGIN = 'https://xphere.skale.club'
 
 function statusBadge(status: string | null) {
   if (!status) {

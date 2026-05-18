@@ -6,7 +6,7 @@ The platform is intentionally designed as a configurable integration and orchest
 
 The current codebase reflects a shipped `v1.0` MVP completed on `2026-04-03`. The product focus is simple: when Vapi triggers a tool during a live call, Operator must resolve the right organization, execute the action, and return a result fast enough for production call flows.
 
-The canonical production origin for the app and all first-party webhooks is `https://operator.skale.club`.
+The canonical production origin for the app and all first-party webhooks is `https://xphere.skale.club`.
 
 ## What It Does
 
@@ -58,12 +58,12 @@ This hot path is the shared execution substrate for tenant-specific workflows. T
 
 ### Canonical public URLs
 
-Use `https://operator.skale.club` as the definitive public base URL for the product.
+Use `https://xphere.skale.club` as the definitive public base URL for the product.
 
-- App origin: `https://operator.skale.club`
-- Vapi tool-call webhook: `https://operator.skale.club/api/vapi/tools`
-- Vapi end-of-call webhook: `https://operator.skale.club/api/vapi/calls`
-- Vapi campaign webhook: `https://operator.skale.club/api/vapi/campaigns`
+- App origin: `https://xphere.skale.club`
+- Vapi tool-call webhook: `https://xphere.skale.club/api/vapi/tools`
+- Vapi end-of-call webhook: `https://xphere.skale.club/api/vapi/calls`
+- Vapi campaign webhook: `https://xphere.skale.club/api/vapi/campaigns`
 
 When configuring Vapi server URLs, external callbacks, or customer-specific integrations that call into Operator, prefer these canonical URLs over temporary Vercel preview URLs or other legacy webhook hosts.
 
@@ -146,7 +146,7 @@ The root route redirects to `/calls`.
 
 This repo is aligned to avoid depending on Vercel Edge Runtime or Vercel Cron for core product flows.
 
-Production traffic should terminate at `https://operator.skale.club`. Treat that host as the stable public address for app access, Vapi webhooks, and any first-party webhook construction.
+Production traffic should terminate at `https://xphere.skale.club`. Treat that host as the stable public address for app access, Vapi webhooks, and any first-party webhook construction.
 
 ## Useful Commands
 

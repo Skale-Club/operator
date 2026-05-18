@@ -1,6 +1,6 @@
 // src/app/api/twilio/voice/route.ts
 // Main Twilio Voice webhook (SEED-007 / v2.1).
-// Public URL: https://operator.skale.club/api/twilio/voice
+// Public URL: https://xphere.skale.club/api/twilio/voice
 //
 // Reads call_settings for the org-of-record (resolved via the `To` number) and
 // returns TwiML directing the call to:
@@ -108,7 +108,7 @@ export async function POST(request: Request): Promise<Response> {
 
     if (!orgId) {
       console.warn('[twilio/voice] No Twilio integration for To:', to)
-      return twimlResponse(twimlReject('This number is not connected to an Operator workspace.'))
+      return twimlResponse(twimlReject('This number is not connected to a Xphere workspace.'))
     }
 
     // Validate signature against the org's auth_token. We do this AFTER org

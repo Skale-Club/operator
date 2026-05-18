@@ -14,7 +14,7 @@ export default async function EvolutionIntegrationPage() {
 
   const instance = await getEvolutionInstance()
 
-  const origin = process.env.OPERATOR_PUBLIC_ORIGIN ?? 'https://operator.skale.club'
+  const origin = process.env.XPHERE_PUBLIC_ORIGIN ?? 'https://xphere.skale.club'
   const webhookUrl = `${origin}/api/evolution/webhook`
 
   return (

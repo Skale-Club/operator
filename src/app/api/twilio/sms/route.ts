@@ -1,6 +1,6 @@
 // src/app/api/twilio/sms/route.ts
 // Twilio Inbound SMS webhook (SEED-005 — omnichannel inbox completion).
-// Public URL: https://operator.skale.club/api/twilio/sms
+// Public URL: https://xphere.skale.club/api/twilio/sms
 //
 // Auth: HMAC-SHA1 signature in the X-Twilio-Signature header (Twilio convention,
 // NOT SHA256 like Meta). The signature covers: requestUrl + concat(sorted POST params).
@@ -94,10 +94,10 @@ export function verifyTwilioSignature(
 /**
  * Resolve the absolute URL Twilio used to call us. We prefer X-Forwarded-* headers
  * (Vercel/proxy environments) over the raw request URL — the latter may be
- * `http://...` internally even though Twilio called `https://operator.skale.club`.
+ * `http://...` internally even though Twilio called `https://xphere.skale.club`.
  *
  * Production canonical origin is documented in CLAUDE.md as
- * https://operator.skale.club — but we read the host dynamically to keep
+ * https://xphere.skale.club — but we read the host dynamically to keep
  * preview/staging working.
  */
 function resolveRequestUrl(request: Request): string {

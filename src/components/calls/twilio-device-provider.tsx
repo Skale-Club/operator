@@ -82,7 +82,7 @@ export function TwilioDeviceProvider({ enabled = true, children }: TwilioDeviceP
 
         const device = new Device(data.token, {
           logLevel: 'WARN',
-          appName: 'Operator',
+          appName: 'Xphere',
           appVersion: '2.1',
         })
 

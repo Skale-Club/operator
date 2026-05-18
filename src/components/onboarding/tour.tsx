@@ -22,7 +22,7 @@ const STEPS: Step[] = [
   {
     selector: null,
     side: 'center',
-    title: 'Welcome to Operator',
+    title: 'Welcome to Xphere',
     body: "Let's walk you through the main areas of the product in 30 seconds. You can skip at any time.",
   },
   {
