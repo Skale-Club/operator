@@ -288,6 +288,7 @@ export async function createContact(
       phone: data.phone,
       email: data.email,
       company: data.company,
+      account_id: data.account_id,
       notes: data.notes,
       tags: tagNames,
       source: data.source,
@@ -347,6 +348,7 @@ export async function updateContact(
       phone: data.phone,
       email: data.email,
       company: data.company,
+      account_id: data.account_id,
       notes: data.notes,
       tags: tagNames,
     })

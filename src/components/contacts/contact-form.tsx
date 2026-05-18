@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { TagPicker } from '@/components/tags/tag-picker'
 import { listTags, type TagRow } from '@/app/(dashboard)/settings/tags/actions'
+import { AccountCombobox } from '@/components/accounts/account-combobox'
 import { cn } from '@/lib/utils'
 
 interface ContactFormProps {
@@ -41,6 +42,7 @@ export function ContactForm({
       phone: defaultValues?.phone ?? '',
       email: defaultValues?.email ?? '',
       company: defaultValues?.company ?? '',
+      account_id: defaultValues?.account_id ?? null,
       notes: defaultValues?.notes ?? '',
       tags: defaultValues?.tags ?? [],
       source: defaultValues?.source ?? 'manual',
@@ -83,8 +85,16 @@ export function ContactForm({
         </Field>
       </div>
 
-      <Field label="Company" htmlFor="contact-company" error={errors.company?.message}>
-        <Input id="contact-company" placeholder="Acme Inc." {...register('company')} />
+      <Field label="Company" htmlFor="contact-company">
+        <AccountCombobox
+          value={(watch('account_id') as string | undefined) ?? null}
+          onChange={(id, name) => {
+            setValue('account_id', id, { shouldDirty: true })
+            // Keep legacy company text field in sync (part of submit payload)
+            if (name !== null) setValue('company', name, { shouldDirty: true })
+          }}
+          defaultAccountName={defaultValues?.company ?? undefined}
+        />
       </Field>
 
       <Field label="Tags" htmlFor="contact-tags">

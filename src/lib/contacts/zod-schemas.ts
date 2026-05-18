@@ -52,6 +52,7 @@ export const contactSchema = z
         'Enter a valid email address',
       ),
     company: z.string().trim().max(500).optional(),
+    account_id: z.string().uuid().nullable().optional(),
     notes: z.string().trim().max(5000).optional(),
     tags: z.array(z.string().trim().min(1).max(40)).max(50).default([]),
     source: z.enum(CONTACT_SOURCES).default('manual'),
@@ -76,6 +77,7 @@ export interface NormalisedContact {
   phone: string | null
   email: string | null
   company: string | null
+  account_id: string | null
   notes: string | null
   tags: string[]
   source: ContactSourceLiteral
@@ -89,6 +91,7 @@ export function normaliseContactInput(input: ContactFormOutput): NormalisedConta
     phone: normalisePhone(input.phone ?? null),
     email: normaliseEmail(input.email ?? null),
     company: blank(input.company),
+    account_id: input.account_id ?? null,
     notes: blank(input.notes),
     tags: input.tags,
     source: input.source,
