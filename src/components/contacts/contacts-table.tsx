@@ -19,6 +19,7 @@ import {
 import { ContactDetailSheet } from './contact-detail-sheet'
 import { deleteContacts } from '@/app/(dashboard)/contacts/actions'
 import type { Database } from '@/types/database'
+import type { TagRow } from '@/app/(dashboard)/settings/tags/actions'
 import { CONTACT_SOURCES } from '@/lib/contacts/zod-schemas'
 import { cn } from '@/lib/utils'
 
@@ -29,7 +30,7 @@ interface ContactsTableProps {
   total: number
   page: number
   pageSize: number
-  allTags: string[]
+  allTags: TagRow[]
   currentTag?: string
   currentSource?: string
   currentSort: string
@@ -200,18 +201,16 @@ export function ContactsTable({
       </div>
 
       {/* Tag chips */}
-      {(allTags.length > 0 || currentTag) && (
+      {allTags.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="text-[11px] uppercase tracking-wide text-text-tertiary mr-1">Tags</span>
-          {currentTag && !allTags.includes(currentTag) && (
-            <TagChip label={currentTag} active onClick={() => setParam('tag', null)} />
-          )}
           {allTags.map((t) => (
             <TagChip
-              key={t}
-              label={t}
-              active={currentTag === t}
-              onClick={() => setParam('tag', currentTag === t ? null : t)}
+              key={t.id}
+              label={t.name}
+              color={t.color}
+              active={currentTag === t.id || currentTag === t.name || currentTag === t.slug}
+              onClick={() => setParam('tag', (currentTag === t.id || currentTag === t.name || currentTag === t.slug) ? null : t.id)}
             />
           ))}
         </div>
@@ -297,14 +296,30 @@ export function ContactsTable({
                 </div>
                 <div className="truncate text-[12.5px] text-text-secondary">{c.email || '—'}</div>
                 <div className="flex flex-wrap gap-1 overflow-hidden">
-                  {c.tags.slice(0, 2).map((t) => (
-                    <span
-                      key={t}
-                      className="inline-flex items-center rounded-full bg-accent-muted px-2 py-0.5 text-[10.5px] font-medium text-accent"
-                    >
-                      {t}
-                    </span>
-                  ))}
+                  {c.tags.slice(0, 2).map((tagName) => {
+                    const tagObj = allTags.find((t) => t.name === tagName || t.slug === tagName.toLowerCase())
+                    return tagObj ? (
+                      <span
+                        key={tagName}
+                        className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10.5px] font-medium"
+                        style={{
+                          backgroundColor: `${tagObj.color}22`,
+                          borderColor: `${tagObj.color}44`,
+                          color: tagObj.color,
+                        }}
+                      >
+                        <span className="h-1.5 w-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: tagObj.color }} />
+                        {tagName}
+                      </span>
+                    ) : (
+                      <span
+                        key={tagName}
+                        className="inline-flex items-center rounded-full bg-accent-muted px-2 py-0.5 text-[10.5px] font-medium text-accent"
+                      >
+                        {tagName}
+                      </span>
+                    )
+                  })}
                   {c.tags.length > 2 && (
                     <span className="text-[10.5px] text-text-tertiary">+{c.tags.length - 2}</span>
                   )}
@@ -352,24 +367,34 @@ export function ContactsTable({
 
 function TagChip({
   label,
+  color,
   active,
   onClick,
 }: {
   label: string
+  color?: string
   active?: boolean
   onClick: () => void
 }) {
+  const style = active && color
+    ? { backgroundColor: `${color}33`, borderColor: color, color }
+    : color
+    ? { backgroundColor: `${color}15`, borderColor: `${color}44`, color }
+    : undefined
+
   return (
     <button
       type="button"
       onClick={onClick}
       className={cn(
         'inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11.5px] font-medium transition-colors duration-150',
-        active
+        !color && (active
           ? 'border-accent bg-accent text-accent-foreground'
-          : 'border-border-subtle bg-bg-secondary text-text-secondary hover:border-border-strong hover:text-text-primary',
+          : 'border-border-subtle bg-bg-secondary text-text-secondary hover:border-border-strong hover:text-text-primary'),
       )}
+      style={style}
     >
+      {color && <span className="h-1.5 w-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />}
       {label}
       {active && <X className="h-3 w-3" />}
     </button>

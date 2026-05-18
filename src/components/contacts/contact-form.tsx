@@ -4,7 +4,6 @@ import * as React from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
-import { X } from 'lucide-react'
 
 import { contactSchema, type ContactFormInput } from '@/lib/contacts/zod-schemas'
 import { Button } from '@/components/ui/button'
@@ -12,6 +11,8 @@ import { Input } from '@/components/ui/input'
 import { PhoneInput } from '@/components/ui/phone-input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { TagPicker } from '@/components/tags/tag-picker'
+import { listTags, type TagRow } from '@/app/(dashboard)/settings/tags/actions'
 import { cn } from '@/lib/utils'
 
 interface ContactFormProps {
@@ -46,27 +47,12 @@ export function ContactForm({
     },
   })
 
-  const tags = (watch('tags') as string[] | undefined) ?? []
-  const [tagDraft, setTagDraft] = React.useState('')
+  const [allTags, setAllTags] = React.useState<TagRow[]>([])
+  React.useEffect(() => {
+    listTags().then(setAllTags)
+  }, [])
 
-  function commitTag() {
-    const v = tagDraft.trim()
-    if (!v) return
-    if (tags.includes(v)) {
-      setTagDraft('')
-      return
-    }
-    setValue('tags', [...tags, v], { shouldDirty: true })
-    setTagDraft('')
-  }
-
-  function removeTag(t: string) {
-    setValue(
-      'tags',
-      tags.filter((x) => x !== t),
-      { shouldDirty: true },
-    )
-  }
+  const tagIds = (watch('tags') as string[] | undefined) ?? []
 
   return (
     <form
@@ -101,42 +87,13 @@ export function ContactForm({
         <Input id="contact-company" placeholder="Acme Inc." {...register('company')} />
       </Field>
 
-      <Field label="Tags" htmlFor="contact-tag-draft">
-        <div className="flex flex-wrap gap-1.5">
-          {tags.map((t) => (
-            <span
-              key={t}
-              className="inline-flex items-center gap-1 rounded-full bg-accent-muted px-2.5 py-0.5 text-[11.5px] font-medium text-accent"
-            >
-              {t}
-              <button
-                type="button"
-                onClick={() => removeTag(t)}
-                className="rounded-full hover:bg-accent/10 p-0.5 text-accent/80 hover:text-accent"
-                aria-label={`Remove tag ${t}`}
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </span>
-          ))}
-          <Input
-            id="contact-tag-draft"
-            value={tagDraft}
-            placeholder={tags.length === 0 ? 'lead, vip, hot-lead…' : 'Add tag'}
-            onChange={(e) => setTagDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ',') {
-                e.preventDefault()
-                commitTag()
-              }
-              if (e.key === 'Backspace' && !tagDraft && tags.length > 0) {
-                removeTag(tags[tags.length - 1])
-              }
-            }}
-            onBlur={commitTag}
-            className="min-w-[120px] flex-1"
-          />
-        </div>
+      <Field label="Tags" htmlFor="contact-tags">
+        <TagPicker
+          allTags={allTags}
+          value={tagIds}
+          onChange={(ids) => setValue('tags', ids, { shouldDirty: true })}
+          onTagCreated={(tag) => setAllTags((prev) => [...prev, tag].sort((a, b) => a.name.localeCompare(b.name)))}
+        />
       </Field>
 
       <Field label="Notes" htmlFor="contact-notes" error={errors.notes?.message}>

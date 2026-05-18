@@ -1433,6 +1433,102 @@ export interface Database {
           }
         ]
       }
+      tags: {
+        Row: {
+          id: string
+          org_id: string
+          name: string
+          slug: string
+          color: string
+          created_at: string
+          created_by: string | null
+        }
+        Insert: {
+          id?: string
+          org_id: string
+          name: string
+          slug: string
+          color?: string
+          created_at?: string
+          created_by?: string | null
+        }
+        Update: {
+          name?: string
+          slug?: string
+          color?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'tags_org_id_fkey'
+            columns: ['org_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      contact_tags: {
+        Row: {
+          contact_id: string
+          tag_id: string
+          tagged_at: string
+          tagged_by: string | null
+        }
+        Insert: {
+          contact_id: string
+          tag_id: string
+          tagged_at?: string
+          tagged_by?: string | null
+        }
+        Update: Record<string, never>
+        Relationships: [
+          {
+            foreignKeyName: 'contact_tags_contact_id_fkey'
+            columns: ['contact_id']
+            isOneToOne: false
+            referencedRelation: 'contacts'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'contact_tags_tag_id_fkey'
+            columns: ['tag_id']
+            isOneToOne: false
+            referencedRelation: 'tags'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      opportunity_tags: {
+        Row: {
+          opportunity_id: string
+          tag_id: string
+          tagged_at: string
+          tagged_by: string | null
+        }
+        Insert: {
+          opportunity_id: string
+          tag_id: string
+          tagged_at?: string
+          tagged_by?: string | null
+        }
+        Update: Record<string, never>
+        Relationships: [
+          {
+            foreignKeyName: 'opportunity_tags_opportunity_id_fkey'
+            columns: ['opportunity_id']
+            isOneToOne: false
+            referencedRelation: 'opportunities'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'opportunity_tags_tag_id_fkey'
+            columns: ['tag_id']
+            isOneToOne: false
+            referencedRelation: 'tags'
+            referencedColumns: ['id']
+          }
+        ]
+      }
       call_settings: {
         Row: {
           id: string

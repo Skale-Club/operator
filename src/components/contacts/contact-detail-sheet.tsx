@@ -18,6 +18,7 @@ import {
 import Link from 'next/link'
 
 import { formatCurrency } from '@/lib/pipeline/format'
+import { TagBadge } from '@/components/tags/tag-badge'
 
 import {
   Sheet,
@@ -128,7 +129,7 @@ export function ContactDetailSheet({ contactId, onOpenChange }: ContactDetailShe
                   email: contact.email ?? '',
                   company: contact.company ?? '',
                   notes: contact.notes ?? '',
-                  tags: contact.tags ?? [],
+                  tags: contact.tagIds ?? [],
                 }}
                 submitLabel="Save changes"
                 onCancel={() => setEditing(false)}
@@ -163,15 +164,10 @@ export function ContactDetailSheet({ contactId, onOpenChange }: ContactDetailShe
                       {contact.company}
                     </p>
                   )}
-                  {contact.tags.length > 0 && (
+                  {contact.tagEntities.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1">
-                      {contact.tags.map((t) => (
-                        <span
-                          key={t}
-                          className="inline-flex items-center rounded-full bg-accent-muted px-2 py-0.5 text-[10.5px] font-medium text-accent"
-                        >
-                          {t}
-                        </span>
+                      {contact.tagEntities.map((t) => (
+                        <TagBadge key={t.id} name={t.name} color={t.color} />
                       ))}
                     </div>
                   )}

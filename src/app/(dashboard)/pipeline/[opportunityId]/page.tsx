@@ -8,10 +8,12 @@ import {
   getStages,
 } from '../actions'
 import { OpportunityDetailClient } from '@/components/pipeline/opportunity-detail-client'
+import { OppTagsWidget } from '@/components/pipeline/opp-tags-widget'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { formatCurrency, initialsOf, relativeTime } from '@/lib/pipeline/format'
+import { getOpportunityTagIds, listTags } from '@/app/(dashboard)/settings/tags/actions'
 
 interface Props {
   params: Promise<{ opportunityId: string }>
@@ -19,9 +21,11 @@ interface Props {
 
 export default async function OpportunityDetailPage({ params }: Props) {
   const { opportunityId } = await params
-  const [opp, activities] = await Promise.all([
+  const [opp, activities, opportunityTagIds, allTags] = await Promise.all([
     getOpportunity(opportunityId),
     getActivities(opportunityId),
+    getOpportunityTagIds(opportunityId),
+    listTags(),
   ])
   if (!opp) notFound()
 
@@ -120,6 +124,13 @@ export default async function OpportunityDetailPage({ params }: Props) {
               label="Last updated"
               value={relativeTime(opp.updated_at)}
             />
+            <div className="border-t border-border-subtle pt-3 -mx-2 px-2">
+              <OppTagsWidget
+                opportunityId={opp.id}
+                initialTagIds={opportunityTagIds}
+                allTags={allTags}
+              />
+            </div>
             {opp.contact && (
               <>
                 <div className="border-t border-border-subtle pt-3 -mx-2 px-2 text-[11px] uppercase tracking-wide text-text-tertiary">

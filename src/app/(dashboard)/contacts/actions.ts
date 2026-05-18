@@ -33,6 +33,7 @@ import {
   CONTACT_FIELDS,
   type ContactField,
 } from '@/lib/contacts/csv'
+import { setContactTags, type TagRow } from '@/app/(dashboard)/settings/tags/actions'
 
 type ContactRow = Database['public']['Tables']['contacts']['Row']
 
@@ -41,7 +42,7 @@ export interface ContactListResult {
   total: number
   page: number
   pageSize: number
-  allTags: string[]
+  allTags: TagRow[]
 }
 
 export async function getContacts(
@@ -63,6 +64,17 @@ export async function getContacts(
   const f = parsed.data
   const supabase = await createClient()
 
+  // Load all org tags for filter chips and colored display
+  const { data: orgIdData } = await supabase.rpc('get_current_org_id')
+  const { data: tagRows } = orgIdData
+    ? await supabase.from('tags').select('*').order('name')
+    : { data: [] }
+  const allTags: TagRow[] = (tagRows ?? []).map((t) => ({
+    ...t,
+    contact_count: 0,
+    opportunity_count: 0,
+  }))
+
   let query = supabase.from('contacts').select('*', { count: 'exact' })
 
   if (f.q) {
@@ -76,7 +88,26 @@ export async function getContacts(
       ].join(','),
     )
   }
-  if (f.tag) query = query.contains('tags', [f.tag])
+  if (f.tag) {
+    // f.tag may be a tag ID (new system) or a tag name (legacy URL).
+    // Try ID match first via contact_tags, fall back to text[] contains.
+    const tagObj = allTags.find((t) => t.id === f.tag || t.slug === f.tag || t.name === f.tag)
+    if (tagObj) {
+      const { data: ctRows } = await supabase
+        .from('contact_tags')
+        .select('contact_id')
+        .eq('tag_id', tagObj.id)
+      const contactIds = (ctRows ?? []).map((r) => r.contact_id)
+      if (contactIds.length > 0) {
+        query = query.in('id', contactIds)
+      } else {
+        // No contacts for this tag — return empty
+        return { rows: [], total: 0, page: f.page, pageSize: f.pageSize, allTags }
+      }
+    } else {
+      query = query.contains('tags', [f.tag])
+    }
+  }
   if (f.source) query = query.eq('source', f.source)
 
   if (f.sort === 'name') {
@@ -91,18 +122,8 @@ export async function getContacts(
 
   const { data, count, error } = await query
   if (error || !data) {
-    return { rows: [], total: 0, page: f.page, pageSize: f.pageSize, allTags: [] }
+    return { rows: [], total: 0, page: f.page, pageSize: f.pageSize, allTags }
   }
-
-  // Collect distinct tags from the current page only — full-org tag enumeration
-  // would scan the entire table on every request; we surface filter chips from
-  // the page result + the actively-selected tag.
-  const tagSet = new Set<string>()
-  for (const row of data) {
-    for (const t of row.tags ?? []) tagSet.add(t)
-  }
-  if (f.tag) tagSet.add(f.tag)
-  const allTags = [...tagSet].sort()
 
   return {
     rows: data,
@@ -113,7 +134,16 @@ export async function getContacts(
   }
 }
 
+export interface ContactTagEntity {
+  id: string
+  name: string
+  color: string
+  slug: string
+}
+
 export interface ContactDetail extends ContactRow {
+  tagIds: string[]
+  tagEntities: ContactTagEntity[]
   conversations: Array<{
     id: string
     channel: string
@@ -146,36 +176,48 @@ export async function getContact(id: string): Promise<ContactDetail | null> {
   const user = await getUser()
   if (!user) return null
   const supabase = await createClient()
-  const { data: contact } = await supabase
-    .from('contacts')
-    .select('*')
-    .eq('id', id)
-    .maybeSingle()
+  const [
+    { data: contact },
+    { data: contactTagRows },
+    { data: convs },
+    { data: calls },
+    { data: opps },
+  ] = await Promise.all([
+    supabase.from('contacts').select('*').eq('id', id).maybeSingle(),
+    supabase
+      .from('contact_tags')
+      .select('tag_id, tags(id, name, color, slug)')
+      .eq('contact_id', id),
+    supabase
+      .from('conversations')
+      .select('id, channel, last_message, last_message_at, status')
+      .eq('contact_id', id)
+      .order('last_message_at', { ascending: false, nullsFirst: false })
+      .limit(20),
+    supabase
+      .from('call_logs')
+      .select('id, direction, from_number, to_number, status, duration_seconds, recording_url, started_at')
+      .eq('contact_id', id)
+      .order('started_at', { ascending: false, nullsFirst: false })
+      .limit(20),
+    supabase
+      .from('opportunities')
+      .select('id, title, value, currency, status, updated_at, stage:pipeline_stages(id, name, color)')
+      .eq('contact_id', id)
+      .order('updated_at', { ascending: false })
+      .limit(20),
+  ])
   if (!contact) return null
 
-  const { data: convs } = await supabase
-    .from('conversations')
-    .select('id, channel, last_message, last_message_at, status')
-    .eq('contact_id', id)
-    .order('last_message_at', { ascending: false, nullsFirst: false })
-    .limit(20)
-
-  const { data: calls } = await supabase
-    .from('call_logs')
-    .select('id, direction, from_number, to_number, status, duration_seconds, recording_url, started_at')
-    .eq('contact_id', id)
-    .order('started_at', { ascending: false, nullsFirst: false })
-    .limit(20)
-
-  const { data: opps } = await supabase
-    .from('opportunities')
-    .select('id, title, value, currency, status, updated_at, stage:pipeline_stages(id, name, color)')
-    .eq('contact_id', id)
-    .order('updated_at', { ascending: false })
-    .limit(20)
+  const tagEntities: ContactTagEntity[] = (contactTagRows ?? [])
+    .map((r) => (r.tags as ContactTagEntity | null))
+    .filter((t): t is ContactTagEntity => Boolean(t))
+  const tagIds = tagEntities.map((t) => t.id)
 
   return {
     ...(contact as ContactRow),
+    tagIds,
+    tagEntities,
     conversations: convs ?? [],
     call_logs: (calls ?? []) as ContactDetail['call_logs'],
     opportunities: ((opps ?? []) as unknown as ContactDetail['opportunities']),
@@ -218,6 +260,16 @@ export async function createContact(
     if (existing) return { id: existing.id, existed: true }
   }
 
+  // Resolve tag IDs → names for the legacy text[] column (kept in sync until 062)
+  let tagNames: string[] = []
+  if (data.tags.length > 0) {
+    const { data: tagRows } = await supabase
+      .from('tags')
+      .select('id, name')
+      .in('id', data.tags)
+    tagNames = (tagRows ?? []).map((t) => t.name)
+  }
+
   const { data: inserted, error } = await supabase
     .from('contacts')
     .insert({
@@ -227,13 +279,17 @@ export async function createContact(
       email: data.email,
       company: data.company,
       notes: data.notes,
-      tags: data.tags,
+      tags: tagNames,
       source: data.source,
       created_by: user.id,
     })
     .select('id')
     .single()
   if (error || !inserted) return { error: error?.message ?? 'Insert failed' }
+
+  if (data.tags.length > 0) {
+    await setContactTags(inserted.id, data.tags)
+  }
 
   revalidatePath('/contacts')
   return { id: inserted.id }
@@ -252,6 +308,16 @@ export async function updateContact(
   const data = normaliseContactInput(parsed.data)
   const supabase = await createClient()
 
+  // Resolve tag IDs → names for the legacy text[] column (kept in sync until 062)
+  let tagNames: string[] = []
+  if (data.tags.length > 0) {
+    const { data: tagRows } = await supabase
+      .from('tags')
+      .select('id, name')
+      .in('id', data.tags)
+    tagNames = (tagRows ?? []).map((t) => t.name)
+  }
+
   const { error } = await supabase
     .from('contacts')
     .update({
@@ -260,10 +326,12 @@ export async function updateContact(
       email: data.email,
       company: data.company,
       notes: data.notes,
-      tags: data.tags,
+      tags: tagNames,
     })
     .eq('id', id)
   if (error) return { error: error.message }
+
+  await setContactTags(id, data.tags)
 
   revalidatePath('/contacts')
   revalidatePath(`/contacts/${id}`)

@@ -28,6 +28,12 @@ import {
   searchContactsForOpportunity,
   getStages,
 } from '@/app/(dashboard)/pipeline/actions'
+import {
+  listTags,
+  setOpportunityTags,
+  type TagRow,
+} from '@/app/(dashboard)/settings/tags/actions'
+import { TagPicker } from '@/components/tags/tag-picker'
 import type { Database } from '@/types/database'
 
 type StageRow = Database['public']['Tables']['pipeline_stages']['Row']
@@ -63,6 +69,8 @@ export function NewOpportunityDialog({
   const [contactQuery, setContactQuery] = React.useState('')
   const [suggestions, setSuggestions] = React.useState<ContactSuggestion[]>([])
   const [showSuggestions, setShowSuggestions] = React.useState(false)
+  const [allTags, setAllTags] = React.useState<TagRow[]>([])
+  const [tagIds, setTagIds] = React.useState<string[]>([])
 
   React.useEffect(() => {
     if (!open) return
@@ -70,6 +78,7 @@ export function NewOpportunityDialog({
       setStages(s)
       if (!selectedStage && s.length > 0) setSelectedStage(s[0].id)
     })
+    listTags().then(setAllTags)
   }, [open, pipelineId, selectedStage])
 
   React.useEffect(() => {
@@ -102,6 +111,7 @@ export function NewOpportunityDialog({
     setContact(null)
     setContactQuery('')
     setShowSuggestions(false)
+    setTagIds([])
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -125,6 +135,9 @@ export function NewOpportunityDialog({
     if (res.error) {
       toast.error(res.error)
       return
+    }
+    if (tagIds.length > 0 && res.id) {
+      await setOpportunityTags(res.id, tagIds)
     }
     toast.success('Opportunity created')
     setOpen(false)
@@ -264,6 +277,17 @@ export function NewOpportunityDialog({
                 )}
               </div>
             )}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label>Tags</Label>
+            <TagPicker
+              allTags={allTags}
+              value={tagIds}
+              onChange={setTagIds}
+              onTagCreated={(tag) => setAllTags((prev) => [...prev, tag].sort((a, b) => a.name.localeCompare(b.name)))}
+              placeholder="Add tags…"
+            />
           </div>
 
           <div className="flex items-center justify-end gap-2 pt-1">
