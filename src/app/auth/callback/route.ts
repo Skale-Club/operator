@@ -30,56 +30,72 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/login?error=no_email`)
   }
 
-  // Check if this email has a pending invite in ANY org
-  const { data: invite, error: inviteError } = await supabase
-    .from('org_invites')
-    .select('id, org_id, role, accepted_at')
-    .eq('email', normalizedEmail)
-    .is('accepted_at', null)
+  // 1) Existing-member fast path: if this auth user already belongs to an org,
+  //    accept the OAuth login without requiring an invite. Existing admins
+  //    (created before the invite system) and members previously added directly
+  //    in the DB must be able to sign in with Google.
+  const { data: existingMembership } = await supabase
+    .from('org_members')
+    .select('organization_id')
+    .eq('user_id', user.id)
     .limit(1)
     .maybeSingle()
 
-  if (inviteError) {
-    console.error('[auth/callback] invite lookup error:', inviteError.message)
-    return NextResponse.redirect(`${origin}/login?error=invite_lookup_failed`)
+  let resolvedOrgId: string | null = existingMembership?.organization_id ?? null
+
+  // 2) Invite path: only run if the user has no existing membership.
+  if (!resolvedOrgId) {
+    const { data: invite, error: inviteError } = await supabase
+      .from('org_invites')
+      .select('id, org_id, role, accepted_at')
+      .eq('email', normalizedEmail)
+      .is('accepted_at', null)
+      .limit(1)
+      .maybeSingle()
+
+    if (inviteError) {
+      console.error('[auth/callback] invite lookup error:', inviteError.message)
+      return NextResponse.redirect(`${origin}/login?error=invite_lookup_failed`)
+    }
+
+    if (!invite) {
+      // No existing membership AND no pending invite — block access.
+      // The auth.users row was created by Supabase OAuth (unavoidable) but
+      // without an org_members row the user has no access to any org data.
+      return NextResponse.redirect(`${origin}/login?error=not_invited`)
+    }
+
+    // Accept the invite: create org_members row
+    const { error: memberError } = await supabase
+      .from('org_members')
+      .upsert(
+        {
+          user_id: user.id,
+          organization_id: invite.org_id,
+          role: invite.role,
+        },
+        { onConflict: 'user_id,organization_id', ignoreDuplicates: true },
+      )
+
+    if (memberError) {
+      console.error('[auth/callback] org_members upsert error:', memberError.message)
+      return NextResponse.redirect(`${origin}/login?error=membership_failed`)
+    }
+
+    // Mark invite as accepted
+    await supabase
+      .from('org_invites')
+      .update({ accepted_at: new Date().toISOString() })
+      .eq('id', invite.id)
+
+    resolvedOrgId = invite.org_id
   }
-
-  if (!invite) {
-    // No pending invite — block access
-    // Note: auth.users row was already created by Supabase OAuth. We cannot
-    // prevent that. But we do NOT create an org_members row, so the user
-    // has no access to any org's data.
-    return NextResponse.redirect(`${origin}/login?error=not_invited`)
-  }
-
-  // Accept the invite: create org_members row
-  const { error: memberError } = await supabase
-    .from('org_members')
-    .upsert(
-      {
-        user_id: user.id,
-        organization_id: invite.org_id,
-        role: invite.role,
-      },
-      { onConflict: 'user_id,organization_id', ignoreDuplicates: true }
-    )
-
-  if (memberError) {
-    console.error('[auth/callback] org_members upsert error:', memberError.message)
-    return NextResponse.redirect(`${origin}/login?error=membership_failed`)
-  }
-
-  // Mark invite as accepted
-  await supabase
-    .from('org_invites')
-    .update({ accepted_at: new Date().toISOString() })
-    .eq('id', invite.id)
 
   // Fetch org name for the cookie
   const { data: org } = await supabase
     .from('organizations')
     .select('id, name')
-    .eq('id', invite.org_id)
+    .eq('id', resolvedOrgId)
     .single()
 
   // Build redirect response and set active org cookie
