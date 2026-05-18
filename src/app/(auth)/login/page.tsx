@@ -56,12 +56,29 @@ export default function LoginPage() {
 
   async function handleGoogleSignIn() {
     const supabase = createClient()
-    await supabase.auth.signInWithOAuth({
+    // Use window.location.origin so the redirect always matches the host the
+    // user is actually on (production, preview, or localhost) without
+    // depending on NEXT_PUBLIC_SITE_URL being set in every environment.
+    // If NEXT_PUBLIC_SITE_URL is undefined, the template literal would
+    // produce the literal string "undefined/auth/callback", which Supabase
+    // rejects and silently falls back to its configured Site URL — bypassing
+    // our /auth/callback handler entirely.
+    const origin =
+      typeof window !== 'undefined'
+        ? window.location.origin
+        : process.env.NEXT_PUBLIC_SITE_URL ?? ''
+    const redirectTo = `${origin}/auth/callback`
+    console.log('[auth/login:google] redirectTo=', redirectTo)
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+        redirectTo,
       },
     })
+    if (error) {
+      console.error('[auth/login:google] signInWithOAuth error:', error.message)
+      setAuthError(mapSupabaseError(error.message))
+    }
   }
 
   async function onSubmit(values: LoginFormValues) {
