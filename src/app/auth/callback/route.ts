@@ -8,7 +8,10 @@ export async function GET(request: Request) {
   const code = searchParams.get('code')
   const next = searchParams.get('next') ?? '/'
 
+  console.log('[auth/callback:start] origin=', origin, 'has_code=', Boolean(code), 'next=', next)
+
   if (!code) {
+    console.warn('[auth/callback:missing-code]')
     return NextResponse.redirect(`${origin}/login?error=missing_code`)
   }
 
@@ -17,16 +20,19 @@ export async function GET(request: Request) {
   const { data: sessionData, error: sessionError } = await supabase.auth.exchangeCodeForSession(code)
 
   if (sessionError || !sessionData.user) {
-    console.error('[auth/callback] exchangeCodeForSession error:', sessionError?.message)
+    console.error('[auth/callback:exchange-failed]', sessionError?.message)
     return NextResponse.redirect(`${origin}/login?error=auth_failed`)
   }
 
   const user = sessionData.user
+  console.log('[auth/callback:code-exchanged] user_id=', user.id, 'email=', user.email)
+
   const rawEmail = user.email ?? ''
   // Normalize email: lowercase + trim to match idx_org_invites_email
   const normalizedEmail = rawEmail.toLowerCase().trim()
 
   if (!normalizedEmail) {
+    console.warn('[auth/callback:no-email] user_id=', user.id)
     return NextResponse.redirect(`${origin}/login?error=no_email`)
   }
 
@@ -34,17 +40,26 @@ export async function GET(request: Request) {
   //    accept the OAuth login without requiring an invite. Existing admins
   //    (created before the invite system) and members previously added directly
   //    in the DB must be able to sign in with Google.
-  const { data: existingMembership } = await supabase
+  const { data: existingMembership, error: membershipError } = await supabase
     .from('org_members')
     .select('organization_id')
     .eq('user_id', user.id)
     .limit(1)
     .maybeSingle()
 
+  if (membershipError) {
+    console.error('[auth/callback:membership-lookup-failed]', membershipError.message)
+  }
+
   let resolvedOrgId: string | null = existingMembership?.organization_id ?? null
+
+  if (resolvedOrgId) {
+    console.log('[auth/callback:existing-member-found] org_id=', resolvedOrgId)
+  }
 
   // 2) Invite path: only run if the user has no existing membership.
   if (!resolvedOrgId) {
+    console.log('[auth/callback:invite-lookup] email=', normalizedEmail)
     const { data: invite, error: inviteError } = await supabase
       .from('org_invites')
       .select('id, org_id, role, accepted_at')
@@ -54,16 +69,19 @@ export async function GET(request: Request) {
       .maybeSingle()
 
     if (inviteError) {
-      console.error('[auth/callback] invite lookup error:', inviteError.message)
+      console.error('[auth/callback:invite-lookup-failed]', inviteError.message)
       return NextResponse.redirect(`${origin}/login?error=invite_lookup_failed`)
     }
 
     if (!invite) {
+      console.warn('[auth/callback:no-invite] email=', normalizedEmail)
       // No existing membership AND no pending invite — block access.
       // The auth.users row was created by Supabase OAuth (unavoidable) but
       // without an org_members row the user has no access to any org data.
       return NextResponse.redirect(`${origin}/login?error=not_invited`)
     }
+
+    console.log('[auth/callback:invite-found] invite_id=', invite.id, 'org_id=', invite.org_id)
 
     // Accept the invite: create org_members row
     const { error: memberError } = await supabase
@@ -78,7 +96,7 @@ export async function GET(request: Request) {
       )
 
     if (memberError) {
-      console.error('[auth/callback] org_members upsert error:', memberError.message)
+      console.error('[auth/callback:member-upsert-failed]', memberError.message)
       return NextResponse.redirect(`${origin}/login?error=membership_failed`)
     }
 
@@ -100,6 +118,7 @@ export async function GET(request: Request) {
 
   // Build redirect response and set active org cookie
   const redirectUrl = next.startsWith('/') ? `${origin}${next}` : origin
+  console.log('[auth/callback:redirect-to]', redirectUrl, 'org_id=', resolvedOrgId)
   const response = NextResponse.redirect(redirectUrl)
 
   if (org) {
