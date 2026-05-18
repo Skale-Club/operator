@@ -22,16 +22,24 @@ import { createClient, getUser } from '@/lib/supabase/server'
 import {
   accountSchema,
   accountListFiltersSchema,
+  mergeAccountsSchema,
+  linkContactToAccountSchema,
+  createAccountFromContactSchema,
   normaliseAccountInput,
   okResult,
   errResult,
   type ActionResult,
   type AccountInput,
+  type AccountInsert,
   type AccountListFilters,
   type AccountRow,
   type AccountListResult,
   type AccountWithCounts,
   type AccountReferenceCounts,
+  type MergeAccountsInput,
+  type LinkContactToAccountInput,
+  type CreateAccountFromContactInput,
+  type MergeAccountsResult,
 } from '@/lib/accounts'
 
 // ─── List ────────────────────────────────────────────────────────────────────
@@ -268,4 +276,246 @@ export async function deleteAccount(
 
   revalidatePath('/accounts')
   return okResult({ deleted: id })
+}
+
+// ─── Merge (ACC-16) ──────────────────────────────────────────────────────────
+//
+// LOCKED design (phase brief §13): three sequential Supabase calls.
+//   1. UPDATE contacts SET account_id = primaryId WHERE account_id IN (secondaryIds)
+//   2. UPDATE opportunities SET account_id = primaryId WHERE account_id IN (secondaryIds)
+//   3. DELETE FROM accounts WHERE id IN (secondaryIds)
+//
+// NON-ATOMIC: if a network blip occurs between calls, the DB can land in a
+// partial state. The brief accepts this trade-off for v1 ("if sequential,
+// document the non-atomic risk"). Recovery is manual: re-run mergeAccounts
+// with the same arguments — every step is idempotent, so a partial state
+// converges to a clean merge on retry. A future Postgres RPC can wrap these
+// three statements in BEGIN/COMMIT post-v2.4.
+//
+// Why this works against the CHECK constraint opp_has_contact_or_account:
+// Step 2 rewrites account_id from secondary→primary (never nulls it), so the
+// CHECK is never violated. Step 3's ON DELETE SET NULL is a no-op because
+// step 1 and step 2 already moved every referencing row.
+
+export async function mergeAccounts(
+  input: MergeAccountsInput,
+): Promise<ActionResult<MergeAccountsResult>> {
+  const user = await getUser()
+  if (!user) return errResult('not_authenticated')
+
+  const parsed = mergeAccountsSchema.safeParse(input)
+  if (!parsed.success) {
+    return errResult('invalid_input', parsed.error.issues)
+  }
+  const { primaryId, secondaryIds } = parsed.data
+
+  const supabase = await createClient()
+
+  // Sanity: confirm primary exists and is visible under RLS. If it's not,
+  // every downstream UPDATE/DELETE silently no-ops because RLS filters them out.
+  const { data: primary, error: pErr } = await supabase
+    .from('accounts')
+    .select('id')
+    .eq('id', primaryId)
+    .maybeSingle()
+  if (pErr) return errResult(pErr.message, pErr)
+  if (!primary) return errResult('primary_not_found')
+
+  // Step 1 — move contacts.
+  const { count: movedContacts, error: c1 } = await supabase
+    .from('contacts')
+    .update({ account_id: primaryId }, { count: 'exact' })
+    .in('account_id', secondaryIds)
+  if (c1) return errResult(c1.message, c1)
+
+  // Step 2 — move opportunities.
+  const { count: movedOpps, error: c2 } = await supabase
+    .from('opportunities')
+    .update({ account_id: primaryId }, { count: 'exact' })
+    .in('account_id', secondaryIds)
+  if (c2) {
+    // Partial-state warning: contacts moved, opportunities did NOT.
+    // Caller can retry mergeAccounts with the same input — step 1 is
+    // idempotent (those contacts are already on primaryId).
+    return errResult(c2.message, {
+      ...c2,
+      partial_state: { moved_contacts: movedContacts ?? 0 },
+    })
+  }
+
+  // Step 3 — delete secondaries.
+  const { count: deletedAccts, error: c3 } = await supabase
+    .from('accounts')
+    .delete({ count: 'exact' })
+    .in('id', secondaryIds)
+  if (c3) {
+    // Partial-state warning: both FK updates committed, delete failed.
+    return errResult(c3.message, {
+      ...c3,
+      partial_state: {
+        moved_contacts: movedContacts ?? 0,
+        moved_opportunities: movedOpps ?? 0,
+      },
+    })
+  }
+
+  revalidatePath('/accounts')
+  revalidatePath(`/accounts/${primaryId}`)
+  for (const sid of secondaryIds) revalidatePath(`/accounts/${sid}`)
+
+  return okResult<MergeAccountsResult>({
+    moved_contacts: movedContacts ?? 0,
+    moved_opportunities: movedOpps ?? 0,
+    deleted_accounts: deletedAccts ?? 0,
+  })
+}
+
+// ─── Contact ↔ Account linking helpers (scaffolding for Phases 66/67) ────────
+
+export async function linkContactToAccount(
+  input: LinkContactToAccountInput,
+): Promise<ActionResult<{ contact_id: string; account_id: string }>> {
+  const user = await getUser()
+  if (!user) return errResult('not_authenticated')
+
+  const parsed = linkContactToAccountSchema.safeParse(input)
+  if (!parsed.success) {
+    return errResult('invalid_input', parsed.error.issues)
+  }
+  const { contactId, accountId } = parsed.data
+
+  const supabase = await createClient()
+
+  // RLS scopes the UPDATE; cross-org link attempts no-op silently.
+  const { data, error } = await supabase
+    .from('contacts')
+    .update({ account_id: accountId })
+    .eq('id', contactId)
+    .select('id, account_id')
+    .single()
+
+  if (error) return errResult(error.message, error)
+  if (!data) return errResult('contact_not_found')
+
+  revalidatePath('/contacts')
+  revalidatePath(`/contacts/${contactId}`)
+  revalidatePath(`/accounts/${accountId}`)
+
+  return okResult({ contact_id: data.id, account_id: accountId })
+}
+
+/**
+ * Promotes a contact's legacy `company` free-text into a real account, links
+ * the contact, and returns the account row. Idempotent: if an account whose
+ * `lower(name) = lower(trim(company))` already exists for this org, link to
+ * that one instead of creating a duplicate.
+ *
+ * ILIKE escape: company names may contain `%` or `_`, both of which are
+ * wildcards in Postgres ILIKE. We escape them with `\\` before the lookup so
+ * a name like `50% Off Holdings` or `Acme_Co` matches exactly instead of
+ * over-matching. This mirrors the canonical escape pattern in `getAccounts`
+ * (Plan 65-02): `trimmedName.replace(/[%_]/g, '\\$&')`.
+ *
+ * Index usage: we filter `org_id` explicitly so the
+ * idx_accounts_org_name (org_id, lower(name)) composite index is used by the
+ * planner (RLS-only scoping forces a Seq Scan + filter on small orgs but
+ * tanks on large ones — the explicit eq keeps both planners happy).
+ *
+ * Does NOT clear `contacts.company` — phase brief §17 leaves cleanup of the
+ * legacy column to a future milestone (one-milestone revertibility window
+ * per ACC-14).
+ */
+export async function createAccountFromContact(
+  input: CreateAccountFromContactInput,
+): Promise<ActionResult<AccountRow>> {
+  const user = await getUser()
+  if (!user) return errResult('not_authenticated')
+
+  const parsed = createAccountFromContactSchema.safeParse(input)
+  if (!parsed.success) {
+    return errResult('invalid_input', parsed.error.issues)
+  }
+  const { contactId } = parsed.data
+
+  const supabase = await createClient()
+
+  // 1. Read the contact and its legacy company string.
+  const { data: contact, error: cErr } = await supabase
+    .from('contacts')
+    .select('id, company, account_id')
+    .eq('id', contactId)
+    .maybeSingle()
+  if (cErr) return errResult(cErr.message, cErr)
+  if (!contact) return errResult('contact_not_found')
+
+  const trimmedName = (contact.company ?? '').trim()
+  if (!trimmedName) return errResult('contact_has_no_company')
+
+  // 2. Resolve org_id explicitly for the INSERT (NOT NULL column) AND for the
+  //    indexed lookup below.
+  const { data: orgIdData } = await supabase.rpc('get_current_org_id')
+  if (!orgIdData) return errResult('no_organization')
+
+  // 3. Idempotent lookup: does an account with this name already exist?
+  //    Escape %/_ to prevent ilike wildcard over-match (canonical pattern,
+  //    same as getAccounts in Plan 65-02). The idx_accounts_org_name
+  //    (org_id, lower(name)) index covers (org_id eq + lower(name) ilike).
+  const escapedName = trimmedName.replace(/[%_]/g, '\\$&')
+  const { data: existingMatches, error: lookupErr } = await supabase
+    .from('accounts')
+    .select('*')
+    .eq('org_id', orgIdData)
+    .ilike('name', escapedName)
+  if (lookupErr) return errResult(lookupErr.message, lookupErr)
+
+  // ilike with escaped %/_ now matches the WHOLE string case-insensitively
+  // (no wildcards left after escaping). Multiple results would be a data
+  // anomaly (the data-migration block in 064_accounts.sql dedups by lower(name));
+  // take the first deterministically by id as a defensive tiebreaker.
+  let account: AccountRow | null = null
+  if (existingMatches && existingMatches.length > 0) {
+    // Defensive in-JS exact equality check — belt-and-suspenders against
+    // collation surprises in Postgres ilike for unusual unicode (the index
+    // is on lower(name) with default collation; JS toLowerCase is locale-
+    // insensitive). If any candidate matches case-insensitively in JS, pick
+    // the lexicographically smallest id for determinism.
+    const exact = existingMatches.filter(
+      (a) => (a.name ?? '').trim().toLowerCase() === trimmedName.toLowerCase(),
+    )
+    if (exact.length > 0) {
+      account = exact.sort((a, b) => (a.id < b.id ? -1 : 1))[0] as AccountRow
+    }
+  }
+
+  // 4. Create new account if no match.
+  if (!account) {
+    const insertPayload: AccountInsert = {
+      org_id: orgIdData,
+      name: trimmedName,
+      source: 'auto_from_contact_company',
+      created_by: user.id,
+    }
+    const { data: created, error: insErr } = await supabase
+      .from('accounts')
+      .insert(insertPayload)
+      .select('*')
+      .single()
+    if (insErr) return errResult(insErr.message, insErr)
+    if (!created) return errResult('insert_returned_no_row')
+    account = created as AccountRow
+  }
+
+  // 5. Link the contact to the account.
+  const { error: linkErr } = await supabase
+    .from('contacts')
+    .update({ account_id: account.id })
+    .eq('id', contactId)
+  if (linkErr) return errResult(linkErr.message, linkErr)
+
+  revalidatePath('/contacts')
+  revalidatePath(`/contacts/${contactId}`)
+  revalidatePath('/accounts')
+  revalidatePath(`/accounts/${account.id}`)
+
+  return okResult<AccountRow>(account)
 }
