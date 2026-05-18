@@ -181,7 +181,10 @@ Accounts (SEED-016) → Custom Fields (SEED-017) → Import Pipeline (SEED-018).
   3. `contact_imports` is published on Supabase Realtime so subscribers receive `postgres_changes` events on every status transition
   4. A scheduled cleanup task deletes `contact_imports` rows older than 30 days together with their Storage objects
   5. `ContactImportStorage` and the worker entry point are defined as interfaces (not direct supabase-js / Edge Function calls in business code) so the v1 implementations can later be swapped without touching callers
-**Plans**: TBD
+**Plans**: 3 plans
+- [ ] 73-01-PLAN.md — Migration `066_contact_imports.sql`: ENUMs, tables, indexes, RLS, Realtime publication, pg_cron cleanup cron, Storage bucket notes; applied via `npx supabase db push`
+- [ ] 73-02-PLAN.md — Update `src/types/database.ts` with import type literals + table types; create `src/lib/import/` interfaces and Supabase concrete stubs (ContactImportStorage, ImportWorkerEntry)
+- [ ] 73-03-PLAN.md — Add `tests/import-schema.test.ts`: RLS isolation, progress_percent math, Realtime publication, pg_cron job existence, CASCADE deletion
 
 ### Phase 74: IMPORT-WIZARD-UI
 **Goal**: A user can upload a large CSV directly to Storage with real progress, have it parsed in the background, map columns (including to custom fields) with heuristic suggestions, configure dedup behavior, and see a dry-run preview before committing.
@@ -229,7 +232,7 @@ Accounts (SEED-016) → Custom Fields (SEED-017) → Import Pipeline (SEED-018).
 | 70. CUSTOMFIELDS-SETTINGS-UI | 0/0 | Not started | — |
 | 71. CUSTOMFIELDS-RENDERER-INTEGRATION | 0/0 | Not started | — |
 | 72. CUSTOMFIELDS-LIST-FILTERS-IO | 0/0 | Not started | — |
-| 73. IMPORT-SCHEMA-WORKER | 0/0 | Not started | — |
+| 73. IMPORT-SCHEMA-WORKER | 0/3 | In progress | — |
 | 74. IMPORT-WIZARD-UI | 0/0 | Not started | — |
 | 75. IMPORT-HISTORY-RETRY-TESTS | 0/0 | Not started | — |
 
