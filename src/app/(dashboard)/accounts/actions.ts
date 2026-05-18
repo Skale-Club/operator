@@ -26,6 +26,7 @@ import {
   linkContactToAccountSchema,
   createAccountFromContactSchema,
   normaliseAccountInput,
+  normaliseDomain,
   okResult,
   errResult,
   type ActionResult,
@@ -36,11 +37,19 @@ import {
   type AccountListResult,
   type AccountWithCounts,
   type AccountReferenceCounts,
+  type AccountImportSummary,
+  type AccountCsvPreview,
   type MergeAccountsInput,
   type LinkContactToAccountInput,
   type CreateAccountFromContactInput,
   type MergeAccountsResult,
 } from '@/lib/accounts'
+import {
+  parseCsv,
+  suggestAccountColumnMapping,
+  ACCOUNT_CSV_FIELDS,
+  type AccountCsvField,
+} from '@/lib/accounts/csv'
 
 // ─── List ────────────────────────────────────────────────────────────────────
 
@@ -518,4 +527,196 @@ export async function createAccountFromContact(
   revalidatePath(`/accounts/${account.id}`)
 
   return okResult<AccountRow>(account)
+}
+
+// ─── CSV import (ACC-17) ─────────────────────────────────────────────────────
+//
+// AccountCsvPreview is imported from @/lib/accounts (declared in
+// src/lib/accounts/types.ts). 'use server' files should only export async
+// functions; non-async exports (interfaces, helpers) live in pure-types
+// modules to keep the server-action boundary clean.
+
+const MAX_CSV_BYTES = 5 * 1024 * 1024 // 5MB — keeps the v1 action body small; the
+// production import pipeline (Phase 75) handles up to 50MB via direct-to-Storage.
+
+export async function previewAccountsCsv(
+  csvText: string,
+): Promise<ActionResult<AccountCsvPreview>> {
+  const user = await getUser()
+  if (!user) return errResult('not_authenticated')
+  if (!csvText || csvText.length > MAX_CSV_BYTES) {
+    return errResult('csv_too_large_or_empty', { maxBytes: MAX_CSV_BYTES })
+  }
+  const parsed = parseCsv(csvText)
+  if (!parsed.headers.length) {
+    return errResult('no_columns_detected')
+  }
+  return okResult<AccountCsvPreview>({
+    headers: parsed.headers,
+    rows: parsed.rows.slice(0, 5),
+    suggestedMapping: suggestAccountColumnMapping(parsed.headers),
+    totalRows: parsed.rows.length,
+  })
+}
+
+/**
+ * Bulk-imports accounts from a CSV string. LOCKED v1 dedup (brief §14):
+ *   For each parsed row, if (org_id, lower(name)) OR (org_id, normalised
+ *   domain) matches an existing account, SKIP. Do NOT update — that's
+ *   Phase 75's `update_existing` strategy.
+ *
+ * App-layer dedup (NOT ON CONFLICT) because migration 064 created only
+ * non-unique indexes on (org_id, lower(name)) and (org_id, domain), not
+ * unique constraints. We SELECT existing rows once, build Sets, and skip
+ * matches inline.
+ *
+ * Returns inserted/skipped counts plus per-row errors (max 50 reported).
+ */
+export async function importAccountsCsv(
+  csvText: string,
+  mapping: Record<string, AccountCsvField | null>,
+): Promise<ActionResult<AccountImportSummary>> {
+  const user = await getUser()
+  if (!user) return errResult('not_authenticated')
+  if (!csvText) return errResult('csv_empty')
+  if (csvText.length > MAX_CSV_BYTES) {
+    return errResult('csv_too_large', { maxBytes: MAX_CSV_BYTES })
+  }
+
+  const parsed = parseCsv(csvText)
+  if (!parsed.headers.length) return errResult('no_columns_detected')
+
+  // Build field → column index lookup.
+  const fieldToIdx: Partial<Record<AccountCsvField, number>> = {}
+  for (const [header, field] of Object.entries(mapping)) {
+    if (!field || !ACCOUNT_CSV_FIELDS.includes(field)) continue
+    const idx = parsed.headers.indexOf(header)
+    if (idx >= 0) fieldToIdx[field] = idx
+  }
+
+  if (fieldToIdx.name === undefined) {
+    return errResult('name_column_required')
+  }
+
+  const supabase = await createClient()
+  const { data: orgIdData } = await supabase.rpc('get_current_org_id')
+  if (!orgIdData) return errResult('no_organization')
+
+  // Fetch existing accounts for dedup — single round-trip. Scales linearly
+  // with org account count; acceptable for v1 (the brief explicitly accepts
+  // this scaling profile; Phase 75 introduces the streaming pipeline).
+  const { data: existing, error: exErr } = await supabase
+    .from('accounts')
+    .select('id, name, domain')
+  if (exErr) return errResult(exErr.message, exErr)
+
+  const existingNameKeys = new Set(
+    (existing ?? [])
+      .map((r) => (r.name ?? '').trim().toLowerCase())
+      .filter((s) => s.length > 0),
+  )
+  const existingDomainKeys = new Set(
+    (existing ?? [])
+      .map((r) => normaliseDomain(r.domain))
+      .filter((d): d is string => Boolean(d)),
+  )
+
+  const summary: AccountImportSummary = {
+    inserted: 0,
+    skipped: 0,
+    errors: [],
+  }
+
+  const seenInBatchNames = new Set<string>()
+  const seenInBatchDomains = new Set<string>()
+  const toInsert: AccountInsert[] = []
+
+  const get = (row: string[], field: AccountCsvField): string | null => {
+    const idx = fieldToIdx[field]
+    if (idx === undefined) return null
+    const v = (row[idx] ?? '').trim()
+    return v || null
+  }
+
+  for (let i = 0; i < parsed.rows.length; i++) {
+    const row = parsed.rows[i]
+    const name = get(row, 'name')
+    if (!name) {
+      summary.skipped++
+      summary.errors.push({
+        row: i + 2, // +1 for header, +1 for human 1-indexed
+        field: 'name',
+        message: 'name is required',
+      })
+      continue
+    }
+
+    const nameKey = name.toLowerCase()
+    const domain = normaliseDomain(get(row, 'domain'))
+    const tagsRaw = get(row, 'tags')
+    const tags = tagsRaw
+      ? tagsRaw
+          .split(/[;,|]/)
+          .map((t) => t.trim())
+          .filter(Boolean)
+          .slice(0, 50)
+      : []
+
+    // Dedup check: existing in DB, or already accepted in this batch.
+    if (existingNameKeys.has(nameKey) || seenInBatchNames.has(nameKey)) {
+      summary.skipped++
+      continue
+    }
+    if (domain && (existingDomainKeys.has(domain) || seenInBatchDomains.has(domain))) {
+      summary.skipped++
+      continue
+    }
+
+    seenInBatchNames.add(nameKey)
+    if (domain) seenInBatchDomains.add(domain)
+
+    toInsert.push({
+      org_id: orgIdData,
+      name,
+      domain,
+      website: get(row, 'website'),
+      industry: get(row, 'industry'),
+      size: get(row, 'size'),
+      phone: get(row, 'phone'),
+      address: get(row, 'address'),
+      notes: get(row, 'notes'),
+      tags,
+      // custom_fields stays default '{}' — CSV import never writes structured CFs in v1
+      source: 'csv_import',
+      created_by: user.id,
+    })
+  }
+
+  // Bulk insert in chunks of 500 to keep request bodies reasonable.
+  const CHUNK = 500
+  for (let i = 0; i < toInsert.length; i += CHUNK) {
+    const chunk = toInsert.slice(i, i + CHUNK)
+    const { data, error } = await supabase
+      .from('accounts')
+      .insert(chunk)
+      .select('id')
+    if (error) {
+      // Chunk-level failure: report once, count every row in the chunk as error.
+      summary.errors.push({
+        row: -1,
+        message: `chunk insert failed: ${error.message}`,
+      })
+      // Don't bail — try the remaining chunks; partial imports are accepted.
+      continue
+    }
+    summary.inserted += data?.length ?? 0
+  }
+
+  // Cap reported errors at 50 to keep response payload small.
+  if (summary.errors.length > 50) {
+    summary.errors = summary.errors.slice(0, 50)
+  }
+
+  revalidatePath('/accounts')
+  return okResult<AccountImportSummary>(summary)
 }

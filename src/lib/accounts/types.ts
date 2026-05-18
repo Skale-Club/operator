@@ -56,6 +56,16 @@ export interface AccountReferenceCounts {
   opportunities: number
 }
 
-// NOTE: AccountCsvPreview interface ships in Plan 65-04 Task 1 alongside
-// src/lib/accounts/csv.ts (its AccountCsvField dependency). It MUST live
-// here (NOT inline in actions.ts) — Plan 65-04 will append it.
+import type { AccountCsvField } from './csv'
+
+/**
+ * Returned by previewAccountsCsv. Lives here (NOT inline in the 'use server'
+ * actions.ts file) so the server-action module only exports async functions —
+ * non-async exports from 'use server' files can be fragile in Next.js.
+ */
+export interface AccountCsvPreview {
+  headers: string[]
+  rows: string[][]
+  suggestedMapping: Record<string, AccountCsvField | null>
+  totalRows: number
+}
