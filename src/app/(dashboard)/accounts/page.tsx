@@ -3,6 +3,7 @@ import { Building2 } from 'lucide-react'
 
 import { getAccounts } from './actions'
 import { AccountsTable } from '@/components/accounts/accounts-table'
+import { AccountsFilters } from '@/components/accounts/accounts-filters'
 import { TableSkeleton } from '@/components/skeletons/table-skeleton'
 import { ACCOUNT_SIZES, ACCOUNT_SOURCES } from '@/lib/accounts'
 
@@ -51,6 +52,15 @@ export default async function AccountsPage({ searchParams }: AccountsPageProps) 
           </div>
         </div>
       </div>
+
+      <AccountsFilters
+        currentQuery={q}
+        currentIndustry={industry}
+        currentSize={size}
+        currentTag={tag}
+        currentAssignedTo={assignedTo}
+        currentSource={source}
+      />
 
       <Suspense fallback={<TableSkeleton rows={8} columns={8} />}>
         <AccountsBody
