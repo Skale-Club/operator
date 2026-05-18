@@ -21,7 +21,6 @@ import { PipelineOverview } from '@/components/dashboard/widgets/pipeline-overvi
 import { RecentCalls } from '@/components/dashboard/widgets/recent-calls'
 import { IntegrationsStatus } from '@/components/dashboard/widgets/integrations-status'
 import { ActivitySnapshot } from '@/components/dashboard/widgets/activity-snapshot'
-import { ActivityFeed } from '@/components/dashboard/widgets/activity-feed'
 import { WelcomeWizard } from '@/components/dashboard/welcome-wizard'
 
 export const dynamic = 'force-dynamic'
@@ -225,12 +224,6 @@ export default async function DashboardPage({
         </WidgetErrorBoundary>
       </div>
 
-      {/* Row 4 — activity feed */}
-      <WidgetErrorBoundary name="activity-feed" fallback={<WidgetError title="Activity" />}>
-        <Suspense fallback={<PanelSkeleton rows={8} />}>
-          <ActivityFeed />
-        </Suspense>
-      </WidgetErrorBoundary>
     </PageContainer>
   )
 }
