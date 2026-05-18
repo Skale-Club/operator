@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v2.4
 milestone_name: milestone
 status: In progress
-stopped_at: Completed 66-accounts-list-ui 66-01-PLAN.md
-last_updated: "2026-05-18T22:00:00.000Z"
+stopped_at: Completed 66-accounts-list-ui 66-03-PLAN.md
+last_updated: "2026-05-18T23:30:00.000Z"
 last_activity: 2026-05-18
 progress:
   total_phases: 12
   completed_phases: 5
   total_plans: 22
-  completed_plans: 18
+  completed_plans: 21
 ---
 
 # Xphere - State (v2.4 CRM Expansion)
@@ -18,8 +18,8 @@ progress:
 ## Current Position
 
 Phase: 66
-Plan: 01 complete
-Next: 66-02 (accounts-list-ui filters)
+Plan: 03 complete — Phase 66 DONE
+Next: 67-01 (accounts-detail-ui)
 Status: In progress
 Last activity: 2026-05-18
 
@@ -117,6 +117,8 @@ Three coupled features that together promote contacts/opportunities into a full 
 - [Phase 64-03]: Schema-layer Vitest suite `tests/accounts-schema.test.ts` (483 lines, 8 tests, all passing) — pg_catalog inspection for RLS/CHECK + anon-client cross-org reality check for RLS isolation. Normalized pg_get_constraintdef paren-output before substring match (Postgres reformats the predicate). All three Phase 64 success criteria (ACC-14, ACC-15, ACC-19) now have automated regression coverage.
 - [Phase 73-import-schema-worker]: pg_publication_tables queried via pg client (direct DB URL) — not via supabase-js REST which cannot access system catalogs
 - [Phase 66-01]: AccountsTable uses AccountRow (not AccountWithCounts) from list action — getAccounts returns plain rows without JOIN counts; count columns show '—' until action is extended
+- [Phase 66-03]: bulkAssignOwner uses .select('id') instead of { count, head } — Supabase JS v2 .update().in().select() does not accept second options argument; data.length is equivalent
+- [Phase 66-03]: ACC-07 complete — bulk assign/tag/delete wired with reference-blocking guard on delete
 
 ## Pending Todos
 
@@ -125,5 +127,5 @@ Three coupled features that together promote contacts/opportunities into a full 
 
 ## Session Continuity
 
-Last session: 2026-05-18T22:00:00.000Z
-Stopped at: Completed 66-accounts-list-ui 66-01-PLAN.md
+Last session: 2026-05-18T23:30:00.000Z
+Stopped at: Completed 66-accounts-list-ui 66-03-PLAN.md
