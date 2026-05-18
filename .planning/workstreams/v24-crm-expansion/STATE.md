@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v2.4
 milestone_name: milestone
-status: In progress
-stopped_at: Completed 66-accounts-list-ui 66-03-PLAN.md
-last_updated: "2026-05-18T23:30:00.000Z"
+status: executing
+stopped_at: Completed 66-04-PLAN.md (AccountCombobox + ContactForm wiring)
+last_updated: "2026-05-18T21:52:09.975Z"
 last_activity: 2026-05-18
 progress:
   total_phases: 12
@@ -119,6 +119,7 @@ Three coupled features that together promote contacts/opportunities into a full 
 - [Phase 66-01]: AccountsTable uses AccountRow (not AccountWithCounts) from list action — getAccounts returns plain rows without JOIN counts; count columns show '—' until action is extended
 - [Phase 66-03]: bulkAssignOwner uses .select('id') instead of { count, head } — Supabase JS v2 .update().in().select() does not accept second options argument; data.length is equivalent
 - [Phase 66-03]: ACC-07 complete — bulk assign/tag/delete wired with reference-blocking guard on delete
+- [Phase 66-accounts-list-ui]: account_id added to contactSchema alongside legacy company text for backward compat; AccountCombobox uses debounced getAccounts + inline quick-create
 
 ## Pending Todos
 
@@ -127,5 +128,5 @@ Three coupled features that together promote contacts/opportunities into a full 
 
 ## Session Continuity
 
-Last session: 2026-05-18T23:30:00.000Z
-Stopped at: Completed 66-accounts-list-ui 66-03-PLAN.md
+Last session: 2026-05-18T21:52:06.201Z
+Stopped at: Completed 66-04-PLAN.md (AccountCombobox + ContactForm wiring)

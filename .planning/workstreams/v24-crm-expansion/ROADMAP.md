@@ -91,8 +91,8 @@ Accounts (SEED-016) → Custom Fields (SEED-017) → Import Pipeline (SEED-018).
 **Plans**: 5 plans
 - [x] 66-01-PLAN.md — `/dashboard/accounts/page.tsx` server shell + `AccountsTable` client component (8-column table, pagination, checkbox select infrastructure) (completed 2026-05-18)
 - [x] 66-02-PLAN.md — `AccountsFilters` client component (debounced search + 5 filter dropdowns + active-filter chips) wired into page shell
-- [ ] 66-03-PLAN.md — `AccountsBulkActions` (assign owner, add tag, delete modals) + `bulkAssignOwner` / `bulkAddTag` server actions
-- [ ] 66-04-PLAN.md — `AccountCombobox` component + wire into contact create/edit form (replaces plain company Input with FK combobox + inline quick-create)
+- [x] 66-03-PLAN.md — `AccountsBulkActions` (assign owner, add tag, delete modals) + `bulkAssignOwner` / `bulkAddTag` server actions
+- [x] 66-04-PLAN.md — `AccountCombobox` component + wire into contact create/edit form (replaces plain company Input with FK combobox + inline quick-create)
 - [ ] 66-05-PLAN.md — `TopCompanies` dashboard widget + Vitest unit tests (combobox fallback, bulk-delete guard, relativeTime, sourceLabel)
 **UI hint**: yes
 
@@ -228,7 +228,7 @@ Accounts (SEED-016) → Custom Fields (SEED-017) → Import Pipeline (SEED-018).
 |-------|----------------|--------|-----------|
 | 64. ACCOUNTS-SCHEMA | 3/3 | Complete    | 2026-05-18 |
 | 65. ACCOUNTS-ACTIONS | 5/5 | Complete    | 2026-05-18 |
-| 66. ACCOUNTS-LIST-UI | 2/5 | In Progress|  |
+| 66. ACCOUNTS-LIST-UI | 4/5 | In Progress|  |
 | 67. ACCOUNTS-DETAIL-UI | 0/0 | Not started | — |
 | 68. CUSTOMFIELDS-SCHEMA | 3/3 | Complete    | 2026-05-18 |
 | 69. CUSTOMFIELDS-CORE-LIB | 3/3 | Complete    | 2026-05-18 |
