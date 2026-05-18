@@ -49,6 +49,23 @@ export type CustomFieldType =
 
 export type CustomFieldEntity = 'contact' | 'opportunity' | 'account'
 
+// v2.4 — contact_imports (Import Pipeline) — SEED-018
+export type ContactImportStatus =
+  | 'uploading'
+  | 'parsing'
+  | 'previewing'
+  | 'queued'
+  | 'processing'
+  | 'completed'
+  | 'partial'
+  | 'failed'
+  | 'cancelled'
+
+export type ContactImportDedupStrategy =
+  | 'skip_existing'
+  | 'update_existing'
+  | 'create_duplicate'
+
 // v2.1 â€” call system (SEED-007)
 export type CallRoutingMode = 'phone_forward' | 'sip' | 'browser'
 export type CallDirection = 'inbound' | 'outbound'
@@ -1606,6 +1623,147 @@ export interface Database {
             columns: ['created_by']
             isOneToOne: false
             referencedRelation: 'users'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      contact_imports: {
+        Row: {
+          id: string
+          org_id: string
+          storage_path: string
+          filename: string
+          size_bytes: number
+          mime_type: string | null
+          status: ContactImportStatus
+          status_message: string | null
+          error_summary: string | null
+          mapping: Record<string, string | null>
+          dedup_strategy: ContactImportDedupStrategy
+          dedup_keys: string[] | null
+          default_tags: string[] | null
+          default_source: string | null
+          default_assigned_to: string | null
+          total_rows: number
+          processed_rows: number
+          inserted_rows: number
+          updated_rows: number
+          skipped_rows: number
+          error_rows: number
+          progress_percent: number
+          started_at: string | null
+          finished_at: string | null
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          org_id: string
+          storage_path: string
+          filename: string
+          size_bytes: number
+          mime_type?: string | null
+          status?: ContactImportStatus
+          status_message?: string | null
+          error_summary?: string | null
+          mapping?: Record<string, string | null>
+          dedup_strategy?: ContactImportDedupStrategy
+          dedup_keys?: string[] | null
+          default_tags?: string[] | null
+          default_source?: string | null
+          default_assigned_to?: string | null
+          total_rows?: number
+          processed_rows?: number
+          inserted_rows?: number
+          updated_rows?: number
+          skipped_rows?: number
+          error_rows?: number
+          // progress_percent OMITTED — GENERATED ALWAYS, never writable
+          started_at?: string | null
+          finished_at?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          storage_path?: string
+          filename?: string
+          size_bytes?: number
+          mime_type?: string | null
+          status?: ContactImportStatus
+          status_message?: string | null
+          error_summary?: string | null
+          mapping?: Record<string, string | null>
+          dedup_strategy?: ContactImportDedupStrategy
+          dedup_keys?: string[] | null
+          default_tags?: string[] | null
+          default_source?: string | null
+          default_assigned_to?: string | null
+          total_rows?: number
+          processed_rows?: number
+          inserted_rows?: number
+          updated_rows?: number
+          skipped_rows?: number
+          error_rows?: number
+          // progress_percent OMITTED — GENERATED ALWAYS, never writable
+          started_at?: string | null
+          finished_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'contact_imports_org_id_fkey'
+            columns: ['org_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'contact_imports_default_assigned_to_fkey'
+            columns: ['default_assigned_to']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'contact_imports_created_by_fkey'
+            columns: ['created_by']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      contact_import_errors: {
+        Row: {
+          id: string
+          import_id: string
+          row_number: number
+          raw_row: Record<string, unknown>
+          field: string | null
+          message: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          import_id: string
+          row_number: number
+          raw_row: Record<string, unknown>
+          field?: string | null
+          message: string
+          created_at?: string
+        }
+        Update: {
+          // errors are append-only; only message is realistically updatable
+          message?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'contact_import_errors_import_id_fkey'
+            columns: ['import_id']
+            isOneToOne: false
+            referencedRelation: 'contact_imports'
             referencedColumns: ['id']
           }
         ]
