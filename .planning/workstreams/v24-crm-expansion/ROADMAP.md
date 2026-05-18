@@ -29,7 +29,7 @@ Accounts (SEED-016) → Custom Fields (SEED-017) → Import Pipeline (SEED-018).
 
 ## Phases
 
-- [ ] **Phase 64: ACCOUNTS-SCHEMA** — `accounts` table + FKs from contacts/opportunities + CHECK constraint + idempotent data migration from `contacts.company`
+- [x] **Phase 64: ACCOUNTS-SCHEMA** — `accounts` table + FKs from contacts/opportunities + CHECK constraint + idempotent data migration from `contacts.company` (completed 2026-05-18)
 - [ ] **Phase 65: ACCOUNTS-ACTIONS** — Server actions for account CRUD, merge, CSV import, and contact/opportunity wiring (no UI)
 - [ ] **Phase 66: ACCOUNTS-LIST-UI** — `/dashboard/accounts` list with filters/search/bulk actions, contact-form combobox, Top Companies dashboard widget
 - [ ] **Phase 67: ACCOUNTS-DETAIL-UI** — `/dashboard/accounts/[id]` with Contacts/Opportunities/Activities tabs, add-contact/add-opportunity flows, email-domain auto-suggest
@@ -58,7 +58,7 @@ Accounts (SEED-016) → Custom Fields (SEED-017) → Import Pipeline (SEED-018).
 **Plans**: 3 plans
 - [x] 64-01-PLAN.md — Migration `064_accounts.sql`: accounts table + indexes + RLS + FK columns on contacts/opportunities + CHECK constraint + idempotent data migration; apply via `npx supabase db push`
 - [x] 64-02-PLAN.md — Update `src/types/database.ts` with accounts table type, `account_id` on contacts/opportunities, and `AccountSource` literal union
-- [ ] 64-03-PLAN.md — Add `tests/accounts-schema.test.ts` with Vitest tests for RLS (schema + cross-org), CHECK constraint, and data-migration idempotency
+- [x] 64-03-PLAN.md — Add `tests/accounts-schema.test.ts` with Vitest tests for RLS (schema + cross-org), CHECK constraint, and data-migration idempotency
 
 ### Phase 65: ACCOUNTS-ACTIONS
 **Goal**: Server-side, an admin can create, edit, delete, merge, and CSV-import accounts, and existing contact/opportunity actions know how to read and write `account_id`.
@@ -207,7 +207,7 @@ Accounts (SEED-016) → Custom Fields (SEED-017) → Import Pipeline (SEED-018).
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 64. ACCOUNTS-SCHEMA | 2/3 | In Progress|  |
+| 64. ACCOUNTS-SCHEMA | 3/3 | Complete   | 2026-05-18 |
 | 65. ACCOUNTS-ACTIONS | 0/0 | Not started | — |
 | 66. ACCOUNTS-LIST-UI | 0/0 | Not started | — |
 | 67. ACCOUNTS-DETAIL-UI | 0/0 | Not started | — |
