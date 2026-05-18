@@ -151,7 +151,12 @@ Accounts (SEED-016) → Custom Fields (SEED-017) → Import Pipeline (SEED-018).
   3. Dragging a definition to a new position in the list immediately persists the new `position` and the new order is visible on reload
   4. Archiving a definition hides it from forms and lists but does not delete any stored values from the underlying `custom_fields jsonb`
   5. An admin can create groups, assign fields to a group, and reassign fields between groups
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 70-01-PLAN.md — Server actions (getDefinitions, createDefinition, updateDefinition, archiveDefinition, reorderDefinitions) + Zod schemas
+- [ ] 70-02-PLAN.md — Settings page shell + tabbed definition list with dnd-kit drag-to-reorder, groups, and archive button
+- [ ] 70-03-PLAN.md — Create/edit modal with per-type conditional form sections (options editor, validation fields, toggles)
+- [ ] 70-04-PLAN.md — Sidebar Custom Fields nav link + Vitest unit tests + final npm run build
 **UI hint**: yes
 
 ### Phase 71: CUSTOMFIELDS-RENDERER-INTEGRATION
@@ -236,7 +241,7 @@ Accounts (SEED-016) → Custom Fields (SEED-017) → Import Pipeline (SEED-018).
 | 67. ACCOUNTS-DETAIL-UI | 4/4 | Complete    | 2026-05-18 |
 | 68. CUSTOMFIELDS-SCHEMA | 3/3 | Complete    | 2026-05-18 |
 | 69. CUSTOMFIELDS-CORE-LIB | 3/3 | Complete    | 2026-05-18 |
-| 70. CUSTOMFIELDS-SETTINGS-UI | 0/0 | Not started | — |
+| 70. CUSTOMFIELDS-SETTINGS-UI | 0/4 | Not started | — |
 | 71. CUSTOMFIELDS-RENDERER-INTEGRATION | 0/0 | Not started | — |
 | 72. CUSTOMFIELDS-LIST-FILTERS-IO | 0/0 | Not started | — |
 | 73. IMPORT-SCHEMA-WORKER | 3/3 | Complete    | 2026-05-18 |
