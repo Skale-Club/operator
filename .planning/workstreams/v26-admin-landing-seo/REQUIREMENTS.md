@@ -1,0 +1,33 @@
+# Requirements: v2.6 Admin Panel + Landing Page + SEO
+
+**Milestone:** v2.6
+**Status:** In Progress
+
+---
+
+## Super Admin Panel (ADM)
+
+- **ADM-01:** Acesso restrito — somente email `skale.club@gmail.com` pode acessar `/admin/*`
+- **ADM-02:** Listagem de todas as organizações com métricas de uso
+- **ADM-03:** Detalhes por organização: membros, configurações, status
+- **ADM-04:** Ajuste de preferências e features por organização
+- **ADM-05:** Visual distinto do dashboard de cliente — contexto admin claro
+- **ADM-06:** Navegação e layout dedicados para o painel admin
+
+## Landing Page + Auth (LND)
+
+- **LND-01:** Landing page pública com hero, features e CTA
+- **LND-02:** Design moderno e sofisticado — qualidade Vercel/Linear
+- **LND-03:** Dark mode by default, totalmente responsiva
+- **LND-04:** Página de login com design premium
+- **LND-05:** Consistência visual entre landing e páginas de auth
+- **LND-06:** Performance otimizada — LCP < 2.5s
+
+## SEO (SEO)
+
+- **SEO-01:** Metadata dinâmica com Open Graph e Twitter Card em todas as páginas públicas
+- **SEO-02:** sitemap.xml dinâmico gerado via `src/app/sitemap.ts`
+- **SEO-03:** robots.txt via `src/app/robots.ts` bloqueando rotas privadas
+- **SEO-04:** JSON-LD structured data na landing page
+- **SEO-05:** Painel `/admin/seo` para gerenciar configurações de SEO
+- **SEO-06:** Configurações persistidas em Supabase com acesso restrito ao super admin
