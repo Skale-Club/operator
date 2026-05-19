@@ -10,7 +10,34 @@ import { fromZonedTime } from 'date-fns-tz'
 import { generateSlots } from '@/lib/scheduling/slots'
 import { fetchBusyTimes } from '@/lib/scheduling/google-calendar'
 import { rateLimit } from '@/lib/rate-limit'
+import {
+  sendBookingConfirmation,
+  sendBookingCancellation,
+} from '@/lib/scheduling/emails'
 import type { TimeSlot } from '@/lib/scheduling/slots'
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://xphere.skale.club'
+
+// Resolve a friendly host display string from auth.users. We don't have a
+// dedicated profile-name table for scheduling, so fall back to the email.
+// Returns 'your host' as a final fallback so the email body always reads ok.
+async function resolveHostName(userId: string): Promise<string> {
+  try {
+    const svc = createServiceRoleClient()
+    const { data } = await svc.auth.admin.getUserById(userId)
+    const user = data?.user
+    if (!user) return 'your host'
+    const meta = (user.user_metadata ?? {}) as Record<string, unknown>
+    const fullName =
+      (typeof meta.full_name === 'string' && meta.full_name) ||
+      (typeof meta.name === 'string' && meta.name) ||
+      null
+    if (fullName) return fullName
+    return user.email ?? 'your host'
+  } catch {
+    return 'your host'
+  }
+}
 
 // Extract the client IP from the incoming request headers. Vercel + most
 // reverse proxies populate x-forwarded-for (comma-separated). We take the
@@ -90,7 +117,60 @@ export async function cancelBooking(id: string): Promise<ActionResult<void>> {
 
   if (error) return { ok: false, error: error.message }
   revalidatePath('/scheduling/bookings')
+
+  // Fire-and-forget booker notification.
+  void sendCancellationEmailForBooking(id).catch(() => {})
+
   return { ok: true, data: undefined }
+}
+
+// Shared helper for cancellation paths. Looks up the booking + event type
+// + scheduling profile + host name, then queues the cancellation email.
+// Never throws — caller wraps with .catch already.
+async function sendCancellationEmailForBooking(bookingId: string): Promise<void> {
+  try {
+    const svc = createServiceRoleClient()
+
+    const { data: b } = await svc
+      .from('bookings')
+      .select('id, booker_name, booker_email, booker_timezone, start_at, event_type_id')
+      .eq('id', bookingId)
+      .maybeSingle()
+    if (!b) return
+
+    const { data: et } = await svc
+      .from('event_types')
+      .select('title, user_id, slug')
+      .eq('id', b.event_type_id)
+      .maybeSingle()
+    if (!et) return
+
+    const { data: profile } = await svc
+      .from('scheduling_profiles')
+      .select('slug')
+      .eq('user_id', et.user_id)
+      .maybeSingle()
+
+    const hostName = await resolveHostName(et.user_id)
+    const rebookUrl = profile?.slug
+      ? `${SITE_URL}/book/${profile.slug}/${et.slug}`
+      : `${SITE_URL}`
+
+    await sendBookingCancellation({
+      bookerEmail: b.booker_email,
+      bookerName: b.booker_name,
+      hostName,
+      eventTitle: et.title,
+      startAt: b.start_at,
+      timezone: b.booker_timezone,
+      rebookUrl,
+    })
+  } catch (err) {
+    console.warn(
+      '[scheduling/bookings] cancellation email pipeline failed:',
+      err instanceof Error ? err.message : err,
+    )
+  }
 }
 
 // ─── Public: get available slots for a date ───────────────────────────────────
@@ -326,6 +406,24 @@ export async function createBooking(
     // Non-fatal
   }
 
+  // Booker confirmation email (fire-and-forget, helper never throws).
+  // We pass an inline `void` so the action returns immediately; the email
+  // helper has its own try/catch that logs and swallows any failure.
+  void (async () => {
+    const hostName = await resolveHostName(et.user_id)
+    const cancelUrl = `${SITE_URL}/book/cancel/${booking.id}?token=${booking.cancel_token}`
+    await sendBookingConfirmation({
+      bookerEmail: parsed.data.booker_email,
+      bookerName: parsed.data.booker_name,
+      hostName,
+      eventTitle: et.title,
+      startAt: startAt.toISOString(),
+      endAt: endAt.toISOString(),
+      timezone: parsed.data.booker_timezone,
+      cancelUrl,
+    })
+  })().catch(() => {})
+
   return { ok: true, data: { id: booking.id, cancel_token: booking.cancel_token } }
 }
 
@@ -347,5 +445,9 @@ export async function cancelBookingByToken(
     .single()
 
   if (error || !data) return { ok: false, error: 'not_found_or_already_cancelled' }
+
+  // Fire-and-forget booker notification.
+  void sendCancellationEmailForBooking(bookingId).catch(() => {})
+
   return { ok: true, data: undefined }
 }
