@@ -2336,6 +2336,35 @@ export interface Database {
           }
         ]
       }
+      seo_config: {
+        Row: {
+          id: string
+          site_title: string
+          title_template: string
+          description: string
+          og_image_url: string | null
+          keywords: string[]
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          site_title?: string
+          title_template?: string
+          description?: string
+          og_image_url?: string | null
+          keywords?: string[]
+          updated_at?: string
+        }
+        Update: {
+          site_title?: string
+          title_template?: string
+          description?: string
+          og_image_url?: string | null
+          keywords?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       platform_settings: {
         Row: {
           key: string
