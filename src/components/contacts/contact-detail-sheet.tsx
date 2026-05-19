@@ -21,13 +21,14 @@ import { formatCurrency } from '@/lib/pipeline/format'
 import { TagBadge } from '@/components/tags/tag-badge'
 
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from '@/components/ui/sheet'
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { prefillDialPad } from '@/components/calls/dial-pad-context'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { ChannelBadge, type Channel } from '@/components/design-system/channel-badge'
@@ -106,8 +107,8 @@ export function ContactDetailSheet({ contactId, onOpenChange }: ContactDetailShe
   }
 
   return (
-    <Sheet open={Boolean(contactId)} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-[480px] flex flex-col overflow-hidden p-0">
+    <Dialog open={Boolean(contactId)} onOpenChange={onOpenChange}>
+      <DialogContent className="flex h-[min(780px,calc(100vh-2rem))] max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-[560px] flex-col overflow-hidden p-0 gap-0">
         {loading && !contact ? (
           <div className="p-6 space-y-3 animate-pulse">
             <div className="h-16 w-16 rounded-full bg-bg-tertiary" />
@@ -118,10 +119,10 @@ export function ContactDetailSheet({ contactId, onOpenChange }: ContactDetailShe
           <div className="p-6 text-[13px] text-text-secondary">Contact not found.</div>
         ) : editing ? (
           <div className="flex flex-col overflow-hidden h-full">
-            <SheetHeader className="border-b border-border-subtle px-6 py-4">
-              <SheetTitle>Edit contact</SheetTitle>
-              <SheetDescription>Update fields below.</SheetDescription>
-            </SheetHeader>
+            <DialogHeader className="border-b border-border-subtle px-6 py-4">
+              <DialogTitle>Edit contact</DialogTitle>
+              <DialogDescription>Update fields below.</DialogDescription>
+            </DialogHeader>
             <div className="flex-1 overflow-y-auto px-6 py-5">
               <ContactForm
                 defaultValues={{
@@ -158,9 +159,9 @@ export function ContactDetailSheet({ contactId, onOpenChange }: ContactDetailShe
                   </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">
-                  <SheetTitle className="text-[18px] truncate">
+                  <DialogTitle className="text-[18px] truncate">
                     {contact.name || 'Unnamed contact'}
-                  </SheetTitle>
+                  </DialogTitle>
                   {contact.company && (
                     <p className="mt-0.5 text-[12.5px] text-text-secondary truncate">
                       {contact.company}
@@ -210,8 +211,19 @@ export function ContactDetailSheet({ contactId, onOpenChange }: ContactDetailShe
 
               <div className="flex-1 overflow-y-auto px-6 py-5">
                 <TabsContent value="info" className="space-y-3 mt-0">
-                  <InfoRow icon={Phone} label="Phone" value={contact.phone} />
-                  <InfoRow icon={Mail} label="Email" value={contact.email} />
+                  <InfoRow
+                    icon={Phone}
+                    label="Phone"
+                    value={contact.phone}
+                    onClick={contact.phone ? () => prefillDialPad(contact.phone!) : undefined}
+                    title={contact.phone ? 'Open in dial-pad' : undefined}
+                  />
+                  <InfoRow
+                    icon={Mail}
+                    label="Email"
+                    value={contact.email}
+                    onClick={contact.email ? () => { window.location.href = `mailto:${contact.email}` } : undefined}
+                  />
                   <InfoRow icon={Building2} label="Company" value={contact.company} />
                   <InfoRow
                     icon={Calendar}
@@ -348,8 +360,8 @@ export function ContactDetailSheet({ contactId, onOpenChange }: ContactDetailShe
             </Tabs>
           </div>
         )}
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -357,24 +369,48 @@ function InfoRow({
   icon: Icon,
   label,
   value,
+  onClick,
+  title,
 }: {
   icon: React.ComponentType<{ className?: string }>
   label: string
   value: string | null
+  onClick?: () => void
+  title?: string
 }) {
-  return (
-    <div className="flex items-start gap-3">
+  const interactive = Boolean(onClick && value)
+  const Inner = (
+    <>
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] bg-bg-tertiary ring-1 ring-border-subtle text-text-tertiary">
         <Icon className="h-3.5 w-3.5" />
       </div>
       <div className="min-w-0 flex-1">
         <div className="text-[11px] uppercase tracking-wide text-text-tertiary">{label}</div>
-        <div className={cn('text-[13px]', value ? 'text-text-primary' : 'text-text-tertiary italic')}>
+        <div
+          className={cn(
+            'text-[13px]',
+            value ? 'text-text-primary' : 'text-text-tertiary italic',
+            interactive && 'group-hover:text-accent transition-colors',
+          )}
+        >
           {value || 'Not set'}
         </div>
       </div>
-    </div>
+    </>
   )
+  if (interactive) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        title={title}
+        className="group flex w-full items-start gap-3 text-left rounded-[8px] -mx-1 px-1 py-1 hover:bg-bg-tertiary/40 transition-colors cursor-pointer"
+      >
+        {Inner}
+      </button>
+    )
+  }
+  return <div className="flex items-start gap-3">{Inner}</div>
 }
 
 function EmptyTab({
