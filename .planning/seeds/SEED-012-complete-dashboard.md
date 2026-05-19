@@ -1,6 +1,7 @@
 ---
 id: SEED-012
-status: dormant
+status: shipped
+shipped_in: v2.1
 planted: 2026-05-17
 planted_during: post-v2.1 + SEED-011 chat redesign + 1621801304 incident recovery
 trigger_when: depois que o dashboard mínimo (commit cdcae7f) for confirmado estável; OU pedido explícito

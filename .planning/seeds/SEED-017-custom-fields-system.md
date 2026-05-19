@@ -1,6 +1,7 @@
 ---
 id: SEED-017
-status: dormant
+status: shipped
+shipped_in: v2.4
 planted: 2026-05-18
 planted_during: post-v2.1, before CRM Expansion milestone
 trigger_when: after SEED-016 (Accounts) — system covers 3 entities from day one

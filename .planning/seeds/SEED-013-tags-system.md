@@ -1,6 +1,7 @@
 ---
 id: SEED-013
-status: dormant
+status: shipped
+shipped_in: v2.1
 planted: 2026-05-17
 planted_during: post-v1.8 milestone
 trigger_when: pedido explícito ou quando a migração de contacts for considerada necessária

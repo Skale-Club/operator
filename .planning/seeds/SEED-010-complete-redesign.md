@@ -1,6 +1,7 @@
 ---
 id: SEED-010
-status: dormant
+status: shipped
+shipped_in: v2.1
 planted: 2026-05-17
 planted_during: post-v2.0 Multi-Bot Platform
 trigger_when: antes do milestone v2.1 (CRM + Omnichannel) para que tudo já saia com design final

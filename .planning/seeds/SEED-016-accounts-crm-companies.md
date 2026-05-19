@@ -1,6 +1,7 @@
 ---
 id: SEED-016
-status: dormant
+status: shipped
+shipped_in: v2.4
 planted: 2026-05-18
 planted_during: post-v2.1, before CRM Expansion milestone
 trigger_when: start of next CRM milestone (v2.3+); must precede SEED-017 (Custom Fields)

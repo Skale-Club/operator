@@ -1,6 +1,7 @@
 ---
 id: SEED-011
-status: dormant
+status: shipped
+shipped_in: v2.1
 planted: 2026-05-17
 planted_during: post-v2.1 (Operator CRM + Redesign shipped)
 trigger_when: usuário relata UX confusa no chat; OU antes do próximo milestone que toque inbox/atendimento; OU pedido explícito

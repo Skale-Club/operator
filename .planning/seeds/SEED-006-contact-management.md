@@ -1,6 +1,7 @@
 ---
 id: SEED-006
-status: dormant
+status: shipped
+shipped_in: v2.1
 planted: 2026-05-17
 planted_during: post-v2.0 Multi-Bot Platform
 trigger_when: início do milestone de CRM; OU antes de SEED-007 (Calls) e SEED-008 (Pipeline) pois ambos dependem de contacts
