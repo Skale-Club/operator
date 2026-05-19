@@ -3284,6 +3284,98 @@ export interface Database {
           }
         ]
       }
+      workflows: {
+        Row: {
+          id: string
+          org_id: string
+          name: string
+          slug: string
+          description: string | null
+          is_active: boolean
+          current_version_id: string | null
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          org_id: string
+          name: string
+          slug: string
+          description?: string | null
+          is_active?: boolean
+          current_version_id?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          org_id?: string
+          name?: string
+          slug?: string
+          description?: string | null
+          is_active?: boolean
+          current_version_id?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'workflows_org_id_fkey'
+            columns: ['org_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'workflows_current_version_id_fkey'
+            columns: ['current_version_id']
+            isOneToOne: false
+            referencedRelation: 'workflow_versions'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      workflow_versions: {
+        Row: {
+          id: string
+          workflow_id: string
+          version_number: number
+          definition: Record<string, unknown>
+          notes: string | null
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          workflow_id: string
+          version_number: number
+          definition?: Record<string, unknown>
+          notes?: string | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          workflow_id?: string
+          version_number?: number
+          definition?: Record<string, unknown>
+          notes?: string | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'workflow_versions_workflow_id_fkey'
+            columns: ['workflow_id']
+            isOneToOne: false
+            referencedRelation: 'workflows'
+            referencedColumns: ['id']
+          }
+        ]
+      }
     }
     Views: Record<string, never>
     Functions: {
