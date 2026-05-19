@@ -3,6 +3,7 @@ id: SEED-019
 status: dormant
 planted: 2026-05-19
 planted_during: post-v2.8 Scheduling Hardening
+research: .planning/research/SEED-019-visual-flow-builder-research.md
 trigger_when: explicit user request OR milestone planning with theme "automations 2.0", "no-code", "workflow builder", "flow editor", "AI agents that build automations"; OR first paying client asks for branching/conditional logic; OR competitor analysis shows ManyChat/n8n parity expected
 scope: Large
 priority: high
@@ -11,9 +12,9 @@ depends_on: [SEED-002 (multi-bot platform — agent runtime exists)]
 
 # SEED-019: Visual Automation Builder — AI-Native, Drag-and-Drop, Multi-Channel
 
-Build a **node-based visual workflow editor** for the existing action engine, where flows can be triggered by any runtime (Vapi voice, chat, agents, inbound webhooks, schedules, manual) and execute multi-step sequences with variable passing, conditional branching, and delays.
+Build a **node-based visual workflow editor** on top of the existing Action Engine. Flows can be triggered by any runtime (Vapi voice, chat widget, multi-channel agents, inbound webhooks, schedules, manual), execute multi-step sequences with variable passing, conditional branching, and time-based waits, and call any existing integration.
 
-The defining principle: **AI is the primary builder.** Drag-and-drop is the fallback for power users who want to fine-tune. Most users will say "create a flow that adds new contacts to a Google Sheet and sends them a welcome WhatsApp" and the AI builds the canvas. AI can also **read existing flows, explain them, edit them, and execute them on demand.**
+The defining principle: **AI is the primary builder.** Drag-and-drop is the fallback for power users who want to fine-tune. Most users will say *"create a flow that adds new contacts to a Google Sheet and sends them a welcome WhatsApp"* and the AI builds the canvas. AI can also **read existing flows, explain them, edit them, and execute them on demand.**
 
 Visually inspired by ManyChat / n8n / Zapier. Conceptually different: the LLM is a first-class collaborator, not a chat sidebar bolted onto a canvas.
 
@@ -22,27 +23,27 @@ Visually inspired by ManyChat / n8n / Zapier. Conceptually different: the LLM is
 ## Why This Matters
 
 ### 1. The current `/automations` page is single-shot, stateless
-Today's tool_configs map one LLM-callable name → one backend action. That's enough for "the AI assistant on a call needs to create a contact in GHL", but it can't express:
-- "When SMS arrives from a phone matching a Lost lead, create a task AND send a WhatsApp follow-up AND wait 24h AND if no reply, escalate to a human"
-- "Every Monday at 9am, query GHL for opportunities won last week, render a CSV, email to the operator"
-- "When a booking is created via /scheduling, check if the contact has a custom field 'plan=premium', if yes book a 60min slot, if no book 30min"
+Today's `tool_configs` map one LLM-callable name → one backend action. That's enough for *"the AI assistant on a call needs to create a contact in GHL"*, but it cannot express:
+- *"When SMS arrives from a phone matching a Lost lead, create a task AND send a WhatsApp follow-up AND wait 24h AND if no reply, escalate to a human."*
+- *"Every Monday at 9am, query GHL for opportunities won last week, render a CSV, email to the operator."*
+- *"When a booking is created via /scheduling, check if the contact has a custom field plan=premium, if yes book a 60min slot, if no book 30min."*
 
-The competition (ManyChat, n8n, Make, Zapier) sells flows specifically because business logic is **multi-step, conditional, and time-aware**. Xphere is at parity on integrations but a step behind on orchestration.
+Competitors (ManyChat, n8n, Make, Zapier) sell flows specifically because business logic is **multi-step, conditional, and time-aware**. Xphere is at parity on integrations but a step behind on orchestration.
 
 ### 2. AI-native is the differentiator
-n8n/Zapier require business users to drag nodes and wire them manually — which is why those tools are mostly used by developers. ManyChat is easier but locked to one channel.
+n8n / Zapier require business users to drag nodes and wire them manually — which is why those tools are mostly used by developers. ManyChat is easier but locked to one channel.
 
-Xphere already has the agent runtime, the integration library, and the multi-channel inbox. Adding **"tell the AI what you want and it builds the flow"** is the wedge: a non-technical operator can describe an automation in Portuguese, see it materialize on the canvas, tweak visually if needed, and ship. No competitor does this well today.
+Xphere already has the agent runtime, the integration library, and the multi-channel inbox. Adding **"tell the AI what you want and it builds the flow"** is the wedge: a non-technical operator can describe an automation in Portuguese, see it materialize on the canvas, tweak visually if needed, and ship. The research found **no turnkey OSS package** delivers this well today — Sim Studio comes closest but its AI Copilot calls back to a hosted endpoint. Building the AI-builder layer ourselves is the differentiation.
 
-### 3. The action engine is the substrate — flows are a layer on top
-We don't throw away tool_configs. A flow is a graph of nodes; each "action node" calls the existing `executeAction()` dispatcher. The engine, integrations, credential storage, logs — all reused. We add: flow schema, execution state machine, visual editor, trigger expansion, AI generator.
+### 3. The Action Engine is the substrate — flows are a layer on top
+We don't throw away `tool_configs`. A flow is a graph of nodes; each "action node" calls the existing `executeAction()` dispatcher. The engine, integrations, credential storage, and `action_logs` — all reused. We add: flow schema, execution state machine, visual editor, trigger expansion, AI generator.
 
-This means the surface area of new code is bounded — most of it is the canvas + state machine + AI prompting layer. The provider executors don't change.
+Code-surface impact is **bounded** — most new code is the canvas, the state machine, and the AI prompting layer. Provider executors don't change.
 
 ### 4. The 80/20 of flows is linear
-Looking at real ManyChat/n8n templates, 80% of flows are: trigger → 3-5 actions in sequence → end. Branching, loops, and delays are the 20% that matter for advanced cases. **Ship linear flows first, AI can build those cleanly, then add the harder primitives over 2-3 follow-up milestones.**
+Looking at real ManyChat/n8n templates, ~80% of flows are: trigger → 3-5 actions in sequence → end. Branching, loops, and delays are the 20% that matter for advanced cases. **Ship linear flows first**, where AI generation works cleanly, then add the harder primitives over follow-up milestones.
 
-### 5. Long-term, this becomes the agent's playbook
+### 5. Long-term, flows become the agent's playbook
 Once flows exist, an AI agent on a chat can call `executeFlow('lead_qualification', { contact_id })` instead of being told to manually invoke 5 different tools. The flow IS the playbook. The agent becomes a thin natural-language wrapper around well-tested flow definitions.
 
 ---
@@ -51,187 +52,285 @@ Once flows exist, an AI agent on a chat can call `executeFlow('lead_qualificatio
 
 **Primary triggers:**
 - Explicit user request for a workflow builder, visual editor, "automation 2.0", or n8n-style flows
-- Milestone planning with theme "no-code", "ai agents that build automations", "workflow editor"
-- First paying client asks for branching/conditional logic that tool_configs can't express
+- Milestone planning with theme "no-code", "AI agents that build automations", "workflow editor"
+- First paying client asks for branching/conditional logic that `tool_configs` can't express
 - Multi-step automation request that today requires custom code
 
 **Secondary triggers:**
 - Competitor analysis (sales team loses a deal because ManyChat has visual flows)
-- Operator pain point: "I have to ask Claude to chain 3 actions every time, I want this to be reusable"
+- Operator pain point: *"I have to ask Claude to chain 3 actions every time, I want this to be reusable"*
 - Need for scheduled automations beyond GHL reengagement (currently single-purpose cron)
 
 **Negative triggers (don't surface):**
 - Milestone focused on a single new channel or integration — flows reuse what's there, no urgency
-- When the customer base hasn't yet validated tool_configs as a need — premature investment
+- When the customer base hasn't yet validated `tool_configs` as a need — premature investment
 
 ---
 
-## Locked Decisions (capture before /gsd:discuss-phase)
+## Recommended Stack (from research)
+
+Full research with sources and license analysis: [`.planning/research/SEED-019-visual-flow-builder-research.md`](../research/SEED-019-visual-flow-builder-research.md)
+
+| Layer | Pick | License | Rationale |
+|-------|------|---------|-----------|
+| **Canvas** | `@xyflow/react` v12 (React Flow) | MIT | De-facto standard; powers Dify, Flowise, Langflow, Sim Studio, Attio, Retool, OneSignal workflows. SSR-safe in v12, virtualizes 100s of nodes, custom nodes are just React components |
+| **Engine** | **Homegrown** thin step-runner on Supabase | — | Inngest server is SSPL (legally risky to embed in SaaS), Trigger.dev v3 needs CRIU + separate orchestrator, n8n's Sustainable Use License **explicitly forbids** embedding in SaaS. Our action-engine already does dispatch + tenant routing; flows are just stateful sequences of action-engine calls |
+| **Queue / durability** | `pgmq` + `pg_cron` + `workflow_runs` table | PostgreSQL | First-party in Supabase, survives Vercel cold starts, no extra infra |
+| **Long-running steps** | Three-tier execution model | — | Vercel Fluid Compute (sync ≤800s on Pro) → Supabase Edge Functions (≤150s async via pgmq) → DB row with `resume_at` / `wait_for_event` (durable minutes–months) |
+| **Triggers** | Declarative `workflow_triggers` table; existing action-engine fires matching workflows on inbound events | — | Reuses already-built dispatch from Vapi/Meta/ManyChat/GHL/Twilio/Evolution routes |
+| **AI builder** | Anthropic Claude Sonnet 4.5 + Structured Outputs (`strict: true`) + Vercel AI SDK 5 streaming + 7 graph-mutation tools | — | Strict JSON Schema compiles into a grammar — output guaranteed valid. AI SDK 5's generative-UI patterns make canvas-mutation streaming straightforward |
+| **Schema** | Zod (canonical) + zod-to-json-schema for LLM tool defs | MIT | Single source of truth: validates DB writes, types React canvas state, becomes the LLM's tool-call schema |
+| **Variable interpolation** | Simple `{{ path }}` regex for parameter strings + JSONata for data transforms | MIT | AWS Step Functions adopted JSONata in late 2024 — battle-tested for workflow engines. Custom regex covers 90% of "set this field to that field" cases |
+| **Agent loops inside nodes** | LangGraph.js (only inside an "Agent" node type) | MIT | Don't make it the platform; do use it for ReAct-style loops where they're needed |
+
+---
+
+## Locked Decisions
 
 | Decision | Value | Reasoning |
 |----------|-------|-----------|
-| Visual library | **React Flow (`@xyflow/react` v12)** | Mature, used by n8n itself, great TS support, custom nodes, free MIT |
-| Storage | **JSONB column on `flows` table** + edges in same blob | Versioning, optimistic locking, fast snapshot reads — no graph DB |
-| Execution | **Linear-first** — branching/loops in v2 | Ship the 80% case first; AI generates linear flows reliably |
-| Trigger model | **Coexist with existing webhook receivers** | Don't break Vapi/Meta/ManyChat routes; add a new `flow_triggers` registry that maps events → flow IDs |
-| AI builder | **Tool-calling LLM with strict schema** | Use Anthropic structured output: LLM proposes a flow JSON validated by Zod before render. No free-form code generation |
-| AI executor | **New action_type `execute_flow`** | Flows become callable from any runtime exactly like other actions — clean reuse |
-| Backwards compat | **Existing tool_configs survive as "1-node flows" or stay as-is** | Don't force a migration; operator chooses when to upgrade a tool_config to a flow |
-| Execution runtime | **Node.js (Vercel) for short flows, Supabase Edge Functions for delays/schedules** | Vercel timeout is the blocker for long flows; Edge Functions can sleep |
-| Variable interpolation | **Mustache-style `{{node_id.output.field}}`** | Familiar syntax, easy to render, can be highlighted in the UI |
-| Error handling | **Per-node: halt-flow / skip-node / fallback-edge** | Three explicit options on each node; default halt |
-| Observability | **Reuse `action_logs` + new `flow_runs` table** | Per-run state + per-node timing; query joins reconstruct full execution |
+| Visual library | `@xyflow/react` v12 | See stack table |
+| Execution engine | Build homegrown, ~1.5k LOC, cap at 2k | All viable OSS engines have license blockers, separate-host requirements, or architectural impedance against our action-engine |
+| Storage | JSONB definition on `workflow_versions` (immutable snapshots) + a `workflows` header row | Versioning, optimistic locking, fast snapshot reads — no graph DB |
+| Execution semantics | **Linear-first.** Branching/loops/parallel in v2 | Ship the 80% case first; AI generates linear flows reliably |
+| Trigger model | Coexist with existing webhook receivers — they call `triggerRouter.fire(event, payload)` alongside legacy logic | Don't break Vapi/Meta/ManyChat routes |
+| AI builder transport | LLM never returns raw JSON. Strict tool-call schema via Vercel AI SDK 5; each tool mutates a Zustand store; React Flow renders from that store | Bidirectional editing works naturally — user drags a node, AI sees the new snapshot next turn |
+| AI executor | New `action_type = execute_flow` in the existing enum | Flows become callable from any runtime exactly like every other action — clean reuse |
+| Backwards compat | `tool_configs` survive untouched; **"Upgrade to flow"** button creates a 1-node flow as starting point | Don't force a migration; operator chooses when to graduate |
+| Variable interpolation syntax | Mustache-style `{{ node_id.output.field }}` for params; JSONata expressions for transformation nodes | Familiar UX for params; powerful when needed |
+| Error handling | Per-node policy: halt-flow / skip-node / fallback-edge (default halt) | Three explicit options on each node, configurable |
+| Observability | `workflow_runs` + `workflow_run_steps` tables; reuse `action_logs` for the underlying action calls | Per-run state + per-node timing; query joins reconstruct full execution |
+| Secret handling | LLM sees credential **references** (`{ credentialRef: 'ghl_main' }`), never raw values | Encryption layer in `src/lib/crypto.ts` stays the source of truth |
+| Long-running flows | `step.sleep('24h')` = `UPDATE workflow_runs SET resume_at = now() + '24h'` polled by pg_cron every minute; `step.waitForEvent` = row in `workflow_waits` satisfied by the trigger router | Officially documented Supabase pattern — no extra infra |
 
 ---
 
 ## Scope Estimate
 
-**Large** — 7-9 phases for the v1 MVP. Likely 3 milestones total to reach feature-parity with simplified ManyChat:
-- **Milestone A (v3.0):** linear flows, AI builder, AI executor, manual + webhook triggers
-- **Milestone B (v3.1):** branching, scheduled triggers, retries, debugging UI
-- **Milestone C (v3.2):** loops, sub-flows, parallel branches, marketplace templates
+**Large.** Research tightened the v1 milestone to **4 phases / ~5.5 weeks**, down from the 8-phase first draft. The total feature surface to reach Zapier-equivalent UX will likely span 3 milestones:
 
-This seed scopes **Milestone A**.
+- **Milestone A — v3.0 (this seed):** linear flows, AI builder, AI executor, manual + webhook + cron triggers, `step.sleep` + `step.waitForEvent`
+- **Milestone B — v3.1:** branching nodes, scheduled triggers UI, retry policies, debug/step-through, version history beyond undo
+- **Milestone C — v3.2:** loops, sub-flows, parallel branches, marketplace templates, custom code nodes (Deno isolates)
 
 ### Milestone A — Phase decomposition (proposed)
 
-1. **FLOWS-DB-FOUNDATION** — schema for `flows`, `flow_versions`, `flow_runs`, `flow_triggers`, `flow_run_nodes`; RLS; TypeScript types
-2. **FLOWS-ENGINE-LINEAR** — execution engine: load flow → walk nodes sequentially → call `executeAction()` per node → interpolate variables → persist run state → return result; per-node error policy
-3. **FLOWS-TRIGGER-REGISTRY** — declarative trigger system: webhook triggers (event router checks `flow_triggers` table for matching flows), manual triggers, future-scheduled triggers; first wire Meta+ManyChat+Vapi inbound through the registry
-4. **FLOWS-VISUAL-CANVAS** — React Flow setup, base canvas with pan/zoom, custom node types (trigger, action, end), edge rendering, save/load round-trip
-5. **FLOWS-NODE-PALETTE** — left sidebar listing all available action_types grouped by integration, drag-to-canvas creates new node with default config, node config panel (form per action_type with required params, variable picker)
-6. **FLOWS-AI-BUILDER** — `/automations/build` chat-style page where user describes the flow in natural language, LLM streams structured flow JSON, canvas renders live; bi-directional: user can edit canvas and ask AI to refine; "explain this flow" command for existing flows
-7. **FLOWS-AI-EXECUTOR** — new `execute_flow` action_type wired into the action engine; AI agents on chat can call flows by name; `runFlowNow(flowId, inputVars)` server action for manual triggering; observability viewer at `/automations/runs/[id]` with per-node status
-8. **FLOWS-MIGRATION-COEXIST** — keep `/automations` (tool_configs) page intact, add `/automations/flows` as the new entry; "upgrade to flow" button on tool_configs that creates a 1-node flow as starting point; clear messaging about which is which
+**Phase A — Canvas Foundation (1 week)**
+- Install `@xyflow/react@^12`; build node-type registry (`trigger`, `action`, `condition`, `wait`, `agent`, `loop`)
+- Zod schema for `Workflow`; tables `workflows`, `workflow_versions` with RLS
+- Zustand store + autosave on debounce + simple undo/redo stack
+- Manual node-by-node builder works end-to-end (save, reload, edit) — **no execution yet**
 
-### Components to build (high level)
+**Phase B — Engine + Trigger Router (2 weeks)**
+- Tables: `workflow_runs`, `workflow_run_steps`, `workflow_waits`, `workflow_triggers` (+ RLS, indexes)
+- `pgmq` queue + `pg_cron` tick (every minute)
+- Supabase Edge Function worker that picks pending runs and dispatches steps via the existing action-engine
+- Primitives: `step.run` (idempotent, memoized by step_id) / `step.sleep(duration)` / `step.waitForEvent(filter, timeout)`
+- Action-engine hook: on inbound event, also activate matching triggers + satisfy matching waits
+- Synchronous "test run" path via Vercel Fluid Compute (no queue round-trip)
 
-**Database (Phase 1):**
-- `flows(id, org_id, name, slug, description, version, is_active, created_by, created_at, updated_at)` — header
-- `flow_versions(id, flow_id, version_number, definition jsonb, created_at, created_by)` — immutable snapshots (definition = `{ nodes, edges, variables, metadata }`)
-- `flow_triggers(id, org_id, flow_id, trigger_type, config jsonb, is_active)` — `trigger_type` enum: `webhook | manual | scheduled | event` with config being `{ event_name, filter }` etc.
-- `flow_runs(id, org_id, flow_id, flow_version_id, trigger_type, trigger_payload jsonb, status, started_at, ended_at, error)` — one row per execution
-- `flow_run_nodes(id, run_id, node_id, status, input jsonb, output jsonb, error, started_at, ended_at)` — per-node trace
+**Phase C — AI Builder (1.5 weeks)**
+- Define the 7-tool toolkit: `listNodes`, `addNode`, `connectNodes`, `updateNodeConfig`, `removeNode`, `explainFlow`, `validateFlow`
+- Wire Vercel AI SDK 5 streaming with Claude Sonnet 4.5 + Structured Outputs (`strict: true`)
+- Chat sidebar component streams tool calls into Zustand reducers → optimistic canvas updates
+- System prompt + few-shot library of ~10 archetypal flows from existing Xphere customer use cases
+- `runFlowNow(flowId, inputVars)` server action for manual triggering from the canvas
 
-**Engine (Phase 2):**
-- `src/lib/flows/engine.ts` — `runFlow(flow_version, trigger_payload, context)`: walks nodes, calls executors, persists state
-- `src/lib/flows/interpolate.ts` — `{{node_5.output.email}}` → resolved value from runtime state
-- `src/lib/flows/zod-schema.ts` — Zod schema for flow definition (catches AI hallucinations + UI validation)
-- Vercel timeout guard: flows with delays > 10s halt and persist, picked up by Edge Function workers
+**Phase D — Polish + Observability (1 week)**
+- Run history view (`/automations/flows/[id]/runs`) — per workflow, per run, per step
+- `/automations/flows/runs/[id]` — visual replay of execution with per-node status, input/output, timing, errors
+- Manual retry from a failed step
+- JSONata expression node + the `{{ path }}` regex helper for params
+- New `execute_flow` action_type wired into action-engine; agents can call flows from chat
+- Documentation: piece authoring guide + AI builder prompt-engineering guide
 
-**Trigger registry (Phase 3):**
-- `src/lib/flows/trigger-router.ts` — given an event (e.g., `meta.message.received`, `vapi.tool.called`, `contact.created`), find flows whose triggers match and enqueue runs
-- Hook into existing webhook handlers (Meta, ManyChat, Vapi, etc.) — they call `triggerRouter.fire(event, payload)` alongside current logic
+**Total: ~5.5 weeks** with buffer.
 
-**Visual editor (Phases 4-5):**
+### Database schema (Phase A + B)
+
+```sql
+-- Header
+workflows(
+  id uuid pk, org_id uuid, name text, slug text unique-per-org,
+  description text, is_active boolean,
+  created_by uuid, created_at, updated_at
+)
+
+-- Immutable versioned snapshots
+workflow_versions(
+  id uuid pk, workflow_id uuid fk, version_number int,
+  definition jsonb,  -- { nodes, edges, variables, metadata }
+  created_at, created_by
+)
+
+-- Declarative triggers
+workflow_triggers(
+  id uuid pk, org_id uuid, workflow_id uuid fk,
+  event_type text,           -- 'vapi.call.ended' | 'manychat.inbound' | 'cron' | 'webhook.custom' | 'manual'
+  filter jsonb,              -- JSON-path / JSONata predicate over event payload
+  schedule_cron text,        -- only when event_type='cron'
+  enabled boolean default true
+)
+
+-- One row per execution
+workflow_runs(
+  id uuid pk, org_id uuid, workflow_id uuid, workflow_version_id uuid,
+  trigger_type text, trigger_payload jsonb,
+  status text,              -- queued | running | sleeping | waiting | succeeded | failed | cancelled
+  resume_at timestamptz,    -- for step.sleep
+  state jsonb,              -- accumulated step outputs (memoized)
+  started_at, ended_at, error text
+)
+
+-- Per-step trace (joins with action_logs for the underlying action call)
+workflow_run_steps(
+  id uuid pk, run_id uuid fk, step_id text, node_id text,
+  status text, input jsonb, output jsonb, error text,
+  started_at, ended_at
+)
+
+-- Pending waits — satisfied by the trigger router
+workflow_waits(
+  id uuid pk, run_id uuid fk, event_filter jsonb,
+  timeout_at timestamptz, created_at
+)
+```
+
+### Components to build
+
+**Backend (Phases A + B):**
+- `src/lib/flows/engine.ts` — `runFlow(version, triggerPayload, context)`: walks nodes, calls executors, persists state
+- `src/lib/flows/step.ts` — `step.run(id, fn)` / `step.sleep(duration)` / `step.waitForEvent(filter, timeout)`
+- `src/lib/flows/interpolate.ts` — `{{ node_5.output.email }}` → resolved value from runtime state
+- `src/lib/flows/jsonata.ts` — sandboxed JSONata wrapper with 1s timeout + memory cap
+- `src/lib/flows/schema.ts` — Zod schema for flow definition; emit JSON Schema for LLM tool defs
+- `src/lib/flows/trigger-router.ts` — given an event, find flows whose triggers match and enqueue runs
+- `supabase/functions/flow-worker/index.ts` — Edge Function: poll pgmq, advance runs, handle timeouts
+
+**Visual editor (Phases A + C):**
 - `src/app/(dashboard)/automations/flows/page.tsx` — list flows
-- `src/app/(dashboard)/automations/flows/[id]/page.tsx` — canvas editor
+- `src/app/(dashboard)/automations/flows/[id]/page.tsx` — canvas editor (drag-and-drop)
+- `src/app/(dashboard)/automations/flows/build/page.tsx` — split: chat on left, canvas on right (AI builder mode)
+- `src/app/(dashboard)/automations/flows/runs/[id]/page.tsx` — visual replay of execution
 - `src/components/flows/canvas.tsx` — React Flow root
-- `src/components/flows/nodes/{trigger,action,condition,delay,end}-node.tsx` — node types
+- `src/components/flows/nodes/{trigger,action,condition,wait,agent,end}-node.tsx` — node types
 - `src/components/flows/palette.tsx` — left sidebar with grouped integration nodes
 - `src/components/flows/node-config-panel.tsx` — right sidebar form per node
-- `src/components/flows/variable-picker.tsx` — dropdown showing available `{{node_id.output.*}}` references at this point in the flow
+- `src/components/flows/variable-picker.tsx` — dropdown showing valid `{{ node_id.output.* }}` references at the current point
+- `src/components/flows/ai-builder-chat.tsx` — streaming AI chat that mutates the canvas via tool calls
+- `src/stores/flow-store.ts` — Zustand store: single source of truth for canvas state + undo stack
 
-**AI builder (Phase 6):**
-- `src/app/(dashboard)/automations/flows/build/page.tsx` — split: chat on left, canvas on right
-- `src/lib/flows/ai-builder.ts` — prompt template + tool-call definitions: `add_node`, `connect_nodes`, `update_node_config`, `delete_node`, `propose_full_flow`
-- The AI never returns raw flow JSON to the user — it calls structured tools that mutate the canvas state, which the UI then renders
-- For "explain this flow": AI receives flow definition + recent runs, returns markdown summary
-- For "edit this flow": same tool API + current canvas state
-
-**AI executor (Phase 7):**
-- New executor in `src/lib/action-engine/executors/execute-flow.ts` — calls `runFlow()` with mapped params
-- New `action_type` enum value `execute_flow`
-- New page `/automations/runs/[id]` — visual replay of execution with per-node status, input/output, timing
-- Agents that have `execute_flow` in their tools can now run flows mid-conversation
+**Coexistence:**
+- Keep `/automations` (tool_configs) page intact
+- Add `/automations/flows` as the new entry point
+- "Upgrade to flow" button on each tool_config creates a 1-node flow as starting point
 
 ### Out of scope (deferred to Milestones B and C)
 
 - **Branching / conditional nodes** — if/else logic, switch on variable values (Milestone B)
 - **Loop nodes** — for-each over arrays, with iteration limit guards (Milestone C)
-- **Delay nodes beyond 10s** — pause flow, persist state, resume via Edge Function worker (Milestone B)
-- **Scheduled triggers** — cron-style execution (every Monday 9am) requires the delay infrastructure (Milestone B)
+- **Scheduled triggers UI** — cron-style execution UI ("every Monday 9am") — engine supports it, UI in B
 - **Sub-flows** — call one flow from another, nested execution (Milestone C)
 - **Parallel branches** — fork execution into multiple paths, await all (Milestone C)
-- **Flow marketplace / templates** — shareable templates ("Lead qualifier", "Welcome sequence") (Milestone C)
+- **Flow marketplace / templates** — shareable templates (Milestone C)
 - **Real-time collaboration** — multiple operators editing the same canvas (out of scope indefinitely)
 - **Version diff visualization** — show what changed between versions (Milestone B)
-- **Time-travel debugging** — replay execution from any node (Milestone B)
-- **Custom code nodes** — arbitrary JS execution inside a flow (out of scope — security nightmare)
-- **External webhook trigger by URL** — `https://xphere.skale.club/flows/[id]/trigger` (Milestone B)
+- **Time-travel debugging** — replay execution from any step (Milestone B)
+- **Custom code nodes** — arbitrary JS execution via Deno isolates (Milestone C)
+- **External webhook trigger URLs** — `https://xphere.skale.club/flows/[id]/trigger` (Milestone B)
 
 ---
 
-## AI as Primary Builder — Design Notes
+## AI Builder — Implementation Pattern (from research)
 
-This is the part nobody has solved well. The pattern that works:
+This is the part nobody has shipped well as OSS. The pattern (verified against vendor docs):
 
-1. **Strict tool schema, not free-form JSON.** LLM has tools like `add_node(type, position, config)`, `connect_nodes(from_id, to_id)`, `set_node_config(node_id, config)`. Each tool call mutates server state and triggers re-render. The LLM never writes raw flow JSON.
+1. **Strict tool schema, not free-form JSON.** LLM has 7 tools (`addNode`, `connectNodes`, `setNodeConfig`, `removeNode`, `listNodes`, `explainFlow`, `validateFlow`). Each tool call mutates Zustand state and triggers re-render. The LLM never writes raw flow JSON.
 
-2. **Bounded action types.** LLM only sees the existing `action_type` enum + node primitives (trigger, action, end). Cannot invent new node types — typecheck on every tool call.
+2. **Bounded action types.** LLM only sees the existing `action_type` enum + node primitives (`trigger`, `action`, `condition`, `wait`, `agent`, `end`). Cannot invent new node types — typecheck on every tool call via Zod.
 
-3. **Variable awareness.** LLM has a `get_available_variables(at_node_id)` tool that returns valid `{{node_id.output.*}}` references at that point. Prevents hallucinated variable paths.
+3. **Variable awareness.** LLM has a `getAvailableVariables(atNodeId)` tool that returns valid `{{ node_id.output.* }}` references at that point. Prevents hallucinated variable paths.
 
-4. **Round-trip editing.** User drags a node, asks AI "do the rest", AI sees current state and continues from there. No "AI builds in one shot or never" — it's continuous collaboration.
+4. **Round-trip editing.** User drags a node, asks AI *"do the rest"*, AI calls `listNodes()` and sees current state, continues from there. No "AI builds in one shot or never" — continuous collaboration.
 
-5. **Explain mode.** AI can render any flow in natural language: "When an SMS arrives from a phone number matching a contact tagged 'lead', create a task for the owner and send a Slack notification."
+5. **Streaming UI.** Vercel AI SDK 5's `streamUI` + typed tool parts (`tool-${toolName}`) dispatch into the canvas store as tool calls arrive. User sees the AI working in real time.
 
-6. **Run mode.** From the chat: "Run my lead qualification flow for contact ID 123." AI invokes `execute_flow` with the right params. Confirms back the result and links to the run page.
+6. **Explain mode.** AI renders any flow in natural language: *"When an SMS arrives from a phone number matching a contact tagged 'lead', create a task for the owner and send a Slack notification."*
 
-7. **Debug mode.** AI can read recent `flow_runs` for a flow, identify which node failed, suggest a fix, and offer to apply it (calls `set_node_config` with the fix).
+7. **Run mode.** From the chat: *"Run my lead qualification flow for contact ID 123."* AI invokes `execute_flow` with the right params. Confirms the result and links to the run page.
 
-The AI builder is opinionated: it has a system prompt that **discourages overengineering** ("most flows are linear, don't add branching unless asked"), **suggests starting simple** ("ship a 3-node flow first, iterate"), and **explains tradeoffs** in plain language.
+8. **Debug mode.** AI reads recent `workflow_runs` for a flow, identifies which step failed, suggests a fix, offers to apply it via `setNodeConfig` with the fix.
+
+9. **System prompt enforces simplicity.** *"Most flows are linear, don't add branching unless explicitly asked."* *"Ship a 3-node flow first, iterate."* Explain tradeoffs in plain language.
+
+10. **Validate before terminate.** AI's loop is capped at ~10 tool calls per turn via `stepCountIs(10)`. Last step always calls `validateFlow()` and surfaces issues.
 
 ---
 
 ## Open Questions (resolve in /gsd:discuss-phase)
 
-1. **Should flows replace tool_configs eventually, or coexist forever?** Migration story has UX implications.
-2. **How do we handle execution timeouts on Vercel Hobby (10s per route)?** Edge Functions worker queue? Persist + resume?
-3. **Trigger granularity:** is `event_type = 'message.received'` enough, or do we need `event_type = 'message.received' AND channel = 'whatsapp' AND keyword LIKE 'hello'`?
-4. **AI model:** Claude (anthropic.com), GPT-4 (openai.com), or local? Tool-calling quality matters more than reasoning here.
-5. **How does the canvas handle 50+ node flows?** Performance / pan-zoom / mini-map / search?
-6. **Versioning UX:** semantic versions auto? Operator-named drafts? Force a new version on every save?
-7. **Per-node retry policy:** default retry 3x with exponential backoff, or no retry? Configurable per node?
-8. **Concurrent runs of the same flow:** how many max? Per-tenant rate limit?
-9. **Run history retention:** keep 30 days of `flow_runs` and `flow_run_nodes`? More? Configurable per org?
-10. **Variable types:** string-only at first? Or typed (string/number/boolean/array/object) with validation?
-11. **Trigger backfill:** when operator activates a new trigger, do we backfill existing events that match? (e.g., "send WhatsApp to all contacts created in the last 24h" — should this work?)
-12. **Permission model:** can any org member edit flows, or only admins? Read-only viewer role?
-13. **Public webhook endpoints for flows:** `https://xphere.skale.club/api/flows/[id]` callable from external? With signing secret?
+1. **Should flows replace `tool_configs` eventually, or coexist forever?** Migration story has UX implications.
+2. **Trigger granularity:** is `event_type = 'message.received'` enough, or `event_type = 'message.received' AND channel = 'whatsapp' AND keyword LIKE 'hello'`? (Tend toward the richer filter via JSONata in the trigger row.)
+3. **AI model:** Claude Sonnet 4.5 (recommended) vs OpenAI GPT-4.1 vs both? Tool-calling quality matters more than reasoning here.
+4. **Canvas perf:** 50+ node flows — performance disciplines (`React.memo`, memoized arrays), do we need a mini-map and search?
+5. **Versioning UX:** semantic versions auto? Operator-named drafts? Force a new version on every save?
+6. **Per-node retry policy:** default retry 3x with exponential backoff, or no retry? Configurable per node?
+7. **Concurrent runs of the same flow:** how many max? Per-tenant rate limit to protect the worker pool?
+8. **Run history retention:** keep 30 days of `workflow_runs` and `workflow_run_steps`? More? Configurable per org?
+9. **Variable types:** string-only at first? Or typed (string/number/boolean/array/object) with validation?
+10. **Trigger backfill:** when operator activates a new trigger, do we backfill matching past events? (e.g., *"send WhatsApp to all contacts created in the last 24h"*)
+11. **Permission model:** can any org member edit flows, or only admins? Read-only viewer role?
+12. **Public webhook endpoints for flows:** `https://xphere.skale.club/api/flows/[id]/trigger` callable from external? With HMAC signing? (Probably Milestone B.)
+13. **Empirical test:** is `pg_cron`'s 1-minute granularity acceptable for "test run feels instant" UX, given that sync test runs bypass the queue?
 
 ---
 
-## Codebase Hints (for the researcher when this seed is promoted)
+## Codebase Hints (for the researcher when promoted)
 
 - **Action engine:** `src/lib/action-engine/execute-action.ts` is the dispatcher — flows call it. Don't bypass.
-- **Existing executors:** `src/lib/action-engine/executors/*` (whatsapp), plus all the provider libs (`src/lib/ghl/*`, `src/lib/twilio/*`, `src/lib/manychat/*`, `src/lib/google-contacts/*`, `src/lib/custom-webhook/*`, `src/lib/knowledge/*`). Every action_type already has an executor.
-- **Action types:** `Database['public']['Enums']['action_type']` — current ~31 values. Add `execute_flow` and `flow_trigger` (for AI agents that can run flows).
+- **Existing executors:** all under `src/lib/action-engine/executors/` plus provider libs (`src/lib/ghl/`, `src/lib/twilio/`, `src/lib/manychat/`, `src/lib/google-contacts/`, `src/lib/custom-webhook/`, `src/lib/knowledge/`). Every `action_type` already has a working executor.
+- **Action types:** `Database['public']['Enums']['action_type']` — current ~31 values. Add `execute_flow` (callable from any runtime) and possibly `flow_trigger` (for AI agents that can fire flows).
 - **Multi-tenancy:** all new tables follow the RLS pattern with `(SELECT public.get_current_org_id())`. Service role bypasses.
-- **Agent runtime:** `src/lib/agent-runtime/run-agent.ts` — chat agents already have tool-calling. Adding `execute_flow` as a callable tool is a 10-line change.
+- **Agent runtime:** `src/lib/agent-runtime/run-agent.ts` — chat agents already have tool-calling. Adding `execute_flow` as a callable tool is a small change.
 - **Migration cadence:** numbered SQL files in `supabase/migrations/`, applied via `npx supabase db push`. Last applied: 073.
-- **Webhook receivers:** `src/app/api/{vapi,meta,manychat,evolution,ghl,twilio,chat}/**` — these are the integration points for the new trigger registry.
-- **Storage of definitions:** JSONB is fine. The whole flow definition (nodes + edges + variables + metadata) goes in one `definition jsonb` column on `flow_versions`. Snapshots are immutable; edits create new versions.
-- **React Flow:** install `@xyflow/react@^12`. Built-in pan/zoom/mini-map. Custom node types via `nodeTypes={{ trigger: TriggerNode, action: ActionNode, end: EndNode }}`.
-- **dnd-kit already installed:** used in pipeline kanban (`src/components/pipeline/kanban-board.tsx`) and custom fields settings (`src/app/(dashboard)/settings/custom-fields/`). Useful for the palette → canvas drag.
+- **Webhook receivers:** `src/app/api/{vapi,meta,manychat,evolution,ghl,twilio,chat}/**` — integration points for the new trigger registry.
+- **React Flow:** install `@xyflow/react@^12`. Built-in pan/zoom/mini-map. Custom node types via `nodeTypes={{ trigger: TriggerNode, action: ActionNode, end: EndNode }}`. SSR-safe in v12.
+- **dnd-kit already installed:** used in pipeline kanban and custom fields settings. Useful for palette → canvas drag.
 - **Anthropic SDK:** used in `src/lib/chat/stream/anthropic.ts` — strong tool-calling support. Use the same client for the AI builder.
-- **Existing scheduling cron:** `src/lib/automations/ghl-reengagement/runner.ts` shows how to run a scheduled job. Flows scheduled triggers would generalize this pattern.
-- **Custom Fields validation pattern:** `src/lib/custom-fields/validate.ts` — pure function model is a good reference for the flow definition validator.
+- **Vercel AI SDK:** add `ai@^5` for streaming UI patterns (current chat streaming uses raw provider SDKs — fine, but the AI builder benefits from AI SDK's typed tool parts).
+- **Supabase pgmq:** [supabase.com/docs/guides/queues](https://supabase.com/docs/guides/queues) — first-party, no extra setup.
+- **Supabase pg_cron:** already used elsewhere in the project (`supabase/migrations/` mentions pg_cron jobs).
+- **Existing scheduled cron pattern:** `src/lib/automations/ghl-reengagement/runner.ts` shows how to run a scheduled job today. Flows generalize this.
+- **Custom Fields validation pattern:** `src/lib/custom-fields/validate.ts` — pure-function model is a good reference for the flow definition validator.
+- **Sim Studio source to study:** [github.com/simstudioai/sim](https://github.com/simstudioai/sim) `apps/sim/components/workflow` and `apps/sim/lib/copilot` (Apache-2.0, attribute if borrowed).
+- **Activepieces source to study:** [github.com/activepieces/activepieces](https://github.com/activepieces/activepieces) "piece" plugin schema (MIT).
+
+---
+
+## Key Risks (from research)
+
+1. **AI Builder quality on edge cases.** Pattern is well-understood; demos look great; edge cases fail. **Mitigation:** ship `explainFlow` and `validateFlow` tools from day one so the AI can self-correct; ship undo stack so users recover from bad mutations.
+2. **`pgmq` + `pg_cron` scaling for `waitForEvent` semantics.** Supabase supports this but we'll be implementing per-tenant scheduling on top. Risk that 1-minute cron granularity feels sluggish. **Mitigation:** synchronous test runs go through Vercel Fluid Compute directly, never through the queue.
+3. **"Rebuilding Inngest poorly" scope creep.** Step semantics, retries, idempotency, observability — easy to underestimate. **Mitigation:** ship minimum primitives only (`step.run`, `step.sleep`, `step.waitForEvent`); refuse `step.parallel` / `step.race` / fan-out until users explicitly ask. **Cap engine at ~2k LOC.**
+4. **License hygiene.** Sim Studio is Apache-2.0 — study freely, attribute if code is copied. n8n is off-limits for embedding regardless. Activepieces is MIT — safe.
+5. **Multi-tenant secret handling.** Flow JSON references credentials. Must stay encrypted via `src/lib/crypto.ts`; never serialize secrets into the AI-visible flow snapshot. **Mitigation:** LLM sees `{ credentialRef: 'ghl_main' }`, never raw values.
+6. **React Flow re-render perf.** Solved problem with `React.memo` on custom nodes and memoized node arrays — discipline issue, not architectural blocker.
 
 ---
 
 ## References
 
+- **Research file:** [`.planning/research/SEED-019-visual-flow-builder-research.md`](../research/SEED-019-visual-flow-builder-research.md) — full source list with citations
 - React Flow (xyflow): https://reactflow.dev/
-- n8n architecture writeup: https://docs.n8n.io/hosting/architecture/
-- ManyChat flow builder UX (visual reference): https://manychat.com/
-- LangGraph for executor pattern reference: https://langchain-ai.github.io/langgraph/
-- Anthropic tool use: https://docs.anthropic.com/en/docs/build-with-claude/tool-use
-- Vercel timeout limits: https://vercel.com/docs/functions/runtimes#max-duration
-- Supabase Edge Functions for long-running work: https://supabase.com/docs/guides/functions
+- Sim Studio (architectural reference): https://github.com/simstudioai/sim
+- Anthropic Structured Outputs: https://platform.claude.com/docs/en/build-with-claude/structured-outputs
+- Vercel AI SDK 5: https://ai-sdk.dev/docs/ai-sdk-ui/generative-user-interfaces
+- Supabase pgmq + pg_cron + Edge Functions: https://supabase.com/blog/processing-large-jobs-with-edge-functions
+- Vercel Fluid Compute (long-running routes): https://vercel.com/changelog/serverless-functions-can-now-run-up-to-5-minutes
+- JSONata in AWS Step Functions: https://docs.aws.amazon.com/step-functions/latest/dg/transforming-data.html
 
 ---
 
 **Status:** Dormant until trigger surfaces.
 
-When promoted, this seed becomes the basis for the **v3.0 Visual Automation Builder (Milestone A)** roadmap. The discussion phase resolves the open questions above; the planning phase decomposes Phase 1 (FLOWS-DB-FOUNDATION) into individual plans. Expect this milestone to take 4-6 weeks of focused work — biggest single feature in Xphere's roadmap.
+When promoted, this seed becomes the basis for the **v3.0 Visual Automation Builder (Milestone A)** roadmap. The discussion phase resolves the 13 open questions; the planning phase decomposes Phases A–D into individual plans. Expect **~5.5 weeks of focused work** — the biggest single feature in Xphere's roadmap.
