@@ -17,6 +17,7 @@ import {
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { PhoneInput } from '@/components/ui/phone-input'
 import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib/utils'
 import {
@@ -211,11 +212,12 @@ export function CallSettingsForm({ initial, sipDomain }: CallSettingsFormProps) 
             <p className="text-[12.5px] text-text-secondary">
               We&apos;ll bridge inbound calls to this number. Use international format (+country code).
             </p>
-            <Input
+            <PhoneInput
               value={phoneForward}
-              onChange={(e) => setPhoneForward(e.target.value)}
-              placeholder="+14155551234"
+              onChange={setPhoneForward}
+              placeholder="Phone number"
               className="max-w-md"
+              aria-invalid={Boolean(phoneError)}
             />
             {phoneError && (
               <p className="text-[12px] text-rose-400">{phoneError}</p>

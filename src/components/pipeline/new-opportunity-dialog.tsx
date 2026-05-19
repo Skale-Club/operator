@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { PhoneInput } from '@/components/ui/phone-input'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -35,6 +36,7 @@ import {
 } from '@/app/(dashboard)/settings/tags/actions'
 import { createContact } from '@/app/(dashboard)/contacts/actions'
 import { TagPicker } from '@/components/tags/tag-picker'
+import { isValidEmail } from '@/lib/contacts/zod-schemas'
 import type { Database } from '@/types/database'
 
 type StageRow = Database['public']['Tables']['pipeline_stages']['Row']
@@ -79,6 +81,7 @@ export function NewOpportunityDialog({
   const [quickName, setQuickName] = React.useState('')
   const [quickPhone, setQuickPhone] = React.useState('')
   const [quickEmail, setQuickEmail] = React.useState('')
+  const [quickEmailError, setQuickEmailError] = React.useState<string | null>(null)
   const [quickCreating, setQuickCreating] = React.useState(false)
 
   React.useEffect(() => {
@@ -124,6 +127,7 @@ export function NewOpportunityDialog({
     setQuickName('')
     setQuickPhone('')
     setQuickEmail('')
+    setQuickEmailError(null)
   }
 
   async function handleQuickCreate() {
@@ -131,6 +135,11 @@ export function NewOpportunityDialog({
       toast.error('Enter at least a name, phone, or email')
       return
     }
+    if (quickEmail.trim() && !isValidEmail(quickEmail)) {
+      setQuickEmailError('Enter a valid email address')
+      return
+    }
+    setQuickEmailError(null)
     setQuickCreating(true)
     const res = await createContact({
       name: quickName.trim() || undefined,
@@ -156,6 +165,7 @@ export function NewOpportunityDialog({
     setQuickName('')
     setQuickPhone('')
     setQuickEmail('')
+    setQuickEmailError(null)
     toast.success('Contact created')
   }
 
@@ -368,20 +378,25 @@ export function NewOpportunityDialog({
                           className="h-8 text-[13px]"
                           autoFocus
                         />
-                        <Input
+                        <PhoneInput
                           placeholder="Phone"
                           value={quickPhone}
-                          onChange={(e) => setQuickPhone(e.target.value)}
-                          className="h-8 text-[13px]"
-                          inputMode="tel"
+                          onChange={setQuickPhone}
                         />
                         <Input
                           placeholder="Email"
                           value={quickEmail}
-                          onChange={(e) => setQuickEmail(e.target.value)}
-                          className="h-8 text-[13px]"
+                          onChange={(e) => {
+                            setQuickEmail(e.target.value)
+                            if (quickEmailError) setQuickEmailError(null)
+                          }}
+                          className={quickEmailError ? 'h-8 text-[13px] border-destructive' : 'h-8 text-[13px]'}
                           type="email"
+                          aria-invalid={Boolean(quickEmailError)}
                         />
+                        {quickEmailError && (
+                          <p className="text-[11.5px] text-destructive">{quickEmailError}</p>
+                        )}
                         <div className="flex gap-2 pt-1">
                           <Button
                             type="button"

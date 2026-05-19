@@ -19,6 +19,7 @@ import {
 import {
   normalisePhone,
   normaliseEmail,
+  isValidEmail,
   contactSchema,
 } from '@/lib/contacts/zod-schemas'
 
@@ -51,6 +52,16 @@ describe('normaliseEmail', () => {
   })
   it('returns null on blank', () => {
     expect(normaliseEmail('')).toBeNull()
+  })
+})
+
+describe('isValidEmail', () => {
+  it('accepts syntactically valid email addresses', () => {
+    expect(isValidEmail(' Jane@Example.COM ')).toBe(true)
+  })
+  it('rejects malformed email addresses', () => {
+    expect(isValidEmail('jane@example')).toBe(false)
+    expect(isValidEmail('jane@')).toBe(false)
   })
 })
 

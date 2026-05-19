@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { Input } from '@/components/ui/input'
+import { PhoneInput } from '@/components/ui/phone-input'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
@@ -287,14 +288,27 @@ function FieldInput({
         </div>
       )
 
+    case 'phone':
+      return (
+        <div className="flex flex-col gap-1.5">
+          {labelEl}
+          {def.help_text && <p className="text-[11px] text-text-tertiary">{def.help_text}</p>}
+          <PhoneInput
+            value={typeof value === 'string' ? value : ''}
+            onChange={onChange}
+            placeholder={def.label}
+          />
+        </div>
+      )
+
     default:
-      // text, long_text (handled above), url, email, phone
+      // text, long_text (handled above), url, email
       return (
         <div className="flex flex-col gap-1.5">
           {labelEl}
           {def.help_text && <p className="text-[11px] text-text-tertiary">{def.help_text}</p>}
           <Input
-            type={def.type === 'url' ? 'url' : def.type === 'email' ? 'email' : def.type === 'phone' ? 'tel' : 'text'}
+            type={def.type === 'url' ? 'url' : def.type === 'email' ? 'email' : 'text'}
             value={typeof value === 'string' ? value : ''}
             onChange={(e) => onChange(e.target.value)}
             placeholder={def.label}

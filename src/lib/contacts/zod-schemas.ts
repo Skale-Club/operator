@@ -32,6 +32,12 @@ export function normaliseEmail(input: string | null | undefined): string | null 
   return trimmed || null
 }
 
+export function isValidEmail(input: string | null | undefined): boolean {
+  const trimmed = input?.trim()
+  if (!trimmed) return false
+  return z.string().email().safeParse(trimmed).success
+}
+
 /**
  * Form-facing schema: validates shape without transforming. Strings stay
  * strings (with trimming) so react-hook-form's input/output types line up.
@@ -48,7 +54,7 @@ export const contactSchema = z
       .max(200)
       .optional()
       .refine(
-        (v) => !v || /.+@.+\..+/.test(v),
+        (v) => !v || isValidEmail(v),
         'Enter a valid email address',
       ),
     company: z.string().trim().max(500).optional(),

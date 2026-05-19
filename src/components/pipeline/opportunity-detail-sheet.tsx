@@ -20,12 +20,12 @@ import {
 } from 'lucide-react'
 
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from '@/components/ui/sheet'
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -110,7 +110,7 @@ export function OpportunityDetailSheet({
   const [contactPickerOpen, setContactPickerOpen] = React.useState(false)
   const [customFields, setCustomFields] = React.useState<Record<string, unknown>>({})
 
-  // Load opportunity, tags, activities when sheet opens
+  // Load opportunity, tags, activities when the detail popup opens
   React.useEffect(() => {
     if (!opportunityId) {
       setOpp(null)
@@ -243,8 +243,8 @@ export function OpportunityDetailSheet({
   const selectedTags = allTags.filter((t) => tagIds.includes(t.id))
 
   return (
-    <Sheet open={Boolean(opportunityId)} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-[560px] flex flex-col overflow-hidden p-0">
+    <Dialog open={Boolean(opportunityId)} onOpenChange={onOpenChange}>
+      <DialogContent className="flex h-[min(780px,calc(100vh-2rem))] max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-[880px] flex-col overflow-hidden p-0 gap-0">
         {loading && !opp ? (
           <div className="p-6 space-y-3 animate-pulse">
             <div className="h-6 w-2/3 rounded bg-bg-tertiary" />
@@ -256,7 +256,7 @@ export function OpportunityDetailSheet({
         ) : (
           <div className="flex flex-col overflow-hidden h-full">
             {/* Header */}
-            <SheetHeader className="border-b border-border-subtle px-6 py-5 space-y-3">
+            <DialogHeader className="border-b border-border-subtle px-6 py-5 pr-14 space-y-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-text-tertiary">
@@ -274,13 +274,13 @@ export function OpportunityDetailSheet({
                     )}
                     <span className="capitalize text-text-tertiary">· {status}</span>
                   </div>
-                  <SheetTitle className="mt-1 text-[18px] truncate">
+                  <DialogTitle className="mt-1 text-[18px] truncate">
                     {editing ? 'Edit opportunity' : opp.title}
-                  </SheetTitle>
+                  </DialogTitle>
                   {!editing && (
-                    <SheetDescription className="text-[14px] text-accent font-semibold tabular-nums">
+                    <DialogDescription className="text-[14px] text-accent font-semibold tabular-nums">
                       {formatCurrency(Number(opp.value), opp.currency)}
-                    </SheetDescription>
+                    </DialogDescription>
                   )}
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -308,7 +308,7 @@ export function OpportunityDetailSheet({
                   ))}
                 </div>
               )}
-            </SheetHeader>
+            </DialogHeader>
 
             <Tabs defaultValue="info" className="flex flex-col flex-1 overflow-hidden">
               <TabsList className="mx-6 mt-4 self-start">
@@ -563,8 +563,8 @@ export function OpportunityDetailSheet({
             </Tabs>
           </div>
         )}
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   )
 }
 
