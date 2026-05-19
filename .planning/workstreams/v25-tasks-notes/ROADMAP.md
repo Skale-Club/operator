@@ -19,7 +19,7 @@
 6. `npm run build` exits 0
 
 **Plans:** 2
-- [ ] 76-01-PLAN.md — Migration 067: tasks table + enums + RLS
+- [x] 76-01-PLAN.md — Migration 067: tasks table + enums + RLS
 - [ ] 76-02-PLAN.md — Migration 068: notes table + RLS + TypeScript types update
 
 ---
@@ -133,7 +133,7 @@
 
 | Phase | Plans | Status | Completed |
 |-------|-------|--------|-----------|
-| 76. DB-FOUNDATION | 0/2 | ○ Not Started | — |
+| 76. DB-FOUNDATION | 1/2 | 🔄 In Progress | — |
 | 77. TASKS-ACTIONS | 0/2 | ○ Not Started | — |
 | 78. TASKS-LIST-UI | 0/3 | ○ Not Started | — |
 | 79. NOTES-ACTIONS | 0/2 | ○ Not Started | — |

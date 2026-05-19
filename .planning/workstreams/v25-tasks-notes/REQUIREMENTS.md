@@ -18,10 +18,10 @@ Full CRM-grade task management, multi-tenant, linked to any entity.
 - [ ] **TSK-06:** User can sort the task list by due date, priority, status, or creation date
 - [ ] **TSK-07:** Tasks past their due date with status todo/in_progress show a visual overdue indicator (red badge or strikethrough date)
 - [ ] **TSK-08:** User can quick-create a task from the task list page without navigating away (slide-over or inline form)
-- [ ] **TSK-09:** A task can be linked to a contact, account, or opportunity (or none) via `entity_type` + `entity_id` polymorphic association
+- [x] **TSK-09:** A task can be linked to a contact, account, or opportunity (or none) via `entity_type` + `entity_id` polymorphic association
 - [ ] **TSK-10:** Clicking "Mark done" in the task list toggles status to `done` without a full-page reload
 - [ ] **TSK-11:** Tasks section appears in the detail page of every linked entity (contact, account, opportunity) showing tasks associated with that record
-- [ ] **TSK-12:** All task reads/writes are scoped by `org_id` via RLS — tasks from one org are invisible to another
+- [x] **TSK-12:** All task reads/writes are scoped by `org_id` via RLS — tasks from one org are invisible to another
 - [ ] **TSK-13:** `assigned_to` references `auth.users.id`; users see their own tasks highlighted or filterable by "My Tasks"
 - [ ] **TSK-14:** Task list shows task count badge in sidebar navigation item
 
@@ -52,4 +52,4 @@ Structured notes with pin support and entity associations.
 |--------|-------|--------|
 | TSK-01..14 | 77, 78, 81 | ○ |
 | NOT-01..12 | 79, 80, 81 | ○ |
-| DB schema | 76 | ○ |
+| DB schema (tasks 067) | 76-01 | ✅ |

@@ -1,26 +1,27 @@
 ---
 gsd_state_version: 1.0
 milestone: v2.5
-milestone_name: Tasks & Notes CRM System
-status: in_progress
-stopped_at: ""
-last_updated: "2026-05-18T00:00:00.000Z"
-last_activity: 2026-05-18
+milestone_name: milestone
+status: executing
+last_updated: "2026-05-19T03:04:16.994Z"
 progress:
   total_phases: 6
   completed_phases: 0
-  total_plans: 14
-  completed_plans: 0
+  total_plans: 2
+  completed_plans: 1
 ---
 
 # Xphere - State (v2.5 Tasks & Notes CRM System)
 
 ## Current Position
 
-Phase: 76
-Plan: not started
-Next: Phase 76-DB-FOUNDATION — migrations for tasks + notes tables
-Status: 0/6 phases complete
+Phase: 76 (db-foundation) — EXECUTING
+Plan: 2 of 2
+Next: 76-02 — migration 068: notes table
+Status: Ready to execute (76-01 complete)
+
+### Completed Plans
+- 76-01: Migration 067 — tasks table + enums + RLS (commit 396b8ac, 2026-05-19)
 
 ## Milestone Progress
 
@@ -61,13 +62,14 @@ See `.planning/workstreams/v25-tasks-notes/ROADMAP.md` for v2.5 phase details.
 **Core value:** Xphere is a tenant-aware integration and orchestration platform — reusable platform capabilities over hardcoding any single client's playbook.
 **App name:** Xphere
 **Production origin:** https://xphere.skale.club
-**Next migration number:** 067
+**Next migration number:** 068
 
 ## Accumulated Context
 
 ### v2.5 Scope
 
 Two coupled CRM primitives — Tasks and Notes — modeled after standard CRM systems (HubSpot, Pipedrive, Close CRM). Both are:
+
 - Multi-tenant (RLS via get_current_org_id())
 - Polymorphically linked to contacts/accounts/opportunities via entity_type + entity_id
 - Accessible from standalone pages (/dashboard/tasks, /dashboard/notes)
