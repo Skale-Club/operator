@@ -17,7 +17,7 @@
 3. `src/app/(dashboard)/calls/actions.ts` — `getUnifiedCalls(params)` e `getUnifiedCall(id)` funcionando
 4. `npm run build` exits 0
 
-**Plans:** 2/2 plans executed
+**Plans:** 2/2 plans complete
 - [x] 85-01-PLAN.md — Migration + VIEW SQL + TypeScript types
 - [x] 85-02-PLAN.md — Vitest test suite for getUnifiedCalls + getUnifiedCall (8 tests)
 
