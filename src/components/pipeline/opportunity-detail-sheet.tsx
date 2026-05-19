@@ -26,6 +26,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog'
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -246,13 +247,23 @@ export function OpportunityDetailSheet({
     <Dialog open={Boolean(opportunityId)} onOpenChange={onOpenChange}>
       <DialogContent className="flex h-[min(780px,calc(100vh-2rem))] max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-[880px] flex-col overflow-hidden p-0 gap-0">
         {loading && !opp ? (
-          <div className="p-6 space-y-3 animate-pulse">
-            <div className="h-6 w-2/3 rounded bg-bg-tertiary" />
-            <div className="h-4 w-1/2 rounded bg-bg-tertiary" />
-            <div className="h-32 rounded bg-bg-tertiary" />
-          </div>
+          <>
+            <VisuallyHidden>
+              <DialogTitle>Loading opportunity</DialogTitle>
+            </VisuallyHidden>
+            <div className="p-6 space-y-3 animate-pulse">
+              <div className="h-6 w-2/3 rounded bg-bg-tertiary" />
+              <div className="h-4 w-1/2 rounded bg-bg-tertiary" />
+              <div className="h-32 rounded bg-bg-tertiary" />
+            </div>
+          </>
         ) : !opp ? (
-          <div className="p-6 text-[13px] text-text-secondary">Opportunity not found.</div>
+          <>
+            <VisuallyHidden>
+              <DialogTitle>Opportunity not found</DialogTitle>
+            </VisuallyHidden>
+            <div className="p-6 text-[13px] text-text-secondary">Opportunity not found.</div>
+          </>
         ) : (
           <div className="flex flex-col overflow-hidden h-full">
             {/* Header */}
