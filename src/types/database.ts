@@ -3505,6 +3505,156 @@ export interface Database {
         }
         Relationships: []
       }
+      copilot_conversations: {
+        Row: {
+          id: string
+          org_id: string
+          title: string
+          visibility: string
+          started_at: string
+          ended_at: string | null
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          org_id: string
+          title?: string
+          visibility?: string
+          started_at?: string
+          ended_at?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          org_id?: string
+          title?: string
+          visibility?: string
+          started_at?: string
+          ended_at?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      copilot_messages: {
+        Row: {
+          id: string
+          conversation_id: string
+          role: string
+          parts: Record<string, unknown>[]
+          metadata: Record<string, unknown>
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          conversation_id: string
+          role: string
+          parts?: Record<string, unknown>[]
+          metadata?: Record<string, unknown>
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          conversation_id?: string
+          role?: string
+          parts?: Record<string, unknown>[]
+          metadata?: Record<string, unknown>
+          created_at?: string
+        }
+        Relationships: []
+      }
+      copilot_runs: {
+        Row: {
+          id: string
+          org_id: string
+          conversation_id: string
+          provider: string
+          model: string
+          input_tokens: number
+          output_tokens: number
+          estimated_cost_usd: number
+          status: string
+          error: string | null
+          started_at: string
+          ended_at: string | null
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          org_id: string
+          conversation_id: string
+          provider: string
+          model: string
+          input_tokens?: number
+          output_tokens?: number
+          estimated_cost_usd?: number
+          status?: string
+          error?: string | null
+          started_at?: string
+          ended_at?: string | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          org_id?: string
+          conversation_id?: string
+          provider?: string
+          model?: string
+          input_tokens?: number
+          output_tokens?: number
+          estimated_cost_usd?: number
+          status?: string
+          error?: string | null
+          started_at?: string
+          ended_at?: string | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      copilot_tool_calls: {
+        Row: {
+          id: string
+          run_id: string
+          tool_name: string
+          input: Record<string, unknown>
+          output: Record<string, unknown> | null
+          error: string | null
+          status: string
+          duration_ms: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          run_id: string
+          tool_name: string
+          input?: Record<string, unknown>
+          output?: Record<string, unknown> | null
+          error?: string | null
+          status?: string
+          duration_ms?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          run_id?: string
+          tool_name?: string
+          input?: Record<string, unknown>
+          output?: Record<string, unknown> | null
+          error?: string | null
+          status?: string
+          duration_ms?: number
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: Record<string, never>
     Functions: {

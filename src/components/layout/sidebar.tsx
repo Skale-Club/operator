@@ -25,6 +25,7 @@ import {
   Contact,
   UserCog,
   Building2,
+  Sparkles,
 } from 'lucide-react'
 
 import { createClient } from '@/lib/supabase/client'
@@ -57,6 +58,7 @@ const nav: NavItem[] = [
   { icon: Contact,         label: 'Contacts',     href: '/contacts',     group: 'sales' },
   { icon: Building2,       label: 'Companies',    href: '/accounts',     group: 'sales' },
   { icon: TrendingUp,      label: 'Pipeline',     href: '/pipeline',     group: 'sales' },
+  { icon: Sparkles,        label: 'Copilot',      href: '/copilot/conversations', group: 'build' },
   { icon: Bot,             label: 'Agents',       href: '/agents',       group: 'build' },
   { icon: Zap,             label: 'Automations',   href: '/automations',  group: 'build' },
   { icon: BookOpen,        label: 'Knowledge',    href: '/knowledge',    group: 'build' },
