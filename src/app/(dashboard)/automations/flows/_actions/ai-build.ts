@@ -1,7 +1,9 @@
 'use server'
 
+import OpenAI from 'openai'
 import Anthropic from '@anthropic-ai/sdk'
-import { getUser } from '@/lib/supabase/server'
+import { createClient, getUser } from '@/lib/supabase/server'
+import { getProviderKey } from '@/lib/integrations/get-provider-key'
 import { FlowDefinition } from '@/lib/flows/schema'
 import { AI_BUILDER_TOOLS, dispatchTool } from '@/lib/flows/ai-tools'
 
@@ -32,42 +34,142 @@ update_pipeline_stage, query_knowledge, execute_flow, log.
 For configurable params, populate the action's data.config with the right shape.
 Use {{ trigger.payload.field }} or {{ steps.node_id.output.field }} for variable interpolation.`
 
-export async function aiBuildFlow(input: {
-  prompt: string
-  currentDefinition: FlowDefinition
-}): Promise<ActionResult<{ definition: FlowDefinition; summary: string }>> {
-  const user = await getUser()
-  if (!user) return { ok: false, error: 'not_authenticated' }
+// ─── Provider selection ──────────────────────────────────────────────────────
+// Resolution order (matches existing knowledge synthesis pattern):
+//   1. Org-stored OpenRouter key (preferred — multi-model, billed per org)
+//   2. Org-stored Anthropic key
+//   3. ANTHROPIC_API_KEY env var (platform fallback for dev)
 
-  const apiKey = process.env.ANTHROPIC_API_KEY
-  if (!apiKey) return { ok: false, error: 'ai_not_configured' }
+type ProviderChoice =
+  | { kind: 'openrouter'; apiKey: string; model: string }
+  | { kind: 'anthropic';  apiKey: string; model: string }
 
-  const client = new Anthropic({ apiKey })
+async function resolveProvider(orgId: string): Promise<ProviderChoice | null> {
+  const supabase = await createClient()
 
-  // Working copy of the definition — tool dispatches mutate this in place
-  const workingDef: FlowDefinition = JSON.parse(JSON.stringify(input.currentDefinition))
+  const orKey = await getProviderKey('openrouter', orgId, supabase)
+  if (orKey) {
+    return {
+      kind: 'openrouter',
+      apiKey: orKey,
+      model: 'anthropic/claude-sonnet-4.5',
+    }
+  }
 
-  type ChatMsg = Anthropic.MessageParam
-  const messages: ChatMsg[] = [{ role: 'user', content: input.prompt }]
+  const anthKey = await getProviderKey('anthropic', orgId, supabase)
+  if (anthKey) {
+    return { kind: 'anthropic', apiKey: anthKey, model: 'claude-sonnet-4-6' }
+  }
+
+  const envKey = process.env.ANTHROPIC_API_KEY
+  if (envKey) return { kind: 'anthropic', apiKey: envKey, model: 'claude-sonnet-4-6' }
+
+  return null
+}
+
+// ─── Tool schema conversion: Anthropic → OpenAI (OpenRouter) ─────────────────
+
+function toOpenAiTools(): OpenAI.ChatCompletionTool[] {
+  return AI_BUILDER_TOOLS.map((t) => ({
+    type: 'function' as const,
+    function: {
+      name: t.name,
+      description: t.description,
+      parameters: t.input_schema as Record<string, unknown>,
+    },
+  }))
+}
+
+// ─── OpenRouter path (OpenAI-compatible, tool-calling) ───────────────────────
+
+async function buildViaOpenRouter(
+  apiKey: string,
+  model: string,
+  userPrompt: string,
+  workingDef: FlowDefinition,
+): Promise<{ summary: string }> {
+  const client = new OpenAI({ apiKey, baseURL: 'https://openrouter.ai/api/v1' })
+
+  type Msg = OpenAI.ChatCompletionMessageParam
+  const messages: Msg[] = [
+    { role: 'system', content: SYSTEM_PROMPT },
+    { role: 'user', content: userPrompt },
+  ]
+
   let summary = ''
   const MAX_TURNS = 10
 
   for (let turn = 0; turn < MAX_TURNS; turn++) {
-    let response: Anthropic.Message
-    try {
-      response = await client.messages.create({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 4096,
-        system: SYSTEM_PROMPT,
-        tools: AI_BUILDER_TOOLS,
-        messages,
+    const completion = await client.chat.completions.create({
+      model,
+      max_tokens: 4096,
+      messages,
+      tools: toOpenAiTools(),
+    })
+
+    const choice = completion.choices[0]
+    if (!choice) break
+    const msg = choice.message
+    if (msg.content) summary += msg.content
+
+    const toolCalls = (msg.tool_calls ?? []).filter(
+      (tc): tc is OpenAI.ChatCompletionMessageFunctionToolCall => tc.type === 'function',
+    )
+    if (toolCalls.length === 0) break
+
+    messages.push({
+      role: 'assistant',
+      content: msg.content ?? null,
+      tool_calls: toolCalls.map((tc) => ({
+        id: tc.id,
+        type: 'function' as const,
+        function: { name: tc.function.name, arguments: tc.function.arguments },
+      })),
+    })
+
+    for (const tc of toolCalls) {
+      let parsed: Record<string, unknown> = {}
+      try { parsed = JSON.parse(tc.function.arguments) } catch { /* ignore */ }
+      const dispatch = dispatchTool(tc.function.name, parsed, workingDef)
+      messages.push({
+        role: 'tool',
+        tool_call_id: tc.id,
+        content: dispatch.success
+          ? JSON.stringify({ ok: true, data: dispatch.data })
+          : JSON.stringify({ ok: false, error: dispatch.error }),
       })
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
-      return { ok: false, error: `ai_error: ${msg}` }
     }
 
-    // Collect text + tool uses from this turn
+    if (choice.finish_reason === 'stop') break
+  }
+
+  return { summary }
+}
+
+// ─── Anthropic path (native tool-use) ────────────────────────────────────────
+
+async function buildViaAnthropic(
+  apiKey: string,
+  model: string,
+  userPrompt: string,
+  workingDef: FlowDefinition,
+): Promise<{ summary: string }> {
+  const client = new Anthropic({ apiKey })
+
+  type ChatMsg = Anthropic.MessageParam
+  const messages: ChatMsg[] = [{ role: 'user', content: userPrompt }]
+  let summary = ''
+  const MAX_TURNS = 10
+
+  for (let turn = 0; turn < MAX_TURNS; turn++) {
+    const response = await client.messages.create({
+      model,
+      max_tokens: 4096,
+      system: SYSTEM_PROMPT,
+      tools: AI_BUILDER_TOOLS,
+      messages,
+    })
+
     const textParts: string[] = []
     const toolUses: Array<{ id: string; name: string; input: Record<string, unknown> }> = []
     for (const block of response.content) {
@@ -82,14 +184,10 @@ export async function aiBuildFlow(input: {
     }
 
     if (textParts.length > 0) summary += textParts.join('\n')
-
-    // No tool calls → we're done
     if (toolUses.length === 0) break
 
-    // Echo assistant turn + tool results back to the model
     messages.push({ role: 'assistant', content: response.content })
-
-    const toolResults: Anthropic.MessageParam = {
+    messages.push({
       role: 'user',
       content: toolUses.map((tu) => {
         const dispatch = dispatchTool(tu.name, tu.input, workingDef)
@@ -102,11 +200,49 @@ export async function aiBuildFlow(input: {
           is_error: !dispatch.success,
         }
       }),
-    }
-    messages.push(toolResults)
+    })
 
     if (response.stop_reason === 'end_turn') break
   }
 
-  return { ok: true, data: { definition: workingDef, summary: summary.trim() } }
+  return { summary }
+}
+
+// ─── Public action ───────────────────────────────────────────────────────────
+
+export async function aiBuildFlow(input: {
+  prompt: string
+  currentDefinition: FlowDefinition
+}): Promise<ActionResult<{ definition: FlowDefinition; summary: string; provider: string }>> {
+  const user = await getUser()
+  if (!user) return { ok: false, error: 'not_authenticated' }
+
+  const supabase = await createClient()
+  const { data: orgId } = await supabase.rpc('get_current_org_id')
+  if (!orgId) return { ok: false, error: 'no_active_org' }
+
+  const provider = await resolveProvider(orgId as string)
+  if (!provider) {
+    return {
+      ok: false,
+      error: 'ai_not_configured: connect OpenRouter or Anthropic under Integrations',
+    }
+  }
+
+  const workingDef: FlowDefinition = JSON.parse(JSON.stringify(input.currentDefinition))
+
+  try {
+    const { summary } =
+      provider.kind === 'openrouter'
+        ? await buildViaOpenRouter(provider.apiKey, provider.model, input.prompt, workingDef)
+        : await buildViaAnthropic(provider.apiKey, provider.model, input.prompt, workingDef)
+
+    return {
+      ok: true,
+      data: { definition: workingDef, summary: summary.trim(), provider: provider.kind },
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    return { ok: false, error: `ai_error: ${msg}` }
+  }
 }

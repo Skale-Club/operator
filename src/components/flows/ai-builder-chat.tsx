@@ -24,7 +24,7 @@ interface AiBuilderChatProps {
 
 export function AiBuilderChat({ workflowId, open, onClose }: AiBuilderChatProps) {
   const [prompt, setPrompt] = useState('')
-  const [history, setHistory] = useState<Array<{ role: 'user' | 'assistant'; text: string }>>([])
+  const [history, setHistory] = useState<Array<{ role: 'user' | 'assistant'; text: string; provider?: string }>>([])
   const [isPending, startTransition] = useTransition()
 
   const toDefinition = useFlowStore((s) => s.toDefinition)
@@ -57,6 +57,7 @@ export function AiBuilderChat({ workflowId, open, onClose }: AiBuilderChatProps)
       setHistory((h) => [...h, {
         role: 'assistant',
         text: result.data.summary || 'Done. The canvas has been updated.',
+        provider: result.data.provider,
       }])
     })
   }
@@ -112,6 +113,7 @@ export function AiBuilderChat({ workflowId, open, onClose }: AiBuilderChatProps)
           >
             <p className="text-[9px] uppercase tracking-wider opacity-60 mb-1">
               {msg.role}
+              {msg.provider && <span className="ml-1">· {msg.provider}</span>}
             </p>
             <p className="whitespace-pre-wrap leading-relaxed">{msg.text}</p>
           </div>
