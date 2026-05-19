@@ -821,7 +821,7 @@ export function ToolsTable({
           <div>
             <h2 className="text-xl font-semibold">No tool configurations yet</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Add your first tool to route Vapi tool calls through platform actions.
+              Add your first tool to route LLM tool calls from voice, chat, and inbound webhooks through platform actions.
             </p>
           </div>
           <Button onClick={openCreateSheet}>Add Tool</Button>

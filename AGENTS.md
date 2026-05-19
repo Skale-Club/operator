@@ -4,12 +4,14 @@ This file is for AI coding agents and automation working inside the Operator rep
 
 ## Mission
 
-Operator is a multi-tenant operations platform for Vapi-based voice AI deployments. The most important invariant in the system is the Action Engine path:
+Operator is a multi-tenant operations platform spanning voice AI (Vapi), chat (embeddable widget + multi-channel agents on WhatsApp/Instagram/Messenger), inbound webhook integrations (ManyChat, GHL, Meta), CRM, scheduling, and outbound campaigns.
 
-- receive a Vapi tool call
-- resolve the right organization
-- execute the configured action
-- return a safe response quickly enough for a live call
+The most important invariant in the system is the **Action Engine path** — the shared executor at `src/lib/action-engine/execute-action.ts` that every runtime calls into:
+
+- receive an inbound trigger (Vapi tool call, chat tool invocation mid-stream, agent action, webhook event)
+- resolve the right organization (tenant)
+- execute the configured action via the right provider
+- return a response quickly enough for the calling runtime — voice calls have the tightest latency budget
 
 If you are unsure how to prioritize a change, protect that path first.
 

@@ -18,7 +18,7 @@ export default async function ToolsPage() {
         eyebrow="Action engine"
         eyebrowIcon={Wrench}
         title="Automations"
-        description="Map Vapi tool names to platform actions and integrations. Each automation wires an LLM-callable name to a backend action."
+        description="Map LLM-callable tool names to platform actions and integrations. Wired once here, automations fire from voice calls (Vapi), the chat widget, multi-channel agents (WhatsApp, Instagram, Messenger), and inbound webhooks (ManyChat, GHL)."
       />
       <ToolsTable toolConfigs={toolConfigs} integrations={integrations} folders={folders} />
     </PageContainer>

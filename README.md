@@ -1,24 +1,25 @@
 # Operator
 
-Operator is a multi-tenant operations layer for agencies running voice AI assistants with Vapi. It gives each client organization its own tools, integrations, knowledge base, outbound campaigns, and call observability inside one admin panel, with Supabase RLS enforcing tenant isolation at the data layer.
+Operator is a multi-tenant operations platform for agencies. It unifies voice AI (Vapi), an embeddable chat widget, multi-channel agents (WhatsApp, Instagram, Messenger), inbound webhook integrations (ManyChat, GoHighLevel), CRM, scheduling, knowledge base, and outbound campaigns under one admin panel — with Supabase RLS enforcing tenant isolation at the data layer.
 
-The platform is intentionally designed as a configurable integration and orchestration layer, not as a single hardcoded voice workflow. In practice, each client organization can have its own assistant mappings, provider credentials, tool behaviors, outbound flows, and follow-up actions while still running on the same product foundation.
+The platform is intentionally designed as a configurable integration and orchestration layer, not as a single hardcoded workflow. Each client organization can have its own assistant mappings, provider credentials, tool behaviors, inbound routing rules, and follow-up actions while sharing the same product foundation.
 
-The current codebase reflects a shipped `v1.0` MVP completed on `2026-04-03`. The product focus is simple: when Vapi triggers a tool during a live call, Operator must resolve the right organization, execute the action, and return a result fast enough for production call flows.
+The shared substrate is the **Action Engine**: a single executor that any runtime (voice call, chat stream, agent invocation, inbound webhook) can call with a tool name + params. The engine resolves the tenant, loads the configured action, executes against the right provider, and logs the result. This means a new channel only needs to wire into the engine — the universe of available actions is shared.
 
 The canonical production origin for the app and all first-party webhooks is `https://xphere.skale.club`.
 
 ## What It Does
 
-- Maps Vapi assistants to tenant organizations
+- Routes tool calls from any runtime (Vapi voice, chat widget, multi-channel agents, ManyChat, Meta, GHL) through a shared Action Engine
+- Maps assistants/agents/channels to tenant organizations
 - Stores per-organization integration credentials with AES-256-GCM encryption
-- Executes tool-triggered business logic for live calls
-- Supports client-specific operational workflows built from shared primitives instead of one fixed universal call flow
-- Logs tool executions with timing, payloads, and outcomes
-- Ingests completed call data for observability
-- Provides dashboard metrics, call history, filters, and call detail views
-- Uploads and embeds knowledge documents for tenant-scoped semantic search
-- Runs outbound calling campaigns with CSV contact import and status tracking
+- Logs every tool execution with timing, payloads, and outcomes (`action_logs`)
+- Ingests completed call data, chat conversations, and inbound messages for observability
+- Manages CRM (contacts, accounts, opportunities, custom fields, tags) with per-org RLS
+- Runs Calendly-style scheduling with Google Calendar integration and public booking pages
+- Powers an embeddable chat widget with knowledge base pre-retrieval and tool-calling mid-stream
+- Runs outbound voice campaigns with CSV import and status tracking
+- Supports client-specific operational workflows built from shared primitives instead of one fixed universal flow
 
 ## Product Framing
 
@@ -46,15 +47,27 @@ Operator should be understood as the shared platform underneath many per-client 
 - Deno: Supabase Edge Function in [`supabase/functions/process-embeddings/index.ts`](/c:/Users/Vanildo/Dev/operator/supabase/functions/process-embeddings/index.ts)
 - GitHub Actions: low-frequency maintenance cron like [`.github/workflows/supabase-keepalive.yml`](/c:/Users/Vanildo/Dev/operator/.github/workflows/supabase-keepalive.yml)
 
-### Core flow
+### Core flow — Action Engine
 
-1. Vapi sends a tool-call webhook to [`src/app/api/vapi/tools/route.ts`](/c:/Users/Vanildo/Dev/operator/src/app/api/vapi/tools/route.ts).
-2. Operator resolves the organization from the assistant mapping.
-3. The configured tool and provider credentials are loaded for that tenant.
-4. The action executes and returns a result to Vapi.
-5. Execution logging is deferred asynchronously so the webhook still returns quickly.
+Any runtime can invoke a configured tool:
 
-This hot path is the shared execution substrate for tenant-specific workflows. The platform is expected to support different action combinations and orchestration patterns per organization rather than enforce a single universal business flow.
+| Runtime | Entry point |
+|---------|-------------|
+| Vapi voice call | `src/app/api/vapi/tools/route.ts` |
+| Chat widget stream | `src/lib/chat/stream/{anthropic,openrouter}.ts` |
+| Multi-channel agent | `src/lib/agent-runtime/run-agent.ts` |
+| ManyChat inbound | `src/lib/manychat/dispatch-event.ts` |
+| Meta (WhatsApp/IG/Messenger) inbound | `src/lib/meta/process-event.ts` |
+| GoHighLevel inbound | `src/lib/ghl/process-event.ts` |
+
+Each entry point follows the same shape:
+
+1. Verify webhook signature / API key, resolve the tenant (org)
+2. Call `executeAction(toolConfig, params, context)` in `src/lib/action-engine/`
+3. The engine dispatches to the provider executor (GHL, Twilio, Evolution Go, ManyChat, Custom Webhook, Knowledge Base, Google Contacts)
+4. Result returns to the caller; execution is logged to `action_logs` asynchronously
+
+This shared substrate is why adding a new channel doesn't require duplicating tool implementations — wire the runtime into the engine and every existing action becomes available.
 
 ### Canonical public URLs
 
@@ -75,23 +88,27 @@ When configuring Vapi server URLs, external callbacks, or customer-specific inte
 
 ## Main Product Areas
 
-- `Calls`: observability, filters, transcripts, tool execution visibility
-- `Campaigns`: outbound calling flows and contact status tracking
-- `Tools`: per-org action configuration used by Vapi tool calls
-- `Knowledge`: document upload, chunking, embeddings, semantic retrieval
-- `Assistants`: mapping Vapi assistants to organizations with a friendly internal display name
-- `Integrations`: encrypted credentials and provider configuration
-- `Organizations`: tenant management and org switching
+- `Calls`: unified timeline (AI + human), transcripts, recordings, tool execution visibility, campaigns, assistants, routing settings
+- `Conversations`: multi-channel inbox (chat widget, WhatsApp, Instagram, Messenger, SMS) with bot pause/resume
+- `Contacts / Accounts / Pipeline`: full CRM with custom fields, tags, bulk import, and Kanban opportunities
+- `Tasks / Notes`: per-entity follow-up tracking
+- `Scheduling`: Calendly-style booking pages with Google Calendar sync
+- `Agents`: multi-agent platform with per-agent tools, delegation, and channel routing
+- `Automations`: per-org action configuration — the LLM-callable tool catalog used by every runtime
+- `Knowledge`: document upload, chunking, embeddings, tenant-scoped semantic retrieval
+- `Integrations`: encrypted credentials and provider configuration (GHL, Twilio, Meta, Google, Evolution Go, etc.)
+- `Reviews`: Google Reviews via SerpAPI with embeddable widgets
+- `Admin`: super-admin panel (platform owner only) — org overview, platform stats, feature flags, SEO config
 
 Across these areas, the design goal is composability: the same base capabilities should support many client-specific operational playbooks.
 
 ## Integration Conventions
 
-- When linking a Vapi assistant into Operator, always store a human-friendly assistant name alongside the Vapi assistant ID.
-- Prefer the same readable name your team already uses in Vapi.
-- Do not use raw UUIDs, timestamps, or generated test labels as the primary assistant label in Operator.
-- Treat the Vapi assistant ID as a routing key, not as the user-facing identifier.
-- Assistant mappings should make it easy to jump back to the assistant in Vapi when debugging or reviewing configuration.
+- When linking a Vapi assistant into the platform, store a human-friendly assistant name alongside the Vapi assistant ID — prefer the same readable name your team uses in Vapi.
+- Don't use raw UUIDs, timestamps, or generated test labels as the primary label for assistants, agents, or tools.
+- Treat external provider IDs (Vapi assistant ID, GHL location ID, Twilio account SID) as routing keys, not user-facing identifiers.
+- Inbound webhook receivers (`/api/{provider}/*`) always return HTTP 200, even on internal errors — investigate via `action_logs` instead.
+- New action types must be added to the `action_type` enum + dispatcher in `src/lib/action-engine/execute-action.ts`. Once added, every runtime can use them without further wiring.
 
 ## Quick Start
 
