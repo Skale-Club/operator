@@ -6,7 +6,7 @@ import { LogsFilters } from '@/components/tools/logs-filters'
 import { PageContainer, PageHeader } from '@/components/layout/page-header'
 import type { LogStatus } from './actions'
 
-const BASE_PATH = '/tools/logs'
+const BASE_PATH = '/automations/logs'
 
 function buildPageUrl(
   page: number,
@@ -68,7 +68,7 @@ export default async function ToolLogsPage({
             )}
           </>
         }
-        back={{ href: '/tools', label: 'Back to tools' }}
+        back={{ href: '/automations', label: 'Back to automations' }}
       />
 
       <LogsFilters

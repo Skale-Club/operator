@@ -6,9 +6,9 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { toast } from 'sonner'
 import { Loader2, X } from 'lucide-react'
-import type { ToolConfigWithIntegration, ToolFolder } from '@/app/(dashboard)/tools/actions'
+import type { ToolConfigWithIntegration, ToolFolder } from '@/app/(dashboard)/automations/actions'
 import type { IntegrationForDisplay } from '@/app/(dashboard)/integrations/actions'
-import { createToolConfig, updateToolConfig } from '@/app/(dashboard)/tools/actions'
+import { createToolConfig, updateToolConfig } from '@/app/(dashboard)/automations/actions'
 import { Button } from '@/components/ui/button'
 import {
   Form,

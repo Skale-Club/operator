@@ -62,33 +62,16 @@ export function OpportunityCard({
   const tone = ageTone(days)
   const contactName = opportunity.contact?.name ?? opportunity.contact?.phone ?? 'Unassigned'
 
-  // Click vs drag: a click only registers if no drag movement happened.
-  // We track pointerdown position and only fire onOpen on pointerup if the
-  // pointer didn't travel further than ~5px (dnd-kit will already have
-  // taken over for actual drags via its activationConstraint).
-  const downPos = React.useRef<{ x: number; y: number } | null>(null)
-
-  function handlePointerDown(e: React.PointerEvent) {
-    downPos.current = { x: e.clientX, y: e.clientY }
-  }
-
-  function handleClick(e: React.MouseEvent) {
-    if (!downPos.current) return
-    const dx = Math.abs(e.clientX - downPos.current.x)
-    const dy = Math.abs(e.clientY - downPos.current.y)
-    downPos.current = null
-    if (dx > 5 || dy > 5) return // dragged, ignore click
-    onOpen(opportunity.id)
-  }
-
+  // Click vs drag: dnd-kit's PointerSensor with `distance: 6` only activates
+  // drag once the pointer travels > 6px. If the user releases without
+  // moving that far, no drag fires and onClick runs normally.
   return (
     <div
       ref={setNodeRef}
       style={style}
       {...attributes}
       {...listeners}
-      onPointerDown={handlePointerDown}
-      onClick={handleClick}
+      onClick={() => onOpen(opportunity.id)}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {

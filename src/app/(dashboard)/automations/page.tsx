@@ -17,8 +17,8 @@ export default async function ToolsPage() {
       <PageHeader
         eyebrow="Action engine"
         eyebrowIcon={Wrench}
-        title="Tools"
-        description="Map Vapi tool names to platform actions and integrations. Each tool wires an LLM-callable name to a backend action."
+        title="Automations"
+        description="Map Vapi tool names to platform actions and integrations. Each automation wires an LLM-callable name to a backend action."
       />
       <ToolsTable toolConfigs={toolConfigs} integrations={integrations} folders={folders} />
     </PageContainer>

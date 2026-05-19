@@ -35,9 +35,9 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { Wrench, MoreHorizontal, FolderPlus, GripVertical, ScrollText, ChevronRight, ChevronDown, Pencil, Plus, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
-import type { ToolConfigWithIntegration, ToolFolder } from '@/app/(dashboard)/tools/actions'
+import type { ToolConfigWithIntegration, ToolFolder } from '@/app/(dashboard)/automations/actions'
 import type { IntegrationForDisplay } from '@/app/(dashboard)/integrations/actions'
-import { deleteToolConfig, updateFolder, createFolder, deleteFolder, deleteFolderWithTools, reorderFolders, moveToolToFolder } from '@/app/(dashboard)/tools/actions'
+import { deleteToolConfig, updateFolder, createFolder, deleteFolder, deleteFolderWithTools, reorderFolders, moveToolToFolder } from '@/app/(dashboard)/automations/actions'
 import { cn } from '@/lib/utils'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -610,7 +610,7 @@ export function ToolsTable({
       header: () => <span className="text-xs font-medium">Tool Name</span>,
       cell: ({ row }) => (
         <Link
-          href={`/tools/${row.original.id}`}
+          href={`/automations/${row.original.id}`}
           className="font-mono text-sm underline-offset-4 hover:underline"
         >
           {row.getValue('tool_name')}
@@ -687,7 +687,7 @@ export function ToolsTable({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
-                <Link href={`/tools/${tool.id}`}>View Logs</Link>
+                <Link href={`/automations/${tool.id}`}>View Logs</Link>
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => openEditSheet(tool)}>
                 Edit Tool Config
@@ -805,7 +805,7 @@ export function ToolsTable({
             </Button>
           )}
           <Button variant="outline" size="sm" asChild>
-            <Link href="/tools/logs">
+            <Link href="/automations/logs">
               <ScrollText className="h-4 w-4 mr-1.5" />
               Logs
             </Link>

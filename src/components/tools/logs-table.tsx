@@ -14,7 +14,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { LogDetailSheet } from './log-detail-sheet'
-import type { LogWithCall } from '@/app/(dashboard)/tools/logs/actions'
+import type { LogWithCall } from '@/app/(dashboard)/automations/logs/actions'
 
 interface LogsTableProps {
   logs: LogWithCall[]

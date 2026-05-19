@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import Link from 'next/link'
 import { format } from 'date-fns'
-import type { LogWithCall } from '@/app/(dashboard)/tools/logs/actions'
+import type { LogWithCall } from '@/app/(dashboard)/automations/logs/actions'
 
 function safeStringify(value: unknown): string {
   try {

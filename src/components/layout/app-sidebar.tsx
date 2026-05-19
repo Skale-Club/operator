@@ -48,7 +48,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 const navItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/', active: true },
   { icon: Phone, label: 'Calls', href: '/calls', active: true },
-  { icon: Zap, label: 'Tools', href: '/tools', active: true },
+  { icon: Zap, label: 'Automations', href: '/automations', active: true },
   { icon: Bot, label: 'Agents', href: '/agents', active: true },
   { icon: BookOpen, label: 'Knowledge', href: '/knowledge', active: true },
   { icon: Plug2, label: 'Integrations', href: '/integrations', active: true },

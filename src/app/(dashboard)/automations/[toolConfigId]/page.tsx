@@ -3,7 +3,7 @@ import { format } from 'date-fns'
 import { Wrench } from 'lucide-react'
 
 import { createClient } from '@/lib/supabase/server'
-import { getLogs, getLogStats } from '@/app/(dashboard)/tools/logs/actions'
+import { getLogs, getLogStats } from '@/app/(dashboard)/automations/logs/actions'
 import type { Database } from '@/types/database'
 import { StatusPill } from '@/components/design-system/status-pill'
 import { MetricCard } from '@/components/design-system/metric-card'
@@ -18,7 +18,7 @@ import { LogsTable } from '@/components/tools/logs-table'
 import { LogsFilters } from '@/components/tools/logs-filters'
 import { InlineToolName } from '@/components/tools/inline-tool-name'
 import { PageContainer, PageHeader } from '@/components/layout/page-header'
-import type { LogStatus } from '@/app/(dashboard)/tools/logs/actions'
+import type { LogStatus } from '@/app/(dashboard)/automations/logs/actions'
 
 type ToolConfigRow = Database['public']['Tables']['tool_configs']['Row']
 
@@ -60,7 +60,7 @@ function buildPageUrl(
   if (params.to) p.set('to', params.to)
   if (params.q) p.set('q', params.q)
   p.set('page', String(page))
-  return `/tools/${toolConfigId}?${p.toString()}`
+  return `/automations/${toolConfigId}?${p.toString()}`
 }
 
 export default async function ToolDetailPage({
@@ -90,7 +90,7 @@ export default async function ToolDetailPage({
   if (toolError || !toolConfig) notFound()
 
   const typedToolConfig = toolConfig as ToolConfigDetail
-  const basePath = `/tools/${toolConfigId}`
+  const basePath = `/automations/${toolConfigId}`
 
   const [{ logs, total, pageCount }, stats] = await Promise.all([
     getLogs({
@@ -113,9 +113,9 @@ export default async function ToolDetailPage({
   return (
     <PageContainer>
       <PageHeader
-        eyebrow="Tool"
+        eyebrow="Automation"
         eyebrowIcon={Wrench}
-        back={{ href: '/tools', label: 'Back to tools' }}
+        back={{ href: '/automations', label: 'Back to automations' }}
         title={
           <InlineToolName toolConfigId={toolConfigId} initialName={typedToolConfig.tool_name} />
         }
