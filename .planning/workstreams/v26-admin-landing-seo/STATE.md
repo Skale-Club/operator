@@ -4,8 +4,8 @@ milestone: v2.6
 milestone_name: Admin Panel + Landing Page + SEO
 status: in_progress
 stopped_at: ""
-last_updated: "2026-05-18T00:00:00.000Z"
-last_activity: 2026-05-18
+last_updated: "2026-05-19T00:00:00.000Z"
+last_activity: 2026-05-19
 progress:
   total_phases: 3
   completed_phases: 0
@@ -39,7 +39,7 @@ Status: 0/3 phases complete
 - v2.2 Chat Redesign: 🚧 separate workstream
 - v2.3 Integrations Refactor + Twilio Multi-Number: 🚧 human_uat
 - v2.4 CRM Expansion: ✅ Shipped 2026-05-19
-- v2.5 Tasks & Notes CRM System: 🚧 planned (not started)
+- v2.5 Tasks & Notes CRM System: 🚧 in_progress (1/6 phases — DB foundation done)
 - v2.6 Admin Panel + Landing Page + SEO: 🔄 in progress
 
 ## Phases
