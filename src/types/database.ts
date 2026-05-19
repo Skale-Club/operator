@@ -3376,6 +3376,135 @@ export interface Database {
           }
         ]
       }
+      workflow_triggers: {
+        Row: {
+          id: string
+          org_id: string
+          workflow_id: string
+          event_type: string
+          filter: Record<string, unknown>
+          schedule_cron: string | null
+          enabled: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          org_id: string
+          workflow_id: string
+          event_type: string
+          filter?: Record<string, unknown>
+          schedule_cron?: string | null
+          enabled?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          org_id?: string
+          workflow_id?: string
+          event_type?: string
+          filter?: Record<string, unknown>
+          schedule_cron?: string | null
+          enabled?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      workflow_runs: {
+        Row: {
+          id: string
+          org_id: string
+          workflow_id: string
+          workflow_version_id: string | null
+          trigger_type: string
+          trigger_payload: Record<string, unknown>
+          status: string
+          state: Record<string, unknown>
+          started_at: string | null
+          ended_at: string | null
+          error: string | null
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          org_id: string
+          workflow_id: string
+          workflow_version_id?: string | null
+          trigger_type?: string
+          trigger_payload?: Record<string, unknown>
+          status?: string
+          state?: Record<string, unknown>
+          started_at?: string | null
+          ended_at?: string | null
+          error?: string | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          org_id?: string
+          workflow_id?: string
+          workflow_version_id?: string | null
+          trigger_type?: string
+          trigger_payload?: Record<string, unknown>
+          status?: string
+          state?: Record<string, unknown>
+          started_at?: string | null
+          ended_at?: string | null
+          error?: string | null
+          created_by?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      workflow_run_steps: {
+        Row: {
+          id: string
+          run_id: string
+          step_id: string
+          node_id: string
+          node_type: string
+          status: string
+          input: Record<string, unknown>
+          output: Record<string, unknown>
+          error: string | null
+          started_at: string | null
+          ended_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          run_id: string
+          step_id: string
+          node_id: string
+          node_type: string
+          status?: string
+          input?: Record<string, unknown>
+          output?: Record<string, unknown>
+          error?: string | null
+          started_at?: string | null
+          ended_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          run_id?: string
+          step_id?: string
+          node_id?: string
+          node_type?: string
+          status?: string
+          input?: Record<string, unknown>
+          output?: Record<string, unknown>
+          error?: string | null
+          started_at?: string | null
+          ended_at?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: Record<string, never>
     Functions: {

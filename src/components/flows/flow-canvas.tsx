@@ -17,6 +17,7 @@ import { nodeTypes } from './nodes'
 import { FlowPalette } from './flow-palette'
 import { NodeConfigPanel } from './node-config-panel'
 import { FlowToolbar } from './flow-toolbar'
+import { AiBuilderChat } from './ai-builder-chat'
 import type { FlowDefinition, FlowNodeType } from '@/lib/flows/schema'
 import { saveWorkflowDefinition } from '@/app/(dashboard)/automations/flows/_actions/workflows'
 import { toast } from 'sonner'
@@ -30,6 +31,7 @@ interface FlowCanvasProps {
 function CanvasInner({ workflowId, workflowName, initialDefinition }: FlowCanvasProps) {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null)
+  const [aiOpen, setAiOpen] = useState(false)
   const { screenToFlowPosition } = useReactFlow()
 
   const nodes = useFlowStore((s) => s.nodes)
@@ -88,7 +90,12 @@ function CanvasInner({ workflowId, workflowName, initialDefinition }: FlowCanvas
       <FlowPalette />
 
       <div className="flex-1 flex flex-col min-w-0">
-        <FlowToolbar workflowId={workflowId} workflowName={workflowName} />
+        <FlowToolbar
+          workflowId={workflowId}
+          workflowName={workflowName}
+          onToggleAi={() => setAiOpen((v) => !v)}
+          aiOpen={aiOpen}
+        />
         <div ref={wrapperRef} className="flex-1 relative">
           <ReactFlow
             nodes={nodes}
@@ -118,6 +125,7 @@ function CanvasInner({ workflowId, workflowName, initialDefinition }: FlowCanvas
       </div>
 
       <NodeConfigPanel />
+      <AiBuilderChat workflowId={workflowId} open={aiOpen} onClose={() => setAiOpen(false)} />
     </div>
   )
 }

@@ -4,21 +4,25 @@ import { useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { ArrowLeft, Save, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
+import { ArrowLeft, Save, CheckCircle2, AlertCircle, Loader2, Play, Sparkles, History } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useFlowStore } from '@/stores/flow-store'
 import { validateFlow } from '@/lib/flows/schema'
 import { saveWorkflowDefinition } from '@/app/(dashboard)/automations/flows/_actions/workflows'
+import { runFlowNow } from '@/app/(dashboard)/automations/flows/_actions/runs'
 
 interface FlowToolbarProps {
   workflowId: string
   workflowName: string
+  onToggleAi?: () => void
+  aiOpen?: boolean
 }
 
-export function FlowToolbar({ workflowId, workflowName }: FlowToolbarProps) {
+export function FlowToolbar({ workflowId, workflowName, onToggleAi, aiOpen }: FlowToolbarProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const [isRunning, startRun] = useTransition()
 
   const dirty = useFlowStore((s) => s.dirty)
   const lastSavedAt = useFlowStore((s) => s.lastSavedAt)
@@ -43,6 +47,27 @@ export function FlowToolbar({ workflowId, workflowName }: FlowToolbarProps) {
       markSaved()
       toast.success(`Saved version ${result.data.versionNumber}`)
       router.refresh()
+    })
+  }
+
+  function handleRunNow() {
+    startRun(async () => {
+      // Save any pending edits first
+      if (dirty) {
+        const save = await saveWorkflowDefinition(workflowId, toDefinition())
+        if (save.ok) markSaved()
+      }
+      const result = await runFlowNow({ workflowId, triggerPayload: {} })
+      if (!result.ok) {
+        toast.error(`Run failed: ${result.error}`)
+        return
+      }
+      if (result.data.status === 'succeeded') {
+        toast.success('Run succeeded')
+      } else {
+        toast.error('Run failed — check run history')
+      }
+      router.push(`/automations/flows/runs/${result.data.runId}`)
     })
   }
 
@@ -84,6 +109,31 @@ export function FlowToolbar({ workflowId, workflowName }: FlowToolbarProps) {
 
       <div className="flex items-center gap-2">
         {statusEl}
+        <Button asChild size="sm" variant="ghost" className="gap-1.5">
+          <Link href={`/automations/flows/${workflowId}/runs`}>
+            <History className="h-3.5 w-3.5" /> Runs
+          </Link>
+        </Button>
+        {onToggleAi && (
+          <Button
+            size="sm"
+            variant={aiOpen ? 'secondary' : 'outline'}
+            onClick={onToggleAi}
+            className="gap-1.5"
+          >
+            <Sparkles className="h-3.5 w-3.5" /> AI
+          </Button>
+        )}
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={handleRunNow}
+          disabled={isRunning}
+          className="gap-1.5"
+        >
+          {isRunning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
+          Run now
+        </Button>
         <Button size="sm" onClick={handleSaveVersion} disabled={isPending} className="gap-1.5">
           {isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
           Save version
