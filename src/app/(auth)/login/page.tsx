@@ -1,5 +1,6 @@
 'use client'
 
+import * as React from 'react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -105,10 +106,11 @@ export default function LoginPage() {
 
   const isSubmitting = form.formState.isSubmitting
 
-  const searchParams = typeof window !== 'undefined'
-    ? new URLSearchParams(window.location.search)
-    : new URLSearchParams()
-  const urlError = searchParams.get('error')
+  const [mounted, setMounted] = React.useState(false)
+  React.useEffect(() => { setMounted(true) }, [])
+  const urlError = mounted
+    ? new URLSearchParams(window.location.search).get('error')
+    : null
 
   return (
     <div className="w-full px-4 sm:px-0 sm:max-w-[400px]">

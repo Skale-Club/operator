@@ -69,7 +69,6 @@ export function OnboardingTour() {
   const [step, setStep] = React.useState(0)
   const [rect, setRect] = React.useState<DOMRect | null>(null)
 
-  // Only mount tour on the dashboard root after a slight delay.
   React.useEffect(() => {
     if (pathname !== '/') return
     if (readCookie(COOKIE) === '1') return
@@ -77,7 +76,6 @@ export function OnboardingTour() {
     return () => window.clearTimeout(id)
   }, [pathname])
 
-  // Resolve target rect for the current step.
   React.useEffect(() => {
     if (!active) return
     const current = STEPS[step]
@@ -102,7 +100,6 @@ export function OnboardingTour() {
     }
   }, [active, step])
 
-  // Close on Escape.
   React.useEffect(() => {
     if (!active) return
     const onKey = (e: KeyboardEvent) => {
@@ -131,6 +128,55 @@ export function OnboardingTour() {
   const current = STEPS[step]
   const isCenter = !current.selector || !rect
   const tooltipPos = computeTooltipPosition(rect, current.side ?? 'bottom')
+
+  const tooltipCard = (
+    <div
+      className={cn(
+        'pointer-events-auto w-[320px] max-w-[calc(100vw-32px)] rounded-[12px] border border-border bg-bg-elevated p-4 shadow-lg relative',
+        'animate-fade-in',
+      )}
+    >
+      <button
+        type="button"
+        onClick={dismiss}
+        aria-label="Skip tour"
+        className="absolute top-2 right-2 p-1 rounded-[6px] text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary"
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
+      <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.08em] text-accent mb-1">
+        <Sparkles className="h-3 w-3" />
+        <span>Tour · {step + 1}/{STEPS.length}</span>
+      </div>
+      <h3 className="text-[15px] font-semibold text-text-primary mb-1">{current.title}</h3>
+      <p className="text-[12.5px] text-text-secondary leading-relaxed">{current.body}</p>
+
+      <div className="mt-4 flex items-center justify-between">
+        <button
+          type="button"
+          onClick={dismiss}
+          className="text-[12px] text-text-tertiary hover:text-text-secondary"
+        >
+          Skip tour
+        </button>
+        <div className="flex items-center gap-1">
+          {STEPS.map((_, i) => (
+            <span
+              key={i}
+              className={cn(
+                'h-1.5 rounded-full transition-all duration-300',
+                i === step ? 'w-4 bg-accent' : 'w-1.5 bg-border',
+              )}
+            />
+          ))}
+        </div>
+        <Button size="sm" onClick={next}>
+          {step >= STEPS.length - 1 ? 'Finish' : 'Next'}
+          <ArrowRight className="h-3 w-3" />
+        </Button>
+      </div>
+    </div>
+  )
 
   return (
     <div
@@ -172,58 +218,19 @@ export function OnboardingTour() {
         <div className="absolute inset-0 bg-black/55 pointer-events-auto" onClick={dismiss} />
       )}
 
-      {/* Tooltip card */}
-      <div
-        className={cn(
-          'pointer-events-auto absolute w-[320px] max-w-[calc(100vw-32px)] rounded-[12px] border border-border bg-bg-elevated p-4 shadow-lg',
-          'animate-fade-in',
-        )}
-        style={
-          isCenter
-            ? { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }
-            : { top: `${tooltipPos.top}px`, left: `${tooltipPos.left}px` }
-        }
-      >
-        <button
-          type="button"
-          onClick={dismiss}
-          aria-label="Skip tour"
-          className="absolute top-2 right-2 p-1 rounded-[6px] text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary"
+      {/* Tooltip — flex-centered when no anchor (perfect viewport center) */}
+      {isCenter ? (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          {tooltipCard}
+        </div>
+      ) : (
+        <div
+          className="absolute pointer-events-none"
+          style={{ top: `${tooltipPos.top}px`, left: `${tooltipPos.left}px` }}
         >
-          <X className="h-3.5 w-3.5" />
-        </button>
-        <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.08em] text-accent mb-1">
-          <Sparkles className="h-3 w-3" />
-          <span>Tour · {step + 1}/{STEPS.length}</span>
+          {tooltipCard}
         </div>
-        <h3 className="text-[15px] font-semibold text-text-primary mb-1">{current.title}</h3>
-        <p className="text-[12.5px] text-text-secondary leading-relaxed">{current.body}</p>
-
-        <div className="mt-4 flex items-center justify-between">
-          <button
-            type="button"
-            onClick={dismiss}
-            className="text-[12px] text-text-tertiary hover:text-text-secondary"
-          >
-            Skip tour
-          </button>
-          <div className="flex items-center gap-1">
-            {STEPS.map((_, i) => (
-              <span
-                key={i}
-                className={cn(
-                  'h-1.5 rounded-full transition-all duration-300',
-                  i === step ? 'w-4 bg-accent' : 'w-1.5 bg-border',
-                )}
-              />
-            ))}
-          </div>
-          <Button size="sm" onClick={next}>
-            {step >= STEPS.length - 1 ? 'Finish' : 'Next'}
-            <ArrowRight className="h-3 w-3" />
-          </Button>
-        </div>
-      </div>
+      )}
     </div>
   )
 }
@@ -260,7 +267,6 @@ function computeTooltipPosition(
       left = rect.right + pad
       break
   }
-  // Clamp to viewport
   top = Math.max(pad, Math.min(vh - H - pad, top))
   left = Math.max(pad, Math.min(vw - W - pad, left))
   return { top, left }
