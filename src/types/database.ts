@@ -2407,6 +2407,145 @@ export interface Database {
           }
         ]
       }
+      email_sections: {
+        Row: {
+          id: string
+          org_id: string
+          name: string
+          type: string
+          html_content: string
+          is_global: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          org_id: string
+          name: string
+          type?: string
+          html_content?: string
+          is_global?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          org_id?: string
+          name?: string
+          type?: string
+          html_content?: string
+          is_global?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'email_sections_org_id_fkey'
+            columns: ['org_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      email_template_sections: {
+        Row: {
+          id: string
+          template_id: string
+          section_id: string | null
+          type: string
+          name: string
+          html_content: string
+          sort_order: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          template_id: string
+          section_id?: string | null
+          type?: string
+          name: string
+          html_content?: string
+          sort_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          template_id?: string
+          section_id?: string | null
+          type?: string
+          name?: string
+          html_content?: string
+          sort_order?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'email_template_sections_template_id_fkey'
+            columns: ['template_id']
+            isOneToOne: false
+            referencedRelation: 'email_templates'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'email_template_sections_section_id_fkey'
+            columns: ['section_id']
+            isOneToOne: false
+            referencedRelation: 'email_sections'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      email_templates: {
+        Row: {
+          id: string
+          org_id: string
+          name: string
+          subject_line: string
+          preview_text: string
+          ai_prompt: string | null
+          status: string
+          tags: string[]
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          org_id: string
+          name: string
+          subject_line?: string
+          preview_text?: string
+          ai_prompt?: string | null
+          status?: string
+          tags?: string[]
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          org_id?: string
+          name?: string
+          subject_line?: string
+          preview_text?: string
+          ai_prompt?: string | null
+          status?: string
+          tags?: string[]
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'email_templates_org_id_fkey'
+            columns: ['org_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          }
+        ]
+      }
       event_types: {
         Row: {
           id: string
