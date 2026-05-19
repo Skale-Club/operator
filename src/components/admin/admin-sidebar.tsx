@@ -2,11 +2,12 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { ShieldCheck, Building2 } from 'lucide-react'
+import { ShieldCheck, Building2, Settings } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const navItems = [
   { href: '/admin/orgs', label: 'Organizations', icon: Building2 },
+  { href: '/admin/settings', label: 'Settings', icon: Settings },
 ]
 
 export function AdminSidebar() {
