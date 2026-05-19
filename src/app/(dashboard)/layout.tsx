@@ -12,6 +12,7 @@ import { BrandingStyle } from '@/components/layout/branding-style'
 import { CelebrationProvider } from '@/components/design-system/celebration-provider'
 import { OnboardingTour } from '@/components/onboarding/tour'
 import { PageTransition } from '@/components/layout/page-transition'
+import { CopilotShell } from '@/components/copilot/copilot-launcher'
 import { createClient, getUser } from '@/lib/supabase/server'
 import { getOrgBranding } from '@/lib/branding.server'
 
@@ -115,6 +116,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
               </div>
               <OnboardingTour />
               <DialPadPanelServer />
+              <CopilotShell />
             </CelebrationProvider>
           </VoiceDeviceShell>
         </CommandPaletteProvider>
