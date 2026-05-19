@@ -1,5 +1,23 @@
 # Milestones
 
+## v2.7 Unified Calls Hub + Pipeline UX (Shipped: 2026-05-19)
+
+**Stats:** 8 phases, 9 plans, 17 commits, 41 files, +2,685 / −2 lines
+**Timeline:** 2026-05-19 (single session)
+
+**Key accomplishments:**
+
+1. **Unified Calls Hub** — `unified_calls` VIEW (migration 063) UNION ALL of `calls` (AI/Vapi) and `call_logs` (Human/Twilio) with `call_type` discriminator, `SECURITY INVOKER` RLS; `UnifiedCall` TypeScript type; `getUnifiedCalls` (filters: type/direction/missed/search/pagination) + `getUnifiedCall` with contact enrichment (CALL-01, CALL-02)
+2. **Calls timeline UI** — `/calls` route group with tabs nav (Timeline/Campaigns/Assistants/Settings); `UnifiedCallTimeline` with date-grouped rows, TypeBadge (AI=violet, Human=muted), direction icons, status pills, recording/transcript badges, debounced search, URL-based pagination (CALL-03, CALL-04)
+3. **Sub-routes + Settings** — `/calls/campaigns` and `/calls/assistants` inherit tabs layout; `/calls/settings` consolidates routing modes + Dialer + Twilio config with conditional banners; sidebar single "Calls" item; `/phone` and `/voice` redirect to `/calls` (CALL-05, CALL-06, CALL-09, CALL-10)
+4. **Unified detail page** — `/calls/[id]` shared header shell + type-branch: `CallDetailAi` (transcript timeline via `buildTimeline`, cost, assistant ID) and `CallDetailHuman` (waveform player, notes editor, contact link) (CALL-07, CALL-08)
+5. **Pipeline click/drag fix** — `OpportunityCard` `role="button"` + `onClick→openSheet`; `PointerSensor distance:6` prevents accidental drags; `OpportunityDetailSheet` (Dialog) with Info/Activity/Notes tabs, full edit mode (title/value/stage/contact combobox/tags/custom fields), `updateOpportunity` on save (PIPE-01..06)
+6. **Kanban same-column reorder** — `reorderOpportunities(stageId, orderedIds[])` batch-updates `position` column; `onDragEnd` splice-based optimistic update with rollback on error (PIPE-07, PIPE-08)
+
+**Archives:** [v2.7-ROADMAP.md](milestones/v2.7-ROADMAP.md) | [v2.7-REQUIREMENTS.md](milestones/v2.7-REQUIREMENTS.md)
+
+---
+
 ## v2.6 Admin Landing SEO (Shipped: 2026-05-19)
 
 **Stats:** 3 phases, 10 summaries, 56 files, +3,998 / −230 lines

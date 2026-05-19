@@ -12,6 +12,10 @@ Operator is not meant to encode one universal agency workflow. It is the shared 
 
 That business logic may differ by client. The invariant is the reliability of the execution path, not that every tenant follows the same pattern.
 
+## Previous: v2.7 Unified Calls Hub + Pipeline UX ✅ Shipped 2026-05-19
+
+8 phases (85–92): unified /calls hub merging AI+Human calls, tabs sub-routes, detail variants, sidebar cleanup, OpportunityDetailSheet, DnD fix, same-column kanban reorder.
+
 ## Previous: v2.6 Admin Panel + Landing Page + SEO ✅ Shipped 2026-05-19
 
 3 phases (82–84), super admin panel + landing page + SEO structure. Migrations 069 (org settings jsonb) + 070 (seo_config table) applied.
@@ -249,7 +253,7 @@ Itens persistidos em `.planning/phases/32-ghl-lost-lead-reengagement-sms-automat
 - Custom Fields system: `custom_field_definitions` table (13 types, 3 entities, reserved-key enforcement), server-side zod validation, settings UI with drag-reorder/groups/archive, `CustomFieldsForm`/`CustomFieldsDisplay` in all forms/detail pages, dynamic list columns+filters, CSV IO — v2.4 (CF-01..15)
 - Contact Import Pipeline: queued background import with direct-to-Storage XHR upload (50MB/200k rows), mapping wizard, dedup preview, Realtime progress, per-row errors, retry-failed, account auto-create, imports history page — v2.4 (IMP-01..20)
 
-### Validated (v2.5 + v2.6 additions)
+### Validated (v2.5 + v2.6 + v2.7 additions)
 
 - Tasks entity: createTask / updateTask / deleteTask / getTasks / toggleTaskDone with Zod validation + RLS — v2.5 (TSK-01..14)
 - Notes entity: createNote / updateNote / deleteNote / getNotes / toggleNotePin, pinned-first ordering, content search — v2.5 (NOT-01..12)
@@ -259,6 +263,8 @@ Itens persistidos em `.planning/phases/32-ghl-lost-lead-reengagement-sms-automat
 - Super admin panel `/admin/*` restricted to platform admin email with service-role data access — v2.6 (ADM-01..06)
 - Landing page with Framer Motion animations, dark-mode-first, fully responsive — v2.6 (LND-01..06)
 - SEO structure: metadata, OG, sitemap, robots.txt, JSON-LD, `/admin/seo` config panel — v2.6 (SEO-01..06)
+- Unified Calls Hub: `unified_calls` VIEW, `/calls` timeline with AI+Human filter, tabs sub-routes, detail variants — v2.7 (CALL-01..10)
+- Pipeline UX: OpportunityDetailSheet with edit mode, DnD click/drag fix, same-column kanban reorder — v2.7 (PIPE-01..08)
 
 ### Backlog (next milestone candidates)
 
@@ -334,4 +340,4 @@ Itens persistidos em `.planning/phases/32-ghl-lost-lead-reengagement-sms-automat
 
 Update this file whenever deployment assumptions, validated requirements, or core constraints change.
 
-*Last updated: 2026-05-19 — v2.5 Tasks & Notes + v2.6 Admin/Landing/SEO both shipped. v2.3 Integrations Refactor still pending HUMAN-UAT.*
+*Last updated: 2026-05-19 — v2.5, v2.6, v2.7 all shipped. v2.3 Integrations Refactor still pending HUMAN-UAT.*
