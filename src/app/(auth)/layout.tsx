@@ -3,10 +3,10 @@ import { redirect } from 'next/navigation'
 
 export default async function AuthLayout({ children }: { children: React.ReactNode }) {
   const user = await getUser()
-  if (user) redirect('/')
+  if (user) redirect('/dashboard')
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
+    <div className="dark min-h-screen bg-[#08090A] flex">
       {children}
     </div>
   )
