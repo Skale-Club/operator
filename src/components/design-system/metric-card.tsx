@@ -128,7 +128,7 @@ export function MetricCard({
     <div
       className={cn(
         'group relative flex flex-col gap-3 p-5',
-        'rounded-[12px] border border-border bg-bg-secondary',
+        'rounded-[12px] border border-border bg-bg-secondary overflow-hidden',
         'shadow-elevation-sm h-full',
         'transition-[transform,box-shadow,border-color] duration-200 ease-out',
         href && 'cursor-pointer hover:-translate-y-0.5 hover:shadow-elevation-md hover:border-border-strong',
