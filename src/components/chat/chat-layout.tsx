@@ -25,13 +25,15 @@
  * optimistic state with the canonical DB.
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { toast } from 'sonner'
 
 import {
   ConversationSummary,
   ConversationMessage,
   ConversationPriority,
+  ConversationStatus,
+  ConversationLabel,
 } from '@/types/chat'
 import {
   toggleBotStatus,
@@ -65,7 +67,7 @@ function mapConversationRow(row: Record<string, unknown>): ConversationSummary {
   const pageId = meta?.page_id ?? null
   return {
     id: row.id as string,
-    status: (row.status as string) ?? 'open',
+    status: ((row.status as string) ?? 'open') as ConversationStatus,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
     lastMessageAt: (row.last_message_at as string | null) ?? null,
@@ -81,6 +83,10 @@ function mapConversationRow(row: Record<string, unknown>): ConversationSummary {
     priority: ((row.priority as string) ?? 'normal') as ConversationPriority,
     contactId: (row.contact_id as string | null) ?? null,
     assignedUserId: (row.assigned_user_id as string | null) ?? null,
+    starred: Boolean(row.starred),
+    waitUntil: (row.wait_until as string | null) ?? null,
+    // realtime payloads don't include unread/labels — preserve previous state
+    // via upsert (these are merged in from the API response).
   }
 }
 
@@ -115,12 +121,47 @@ export function ChatLayout({ currentOrgId, currentUserId, agentMap }: ChatLayout
   // ignore identical updates to prevent refetch loops.
   const handleFilterChange = useCallback((next: ConversationFilterChange) => {
     setFilters((prev) => {
-      if (prev.status === next.status && prev.assigned === next.assigned && prev.channel === next.channel) {
-        return prev
-      }
-      return next
+      const prevKey = JSON.stringify({
+        s: prev.status ?? null,
+        ss: prev.statuses ?? null,
+        a: prev.assigned ?? null,
+        c: prev.channel ?? null,
+        u: prev.unread ?? false,
+        p: prev.priority ?? [],
+        b: prev.botStatus ?? null,
+        st: prev.starred ?? false,
+        l: prev.labelIds ?? [],
+        au: prev.assignedUserId ?? null,
+      })
+      const nextKey = JSON.stringify({
+        s: next.status ?? null,
+        ss: next.statuses ?? null,
+        a: next.assigned ?? null,
+        c: next.channel ?? null,
+        u: next.unread ?? false,
+        p: next.priority ?? [],
+        b: next.botStatus ?? null,
+        st: next.starred ?? false,
+        l: next.labelIds ?? [],
+        au: next.assignedUserId ?? null,
+      })
+      return prevKey === nextKey ? prev : next
     })
   }, [])
+
+  // Adapt to the hook's filter shape.
+  const hookFilters = useMemo(() => ({
+    status: filters.status,
+    statuses: filters.statuses ?? null,
+    assigned: filters.assigned,
+    channel: filters.channel,
+    unread: filters.unread ?? false,
+    priority: filters.priority ?? null,
+    botStatus: filters.botStatus ?? null,
+    starred: filters.starred ?? false,
+    labelIds: filters.labelIds ?? null,
+    assignedUserId: filters.assignedUserId ?? null,
+  }), [filters])
 
   // ─────────── Paginated conversation feed ───────────
   const {
@@ -141,13 +182,15 @@ export function ChatLayout({ currentOrgId, currentUserId, agentMap }: ChatLayout
     prepend: prependConversation,
     upsert: upsertConversation,
     remove: removeConversation,
-  } = usePaginatedConversations(filters)
+  } = usePaginatedConversations(hookFilters)
 
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [messages, setMessages] = useState<ConversationMessage[]>([])
   const [isMessagesLoading, setIsMessagesLoading] = useState(false)
   const [botTogglingId, setBotTogglingId] = useState<string | null>(null)
   const [members, setMembers] = useState<OrgMember[]>([])
+  /** SEED-035: org-wide labels for picker + filter panel. */
+  const [orgLabels, setOrgLabels] = useState<Array<{ id: string; name: string; color: string }>>([])
   const [infoOpen, setInfoOpen] = useState(true)
   const [mobileView, setMobileView] = useState<MobileView>('list')
   const [isTyping, setIsTyping] = useState(false)
@@ -214,6 +257,47 @@ export function ChatLayout({ currentOrgId, currentUserId, agentMap }: ChatLayout
   useEffect(() => {
     listOrgMembers().then(setMembers).catch(() => setMembers([]))
   }, [])
+
+  // SEED-035: fetch org labels for the picker + filter panel.
+  const refreshLabels = useCallback(async () => {
+    try {
+      const res = await fetch('/api/chat/labels')
+      if (!res.ok) return
+      const data = await res.json()
+      setOrgLabels(
+        (data.labels ?? []).map((l: { id: string; name: string; color: string }) => ({
+          id: l.id,
+          name: l.name,
+          color: l.color,
+        })),
+      )
+    } catch {
+      // ignore
+    }
+  }, [])
+  useEffect(() => {
+    refreshLabels()
+  }, [refreshLabels])
+
+  // SEED-035: mark the selected conversation as read whenever it changes.
+  // Fire-and-forget; realtime UPDATE on the row (via trigger removing reads
+  // on new messages) will resurface unread state automatically.
+  useEffect(() => {
+    if (!selectedId) return
+    fetch(`/api/chat/conversations/${selectedId}/read`, { method: 'POST' }).catch(() => {})
+  }, [selectedId])
+
+  // SEED-035: surface unread count in the document title.
+  useEffect(() => {
+    const unreadCount =
+      conversations.filter((c) => c.isUnread).length +
+      pinned.filter((c) => c.isUnread).length
+    const base = 'Inbox — Xphere'
+    document.title = unreadCount > 0 ? `(${unreadCount}) ${base}` : base
+    return () => {
+      document.title = base
+    }
+  }, [conversations, pinned])
 
   // ───────────────────────── Realtime: conversations ─────────────────────────
 
@@ -416,13 +500,16 @@ export function ChatLayout({ currentOrgId, currentUserId, agentMap }: ChatLayout
     }
   }
 
-  async function handleStatusChange(status: 'open' | 'closed') {
+  async function handleStatusChange(
+    status: 'open' | 'pending' | 'waiting' | 'resolved' | 'closed',
+    waitUntil?: string | null,
+  ) {
     if (!selectedId) return
     try {
       await fetch(`/api/chat/conversations/${selectedId}/status`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status, wait_until: waitUntil ?? null }),
       })
       // Realtime UPDATE will reconcile the list — no manual refetch needed.
     } catch {
@@ -496,6 +583,36 @@ export function ChatLayout({ currentOrgId, currentUserId, agentMap }: ChatLayout
     }
   }
 
+  // SEED-035
+  async function handleStarToggle(id: string, starredNext: boolean) {
+    const current = findVisibleConversation(id)
+    if (current) {
+      upsertConversation({ ...current, starred: starredNext })
+    }
+    try {
+      const res = await fetch(`/api/chat/conversations/${id}/star`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ starred: starredNext }),
+      })
+      if (!res.ok) throw new Error()
+    } catch {
+      if (current) {
+        upsertConversation({ ...current, starred: !starredNext })
+      }
+      toast.error('Could not update star')
+    }
+  }
+
+  // SEED-035: optimistic labels mutation (set by the picker which already
+  // fired the underlying assign/unassign HTTP call).
+  function handleLabelsChange(id: string, labels: ConversationLabel[]) {
+    const current = findVisibleConversation(id)
+    if (current) {
+      upsertConversation({ ...current, labels })
+    }
+  }
+
   async function handleAssign(id: string, userId: string | null) {
     const current = findVisibleConversation(id)
     const previous = current?.assignedUserId ?? null
@@ -565,6 +682,9 @@ export function ChatLayout({ currentOrgId, currentUserId, agentMap }: ChatLayout
               removeConversation(id)
             }}
             onPin={handlePinToggle}
+            onStar={handleStarToggle}
+            members={members}
+            orgLabels={orgLabels}
           />
         </div>
         <button
@@ -593,6 +713,9 @@ export function ChatLayout({ currentOrgId, currentUserId, agentMap }: ChatLayout
             onPinToggle={handlePinToggle}
             onPriorityCycle={handlePriorityCycle}
             onAssign={handleAssign}
+            onStarToggle={handleStarToggle}
+            orgLabels={orgLabels}
+            onLabelsChange={handleLabelsChange}
             members={members}
             infoPanelOpen={infoOpen}
             onToggleInfoPanel={() => setInfoOpen((v) => !v)}
@@ -651,6 +774,9 @@ export function ChatLayout({ currentOrgId, currentUserId, agentMap }: ChatLayout
                 removeConversation(id)
               }}
               onPin={handlePinToggle}
+              onStar={handleStarToggle}
+              members={members}
+              orgLabels={orgLabels}
             />
           </div>
         )}

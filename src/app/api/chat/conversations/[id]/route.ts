@@ -1,7 +1,7 @@
 // GET /api/chat/conversations/[id]  — single conversation detail
 // DELETE /api/chat/conversations/[id] — delete conversation + messages (cascade)
 import { createClient, getUser } from '@/lib/supabase/server'
-import type { ConversationSummary } from '@/types/chat'
+import type { ConversationStatus, ConversationSummary } from '@/types/chat'
 
 export const runtime = 'nodejs'
 
@@ -27,7 +27,7 @@ export async function GET(
 
   const conversation: ConversationSummary = {
     id: data.id,
-    status: data.status,
+    status: data.status as ConversationStatus,
     createdAt: data.created_at,
     updatedAt: data.updated_at,
     lastMessageAt: data.last_message_at,

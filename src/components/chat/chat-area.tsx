@@ -84,6 +84,9 @@ export function ChatArea({
   onPinToggle,
   onPriorityCycle,
   onAssign,
+  onStarToggle,
+  orgLabels,
+  onLabelsChange,
   members,
   infoPanelOpen,
   onToggleInfoPanel,
@@ -123,6 +126,9 @@ export function ChatArea({
         onPinToggle={onPinToggle}
         onPriorityCycle={onPriorityCycle}
         onAssign={onAssign}
+        onStarToggle={onStarToggle}
+        orgLabels={orgLabels}
+        onLabelsChange={onLabelsChange}
         members={members}
         infoPanelOpen={infoPanelOpen}
         onToggleInfoPanel={onToggleInfoPanel}

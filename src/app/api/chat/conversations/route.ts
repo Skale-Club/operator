@@ -160,13 +160,12 @@ export async function GET(request: Request): Promise<Response> {
     }
   }
 
-  function applyFilters<T extends ReturnType<typeof supabase.from>['select']>(
-    qb: ReturnType<T>,
-  ) {
-    let q = qb
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  function applyFilters<T extends { eq: any; in: any; is: any; not: any }>(qb: T): T {
+    let q: T = qb
     if (statuses.length === 1) q = q.eq('status', statuses[0])
     else if (statuses.length > 1) q = q.in('status', statuses)
-    if (assigned === 'me') q = q.eq('assigned_user_id', user.id)
+    if (assigned === 'me' && user) q = q.eq('assigned_user_id', user.id)
     if (assignedUserIdParam) {
       if (assignedUserIdParam === 'unassigned') {
         q = q.is('assigned_user_id', null)

@@ -220,9 +220,12 @@ export async function getAgentById(
     .from('agent_tools')
     .select('tool_config_id')
     .eq('agent_id', id)
+    .not('tool_config_id', 'is', null)
   return {
     ...(agent as AgentRow),
-    tool_ids: (tools ?? []).map((t) => t.tool_config_id),
+    tool_ids: (tools ?? [])
+      .map((t) => t.tool_config_id)
+      .filter((id): id is string => Boolean(id)),
   }
 }
 
@@ -561,9 +564,14 @@ export async function setAgentTools(
     .from('agent_tools')
     .select('tool_config_id')
     .eq('agent_id', agentId)
+    .not('tool_config_id', 'is', null)
   if (fetchError) return { error: fetchError.message }
 
-  const currentSet = new Set((existing ?? []).map((r) => r.tool_config_id))
+  const currentSet = new Set(
+    (existing ?? [])
+      .map((r) => r.tool_config_id)
+      .filter((id): id is string => Boolean(id)),
+  )
   const nextSet = new Set(selectedToolIds)
   const toAdd = [...nextSet].filter((id) => !currentSet.has(id))
   const toRemove = [...currentSet].filter((id) => !nextSet.has(id))

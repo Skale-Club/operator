@@ -37,6 +37,7 @@ const PROVIDER_LABELS: Record<Provider, string> = {
   manychat: 'ManyChat',
   google_contacts: 'Google Contacts',
   google_calendar: 'Google Calendar',
+  telegram: 'Telegram',
 }
 
 const integrationSchema = z.object({

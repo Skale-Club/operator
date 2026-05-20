@@ -1,0 +1,25 @@
+# Platform-default workflow — ships to every org with Telegram connected.
+# Sends a Telegram alert whenever a workflow run fails so operators can
+# react before customers notice.
+
+name: Notify workflow failure via Telegram
+description: |
+  Platform-default. Sends a Telegram notification to the configured
+  notification chats whenever a workflow run transitions to 'failed'.
+trigger:
+  type: event
+  event: workflow.run.failed
+
+nodes:
+  - id: notify
+    kind: send_telegram_notification
+    integration: telegram
+    text: |
+      ❌ <b>Workflow Falhou</b>
+      ⚡ {{workflow.name}}
+      🔴 {{workflow.error}}
+    parse_mode: HTML
+
+edges:
+  - from: trigger
+    to: notify

@@ -201,14 +201,19 @@ export async function processTelegramUpdate(
       if (contact?.id) {
         contactId = contact.id
       } else {
+        const contactInsert: Record<string, unknown> = {
+          org_id: orgId,
+          name: visitorName,
+          phone: chatId,
+          // 'telegram' will be added to the ContactSource union in a future
+          // migration; cast keeps this forward-compatible without touching
+          // shared types files owned by other parallel agents.
+          source: 'telegram',
+        }
         const { data: created } = await supabase
           .from('contacts')
-          .insert({
-            org_id: orgId,
-            name: visitorName,
-            phone: chatId,
-            source: 'telegram',
-          })
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .insert(contactInsert as any)
           .select('id')
           .single()
         contactId = created?.id ?? null

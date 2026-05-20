@@ -40,6 +40,9 @@ function buildStaticSpec(): WorkflowSpec {
     triggers: TRIGGERS,
     nodes: NODES,
     variable_namespaces: VARIABLE_NAMESPACES,
+    // SEED-033: static seed loader has no org context — no callable workflows
+    // to enumerate. The runtime spec endpoint populates this per org.
+    workflows: [],
   }
 }
 

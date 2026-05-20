@@ -636,7 +636,11 @@ async function runAgentBlocking(opts: AgentRunOptions): Promise<AgentRunResult> 
             let result = ''
             try {
               result = await executeAction(
-                resolvedTool.actionType,
+                // Legacy tool_config path — actionType is always a real
+                // action_type, never the synthetic 'run_flow' used for
+                // workflow-sourced tools (those are handled by
+                // build-workflow-tools.ts and never enter this branch).
+                resolvedTool.actionType as Exclude<typeof resolvedTool.actionType, 'run_flow'>,
                 toolArgs,
                 { apiKey, locationId },
                 {
@@ -1080,7 +1084,14 @@ function runAgentStreaming(
                 }
                 let result = ''
                 try {
-                  result = await executeAction(resolvedTool.actionType, toolArgs, { apiKey, locationId }, { organizationId: orgId, supabase: serviceClient, toolConfig: resolvedTool.config, integrationProvider: resolvedTool.integrationProvider ?? undefined, delegationChain: currentChain })
+                  result = await executeAction(
+                    // SEED-033: legacy tool_config path only; 'run_flow' is
+                    // handled separately in build-workflow-tools.ts.
+                    resolvedTool.actionType as Exclude<typeof resolvedTool.actionType, 'run_flow'>,
+                    toolArgs,
+                    { apiKey, locationId },
+                    { organizationId: orgId, supabase: serviceClient, toolConfig: resolvedTool.config, integrationProvider: resolvedTool.integrationProvider ?? undefined, delegationChain: currentChain },
+                  )
                   if (idempotencyNeededStream && idempotencyKeyStream && invocationId && invocationId !== 'insert-failed') {
                     await recordIdempotency({ organizationId: orgId, agentInvocationId: invocationId, idempotencyKey: idempotencyKeyStream, toolName: capturedToolName, requestHash: hashToolArgs(toolArgs), response: result })
                   }

@@ -41,6 +41,7 @@ type MetaChannelView = {
   lastSyncedAt: string | null
   connectionError: string | null
   automationId: string | null
+  provider: 'direct' | 'manychat'
 }
 
 type AutomationOption = {
@@ -271,6 +272,9 @@ export function MetaSettings({ channels, automationOptions }: MetaSettingsProps)
                       {reconnectNeeded ? 'Reconnect needed' : 'Active'}
                     </Badge>
                     <Badge variant="secondary">{presentation.capability}</Badge>
+                    <Badge variant="outline" className="text-[10px]">
+                      via {channel.provider === 'manychat' ? 'ManyChat' : 'Direct'}
+                    </Badge>
                   </div>
 
                   <div>

@@ -17,6 +17,7 @@ type MetaChannelView = {
   lastSyncedAt: string | null
   connectionError: string | null
   automationId: string | null
+  provider: 'direct' | 'manychat'
 }
 
 type AutomationOption = {
@@ -60,7 +61,7 @@ export default async function MetaIntegrationsPage() {
   const [{ data: channels, error: channelsError }, { data: automations, error: automationsError }] = await Promise.all([
     supabase
       .from('meta_channels')
-      .select('id, page_id, page_name, channel_type, ig_username, is_active, last_synced_at, connection_error, automation_id')
+      .select('id, page_id, page_name, channel_type, ig_username, is_active, last_synced_at, connection_error, automation_id, provider')
       .order('page_name', { ascending: true })
       .order('channel_type', { ascending: true }),
     supabase
@@ -88,6 +89,7 @@ export default async function MetaIntegrationsPage() {
     lastSyncedAt: channel.last_synced_at,
     connectionError: channel.connection_error,
     automationId: channel.automation_id,
+    provider: ((channel as { provider?: string }).provider as 'direct' | 'manychat') ?? 'direct',
   }))
 
   const automationOptions: AutomationOption[] = (automations ?? []).map((automation) => ({

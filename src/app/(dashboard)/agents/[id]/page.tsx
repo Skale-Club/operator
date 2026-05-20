@@ -23,10 +23,13 @@ type Props = { params: Promise<{ id: string }> }
 
 export default async function EditAgentPage({ params }: Props) {
   const { id } = await params
-  const [agent, toolPickerData] = await Promise.all([
-    getAgentById(id),
-    getToolPickerData(),
-  ])
+  const [agent, toolPickerData, attachedWorkflows, availableWorkflows] =
+    await Promise.all([
+      getAgentById(id),
+      getToolPickerData(),
+      getAgentWorkflows(id),
+      getAvailableWorkflowsForAgent(id),
+    ])
   if (!agent) notFound()
 
   const initialValues: Partial<AgentFormInput> = {
@@ -104,6 +107,14 @@ export default async function EditAgentPage({ params }: Props) {
         initialToolIds={agent.tool_ids}
         toolPickerData={toolPickerData}
       />
+
+      <div className="mt-6 rounded-[12px] border border-border bg-bg-secondary p-4">
+        <AgentWorkflowTools
+          agentId={agent.id}
+          initialAttached={attachedWorkflows}
+          initialAvailable={availableWorkflows}
+        />
+      </div>
     </PageContainer>
   )
 }

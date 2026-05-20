@@ -90,7 +90,7 @@ export async function listAgentsForSelect(): Promise<AgentOption[]> {
   const { data } = await supabase
     .from('agents')
     .select('id, name')
-    .eq('org_id', orgId)
+    .eq('organization_id', orgId)
     .eq('is_active', true)
     .order('name', { ascending: true })
 

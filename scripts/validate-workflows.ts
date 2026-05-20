@@ -34,6 +34,8 @@ function buildStaticSpec(): WorkflowSpec {
     triggers: TRIGGERS,
     nodes: NODES,
     variable_namespaces: VARIABLE_NAMESPACES,
+    // SEED-033: validation is platform-static — no org workflows to enumerate.
+    workflows: [],
   }
 }
 

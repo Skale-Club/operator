@@ -174,6 +174,70 @@ When asked to author a workflow:
 
 The validator is the contract. If it passes, the workflow is publishable. There are no implicit conventions beyond what the validator checks.
 
+## Calling workflows from AI agents (SEED-033)
+
+Workflows whose `trigger.type` is `tool_call` can be attached to an agent and invoked by name during a turn. The agent runtime treats them like any other tool — the LLM sees them in its tool list, the validator enforces an `input_schema` on the trigger, and the runtime calls them through the same authorization gate as legacy `tool_configs`.
+
+### Declaring the contract
+
+Every `tool_call` trigger must declare an `input_schema` (validator-enforced). Add an optional `output_schema` to document the return shape:
+
+```yaml
+trigger:
+  type: tool_call
+  config:
+    tool_name: send_appointment_sms
+    input_schema:
+      to:
+        type: string
+        description: Phone number in E.164 format
+        required: true
+      body:
+        type: string
+        description: SMS body text
+        required: true
+    output_schema:
+      message_sid:
+        type: string
+        description: Twilio SID of the sent message
+```
+
+The `input_schema` is converted to a Zod object and passed to the LLM as the tool's parameters. The `output_schema` is informational only — it is exposed via `GET /api/workflows/spec` and shown in the Copilot, but is not validated at runtime.
+
+### Attaching to an agent
+
+In the dashboard: open the agent (`/agents/<id>`) → the "Attached workflows" section near the bottom shows currently attached workflows with a remove button, and a combobox lists every `kind in ('tool', 'flow')` workflow in the org that the agent does not already have attached.
+
+Programmatically:
+
+```ts
+import {
+  attachWorkflowToAgent,
+  detachWorkflowFromAgent,
+} from '@/app/(dashboard)/agents/actions'
+
+await attachWorkflowToAgent(agentId, workflowId)
+await detachWorkflowFromAgent(agentId, workflowId)
+```
+
+The junction row goes into `agent_tools` with `workflow_id` set and `tool_config_id` left NULL (XOR-enforced by `agent_tools_xor_source`).
+
+### Runtime behaviour
+
+When the LLM calls a workflow tool:
+
+1. `resolveAgentTool(agentId, toolName, channel)` re-checks authorization (channel allowance + delegation-chain intersection).
+2. `executeWorkflowTool({ kind, definition, input, context })` dispatches:
+    - `kind='tool'` → `executeAction(actionType, mergedConfig, ...)` — single-step, returns the action's string output.
+    - `kind='flow'` → `runFlowSync(...)` — synchronous DAG executor with a **30s timeout**. If the flow contains a `wait` node, the runner returns `{ ok: true, result: "Workflow started. Run id: …" }` immediately rather than blocking the agent turn.
+3. The tool-call entry is appended to `agent_invocations.tool_calls` JSON with `workflow_id` and `workflow_kind` for auditability.
+
+`kind='flow'` calls are gated through the same `tool_call_idempotency` table as legacy side-effecting tools — replays inside the same invocation return the cached response instead of re-executing the DAG.
+
+### Health gating
+
+`workflows.health_blocked = true` removes the workflow from the build entirely — the LLM never sees it, and the system prompt's `## Available Workflows` block does not mention it.
+
 ## Reference
 
 - Spec source: `src/lib/workflows/spec.ts`

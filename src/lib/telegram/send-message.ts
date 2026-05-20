@@ -52,7 +52,10 @@ export async function sendTelegramReply(
     return { ok: false, messageIds: [], error: 'failed to decrypt bot token' }
   }
 
-  const chunks = formatTelegram(text).map((c) => c.text).filter((t) => t.trim().length > 0)
+  const chunks = formatTelegram(text)
+    .filter((c): c is { type: 'text'; text: string } => c.type === 'text')
+    .map((c) => c.text)
+    .filter((t) => t.trim().length > 0)
   if (chunks.length === 0) {
     return { ok: false, messageIds: [], error: 'no chunks to send' }
   }
