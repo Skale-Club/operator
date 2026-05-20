@@ -190,6 +190,29 @@ export async function POST(request: Request): Promise<Response> {
       MessageSid: messageSid,
       AccountSid: params.get('AccountSid') ?? undefined,
       NumMedia: params.get('NumMedia') ?? undefined,
+      // MMS media fields (up to 10 attachments)
+      MediaUrl0: params.get('MediaUrl0') ?? undefined,
+      MediaUrl1: params.get('MediaUrl1') ?? undefined,
+      MediaUrl2: params.get('MediaUrl2') ?? undefined,
+      MediaUrl3: params.get('MediaUrl3') ?? undefined,
+      MediaUrl4: params.get('MediaUrl4') ?? undefined,
+      MediaUrl5: params.get('MediaUrl5') ?? undefined,
+      MediaUrl6: params.get('MediaUrl6') ?? undefined,
+      MediaUrl7: params.get('MediaUrl7') ?? undefined,
+      MediaUrl8: params.get('MediaUrl8') ?? undefined,
+      MediaUrl9: params.get('MediaUrl9') ?? undefined,
+      MediaContentType0: params.get('MediaContentType0') ?? undefined,
+      MediaContentType1: params.get('MediaContentType1') ?? undefined,
+      MediaContentType2: params.get('MediaContentType2') ?? undefined,
+      MediaContentType3: params.get('MediaContentType3') ?? undefined,
+      MediaContentType4: params.get('MediaContentType4') ?? undefined,
+      MediaContentType5: params.get('MediaContentType5') ?? undefined,
+      MediaContentType6: params.get('MediaContentType6') ?? undefined,
+      MediaContentType7: params.get('MediaContentType7') ?? undefined,
+      MediaContentType8: params.get('MediaContentType8') ?? undefined,
+      MediaContentType9: params.get('MediaContentType9') ?? undefined,
+      // Pass credentials for media download (never stored — only used in after())
+      _authToken: authToken,
     }
     const orgId = integration.organization_id
 

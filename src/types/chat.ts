@@ -2,6 +2,17 @@
 // Admin chat inbox TypeScript types.
 // These interfaces represent the shape returned by /api/chat/conversations/* endpoints.
 
+export interface MediaAttachment {
+  url: string
+  mime_type: string
+  size?: number
+  filename?: string
+  duration?: number
+  width?: number
+  height?: number
+  thumbnail_url?: string
+}
+
 export type ConversationPriority = 'normal' | 'high' | 'urgent'
 
 export interface ConversationSummary {
@@ -35,4 +46,6 @@ export interface ConversationMessage {
   content: string
   createdAt: string
   metadata?: Record<string, unknown> | null
+  /** SEED-030: primary content type (text | image | audio | video | document | sticker | location | mixed) */
+  message_type?: string
 }
