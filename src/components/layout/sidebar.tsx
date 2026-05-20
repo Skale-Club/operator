@@ -24,6 +24,7 @@ import {
   Contact,
   UserCog,
   Building2,
+  CalendarDays,
 } from 'lucide-react'
 
 import { createClient } from '@/lib/supabase/client'
@@ -57,6 +58,7 @@ const nav: NavItem[] = [
   { icon: TrendingUp,      label: 'Pipeline',     href: '/pipeline',     group: 'sales' },
   { icon: Bot,             label: 'Agents',       href: '/agents',       group: 'build' },
   { icon: Zap,             label: 'Workflows',    href: '/workflows',    group: 'build' },
+  { icon: CalendarDays,    label: 'Scheduling',   href: '/scheduling',   group: 'build' },
   { icon: BookOpen,        label: 'Knowledge',    href: '/knowledge',    group: 'build' },
   { icon: Plug2,           label: 'Integrations', href: '/integrations', group: 'manage' },
   { icon: Users,           label: 'Members',      href: '/members',      group: 'manage' },
