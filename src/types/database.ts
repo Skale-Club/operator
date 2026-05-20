@@ -3151,6 +3151,8 @@ export interface Database {
           updated_at: string
           // v2.0 (Phase 33, migration 039 — CHAN-06): NULL = legacy tool_config_id dispatch
           agent_id: string | null
+          // SEED-032 (migration 094): 'direct' | 'manychat' — defaults to 'direct'.
+          provider: string
         }
         Insert: {
           id?: string
@@ -3171,6 +3173,7 @@ export interface Database {
           created_at?: string
           updated_at?: string
           agent_id?: string | null
+          provider?: string
         }
         Update: {
           channel_type?: MetaChannelType
@@ -3187,6 +3190,7 @@ export interface Database {
           config?: Json
           updated_at?: string
           agent_id?: string | null
+          provider?: string
         }
         Relationships: [
           {
