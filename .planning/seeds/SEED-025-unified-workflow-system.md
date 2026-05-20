@@ -8,9 +8,9 @@ scope: Large
 priority: critical
 depends_on: [SEED-019 (visual flow engine), SEED-002 (action engine)]
 blocks: [SEED-026, SEED-027]
-phases_shipped: [A, B, D, E]
-phases_pending: [C, F]
-last_commit: e558768
+phases_shipped: [A, B, C, D, E]
+phases_pending: [F]
+last_commit: d2fcdb3
 ---
 
 # SEED-025: Unified Workflow System — Single Data Model, Single Engine, Single UI
