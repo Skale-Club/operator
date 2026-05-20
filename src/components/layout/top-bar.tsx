@@ -33,14 +33,6 @@ export function TopBar({ activeOrgId, activeOrgName, isPlatformAdmin, userId }: 
       </div>
 
       <div className="flex items-center gap-1.5">
-        {/* Org switcher */}
-        <div className="hidden sm:block min-w-0">
-          <OrgSwitcher currentOrgId={activeOrgId} currentOrgName={activeOrgName} />
-        </div>
-
-        {/* Dial pad */}
-        <DialPadHeaderButton />
-
         {/* Command Palette trigger */}
         <Tooltip>
           <TooltipTrigger asChild>
@@ -64,9 +56,17 @@ export function TopBar({ activeOrgId, activeOrgName, isPlatformAdmin, userId }: 
           <TooltipContent side="bottom" kbd="⌘K">Command palette</TooltipContent>
         </Tooltip>
 
+        {/* Dial pad */}
+        <DialPadHeaderButton />
+
         <NotificationBell userId={userId} />
 
         <ThemeToggle />
+
+        {/* Org switcher */}
+        <div className="hidden sm:block min-w-0">
+          <OrgSwitcher currentOrgId={activeOrgId} currentOrgName={activeOrgName} />
+        </div>
 
         {/* Super Admin shield — only visible to platform admins */}
         {isPlatformAdmin && (
