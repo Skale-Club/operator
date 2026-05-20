@@ -72,7 +72,7 @@ export function LandingPage({ faviconUrl }: { faviconUrl?: string | null }) {
         <header className="flex items-center justify-between px-6 sm:px-10 h-16 border-b border-white/5 backdrop-blur-sm">
           <Link href="/" className="inline-flex items-center gap-2 font-semibold text-base tracking-tight text-[#FAFAFA] hover:text-white transition-colors">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={logoSrc} alt="" width={22} height={22} className="rounded-[5px]" />
+            <img src={logoSrc} alt="" width={22} height={22} />
             Xphere
           </Link>
           <Link href="/login">
@@ -249,7 +249,7 @@ export function LandingPage({ faviconUrl }: { faviconUrl?: string | null }) {
           <div className="mx-auto max-w-5xl flex flex-col sm:flex-row items-center justify-between gap-4">
             <Link href="/" className="inline-flex items-center gap-2 text-base font-semibold text-[#FAFAFA] hover:text-white transition-colors">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={logoSrc} alt="" width={22} height={22} className="rounded-[5px]" />
+              <img src={logoSrc} alt="" width={22} height={22} />
               Xphere
             </Link>
             <p className="text-[0.8125rem] text-[#52525B]">

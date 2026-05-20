@@ -125,7 +125,7 @@ export function Sidebar({ user, isPlatformAdmin, activeOrgId, activeOrgName, bra
       {/* Header — brand + collapse */}
       <div className="flex h-14 items-center justify-between px-3">
         <Link
-          href="/"
+          href="/dashboard"
           className={cn(
             'flex items-center gap-2 px-1.5 py-1 rounded-[8px] hover:bg-bg-tertiary motion-fast',
             collapsed && 'justify-center w-full px-0',
