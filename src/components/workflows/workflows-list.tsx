@@ -1,11 +1,8 @@
 // SEED-025 Phase E: unified workflows list. Replaces the tabs view —
-// every row is a workflow regardless of kind (tool or flow) and trigger
-// type. Kind/trigger/health are surfaced as badges so the user sees
-// the underlying structure without us splitting the surface.
+// every row is a workflow regardless of internal kind and trigger type.
 
 import Link from 'next/link'
 import {
-  Wrench,
   Workflow as WorkflowIcon,
   Calendar,
   Clock,
@@ -16,7 +13,6 @@ import {
 import { formatDistanceToNow, parseISO } from 'date-fns'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { cn } from '@/lib/utils'
 
 interface WorkflowSummary {
   id: string
@@ -92,7 +88,6 @@ export function WorkflowsList({ workflows }: Props) {
         <thead className="bg-bg-secondary/60">
           <tr className="text-xs text-text-tertiary uppercase tracking-wide">
             <th className="text-left font-medium px-4 py-2.5">Name</th>
-            <th className="text-left font-medium px-4 py-2.5">Kind</th>
             <th className="text-left font-medium px-4 py-2.5">Trigger</th>
             <th className="text-left font-medium px-4 py-2.5">Status</th>
             <th className="text-right font-medium px-4 py-2.5">Updated</th>
@@ -114,24 +109,6 @@ export function WorkflowsList({ workflows }: Props) {
                       </p>
                     )}
                   </Link>
-                </td>
-                <td className="px-4 py-3">
-                  <Badge
-                    variant="secondary"
-                    className={cn(
-                      'text-[10px] gap-1',
-                      w.kind === 'tool'
-                        ? 'bg-indigo-500/15 text-indigo-400'
-                        : 'bg-purple-500/15 text-purple-400',
-                    )}
-                  >
-                    {w.kind === 'tool' ? (
-                      <Wrench className="h-2.5 w-2.5" />
-                    ) : (
-                      <WorkflowIcon className="h-2.5 w-2.5" />
-                    )}
-                    {w.kind === 'tool' ? 'Tool' : 'Flow'}
-                  </Badge>
                 </td>
                 <td className="px-4 py-3">
                   <span className="inline-flex items-center gap-1.5 text-xs text-text-secondary">
