@@ -1,6 +1,7 @@
 ---
 id: SEED-021
-status: idea
+status: shipped
+shipped: 2026-05-20
 planted: 2026-05-20
 trigger_when: next milestone
 scope: Small-Medium

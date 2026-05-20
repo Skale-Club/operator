@@ -8,7 +8,7 @@ export default async function AdminSettingsPage() {
   } catch {
     return (
       <div className="p-6">
-        <p className="text-[#A1A1AA] text-sm">Failed to load platform stats. Check your connection and refresh the page.</p>
+        <p className="text-sm text-text-secondary">Failed to load platform stats. Check your connection and refresh the page.</p>
       </div>
     )
   }

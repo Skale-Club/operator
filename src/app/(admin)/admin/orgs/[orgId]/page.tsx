@@ -10,7 +10,7 @@ export default async function AdminOrgDetailPage({ params }: { params: Promise<{
   } catch {
     return (
       <div className="p-6">
-        <p className="text-[#A1A1AA] text-sm">Failed to load organization. Check your connection and refresh the page.</p>
+        <p className="text-sm text-text-secondary">Failed to load organization. Check your connection and refresh the page.</p>
       </div>
     )
   }

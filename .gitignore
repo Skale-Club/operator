@@ -42,3 +42,8 @@ public/reviews-widget.js
 # supabase CLI cache
 supabase/.temp/
 .env*.local
+
+# serwist / PWA service worker build artifacts
+public/sw.js
+public/workbox-*.js
+public/serwist-*.js

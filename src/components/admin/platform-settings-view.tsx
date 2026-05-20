@@ -22,14 +22,14 @@ function StatCard({ icon: Icon, label, value, sub }: {
   sub?: string
 }) {
   return (
-    <Card className="bg-[#111113] border-[#2A2A2F]">
+    <Card>
       <CardContent className="p-4">
         <div className="flex items-center gap-2 mb-2">
-          <Icon className="h-4 w-4 text-[#71717A]" />
-          <span className="text-[0.8125rem] text-[#A1A1AA]">{label}</span>
+          <Icon className="h-4 w-4 text-text-tertiary" />
+          <span className="text-sm text-text-secondary">{label}</span>
         </div>
-        <p className="text-[1.75rem] font-semibold text-[#FAFAFA] tabular-nums leading-none">{value.toLocaleString()}</p>
-        {sub && <p className="text-[0.75rem] text-[#71717A] mt-1">{sub}</p>}
+        <p className="text-[1.75rem] font-semibold text-text-primary tabular-nums leading-none">{value.toLocaleString()}</p>
+        {sub && <p className="text-xs text-text-tertiary mt-1">{sub}</p>}
       </CardContent>
     </Card>
   )
@@ -56,20 +56,14 @@ export function PlatformSettingsView({ stats }: { stats: PlatformStats }) {
   return (
     <div className="p-6 max-w-7xl">
       <div className="mb-6">
-        <h1 className="text-[1.25rem] font-semibold text-[#FAFAFA] tracking-[-0.015em]">Platform Settings</h1>
-        <p className="text-[0.8125rem] text-[#A1A1AA] mt-1">Global platform statistics and bulk feature flag controls</p>
+        <h1 className="text-xl font-semibold text-text-primary">Platform Settings</h1>
+        <p className="text-sm text-text-secondary mt-1">Global platform statistics and bulk feature flag controls</p>
       </div>
 
-      {/* Platform stats */}
       <section className="mb-8">
-        <p className="text-sm font-semibold text-[#FAFAFA] mb-3">Platform Overview</p>
+        <p className="text-sm font-semibold text-text-primary mb-3">Platform Overview</p>
         <div className="grid grid-cols-3 gap-4">
-          <StatCard
-            icon={Building2}
-            label="Organizations"
-            value={stats.total_orgs}
-            sub={`${stats.active_orgs} active`}
-          />
+          <StatCard icon={Building2} label="Organizations" value={stats.total_orgs} sub={`${stats.active_orgs} active`} />
           <StatCard icon={Users} label="Members" value={stats.total_members} />
           <StatCard icon={Contact2} label="Contacts" value={stats.total_contacts} />
           <StatCard icon={Phone} label="Calls" value={stats.total_calls} />
@@ -78,24 +72,23 @@ export function PlatformSettingsView({ stats }: { stats: PlatformStats }) {
         </div>
       </section>
 
-      <Separator className="bg-[#2A2A2F] mb-8" />
+      <Separator className="bg-border-subtle mb-8" />
 
-      {/* Bulk feature flags */}
       <section>
-        <p className="text-sm font-semibold text-[#FAFAFA] mb-1">Bulk Feature Flag Controls</p>
-        <p className="text-[0.8125rem] text-[#A1A1AA] mb-4">Apply a feature flag to all organizations at once. Individual org flags can be overridden on the org detail page.</p>
+        <p className="text-sm font-semibold text-text-primary mb-1">Bulk Feature Flag Controls</p>
+        <p className="text-sm text-text-secondary mb-4">Apply a feature flag to all organizations at once. Individual org flags can be overridden on the org detail page.</p>
 
-        <Card className="bg-[#111113] border-[#2A2A2F]">
+        <Card>
           <CardHeader className="pb-3 pt-4 px-4">
-            <p className="text-sm font-medium text-[#FAFAFA]">Bulk Apply</p>
+            <p className="text-sm font-medium text-text-primary">Bulk Apply</p>
           </CardHeader>
-          <Separator className="bg-[#2A2A2F]" />
+          <Separator className="bg-border-subtle" />
           <CardContent className="p-4 space-y-3">
             {FEATURE_FLAGS.map(({ key, label, description }) => (
               <div key={key} className="flex items-center justify-between gap-4 min-h-[48px] py-1">
                 <div>
-                  <p className="text-sm text-[#FAFAFA]">{label}</p>
-                  <p className="text-[0.75rem] text-[#71717A]">{description}</p>
+                  <p className="text-sm text-text-primary">{label}</p>
+                  <p className="text-xs text-text-tertiary">{description}</p>
                 </div>
                 <div className="flex gap-2 shrink-0">
                   <Button
@@ -103,7 +96,7 @@ export function PlatformSettingsView({ stats }: { stats: PlatformStats }) {
                     variant="outline"
                     disabled={isPending && applying === key}
                     onClick={() => handleBulkApply(key, false)}
-                    className="h-8 text-xs border-[#2A2A2F] bg-transparent text-[#A1A1AA] hover:bg-[#1A1A1D] hover:text-[#FAFAFA]"
+                    className="h-8 text-xs"
                   >
                     Disable all
                   </Button>
@@ -111,7 +104,7 @@ export function PlatformSettingsView({ stats }: { stats: PlatformStats }) {
                     size="sm"
                     disabled={isPending && applying === key}
                     onClick={() => handleBulkApply(key, true)}
-                    className="h-8 text-xs bg-red-600 hover:bg-red-700 text-white"
+                    className="h-8 text-xs"
                   >
                     Enable all
                   </Button>

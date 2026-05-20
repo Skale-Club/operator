@@ -1,5 +1,7 @@
+import { Suspense } from 'react'
 import { getSeoConfig } from '../_actions/seo-config'
 import { SeoConfigForm } from '@/components/admin/seo-config-form'
+import { SeoPreviewCard } from '@/components/admin/seo-preview-card'
 
 export default async function AdminSeoPage() {
   let config
@@ -8,7 +10,7 @@ export default async function AdminSeoPage() {
   } catch {
     return (
       <div className="p-6">
-        <p className="text-[#A1A1AA] text-sm">
+        <p className="text-sm text-text-secondary">
           Failed to load SEO config. Run the migration (070_seo_config.sql) and refresh.
         </p>
       </div>
@@ -18,11 +20,14 @@ export default async function AdminSeoPage() {
   return (
     <div className="p-6 max-w-2xl">
       <div className="mb-6">
-        <h1 className="text-[1.25rem] font-semibold text-[#FAFAFA] tracking-[-0.015em]">SEO Settings</h1>
-        <p className="text-[0.8125rem] text-[#A1A1AA] mt-1">
-          Global metadata used across public pages. Apply changes and redeploy to take effect.
+        <h1 className="text-xl font-semibold text-text-primary">SEO &amp; Branding</h1>
+        <p className="text-sm text-text-secondary mt-1">
+          Global metadata used across public pages. Changes apply immediately.
         </p>
       </div>
+      <Suspense>
+        <SeoPreviewCard config={config} />
+      </Suspense>
       <SeoConfigForm config={config} />
     </div>
   )

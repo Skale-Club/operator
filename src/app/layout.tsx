@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Inter, JetBrains_Mono } from 'next/font/google'
 import { Toaster } from 'sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -26,18 +26,32 @@ const mono = JetBrains_Mono({
   preload: false,
 })
 
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: dark)',  color: '#18181b' },
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+  ],
+}
+
 export async function generateMetadata(): Promise<Metadata> {
   const faviconUrl = await getFaviconUrl()
   return {
     title: APP_NAME,
     description: 'AI Operations Platform',
-    ...(faviconUrl && {
-      icons: {
-        icon: [{ url: faviconUrl }],
-        shortcut: faviconUrl,
-        apple: faviconUrl,
-      },
-    }),
+    applicationName: APP_NAME,
+    manifest: '/manifest.webmanifest',
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: 'black-translucent',
+      title: APP_NAME,
+    },
+    other: {
+      'mobile-web-app-capable': 'yes',
+    },
+    icons: {
+      ...(faviconUrl && { icon: [{ url: faviconUrl }], shortcut: faviconUrl }),
+      apple: '/api/pwa/icons/180',
+    },
   }
 }
 

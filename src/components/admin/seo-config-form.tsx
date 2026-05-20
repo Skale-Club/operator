@@ -94,25 +94,22 @@ export function SeoConfigForm({ config }: { config: SeoConfig }) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <Card className="bg-[#111113] border-[#2A2A2F]">
+        <Card>
           <CardHeader className="pb-3 pt-4 px-4">
-            <p className="text-sm font-semibold text-[#FAFAFA]">Site Identity</p>
+            <p className="text-sm font-semibold text-text-primary">Site Identity</p>
           </CardHeader>
-          <Separator className="bg-[#2A2A2F]" />
+          <Separator className="bg-border-subtle" />
           <CardContent className="p-4 space-y-4">
             <FormField
               control={form.control}
               name="site_title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-[0.8125rem] text-[#A1A1AA]">Site Name</FormLabel>
+                  <FormLabel className="text-sm text-text-secondary">Site Name</FormLabel>
                   <FormControl>
-                    <Input
-                      {...field}
-                      className="h-9 bg-[#0A0A0B] border-[#2A2A2F] text-[#FAFAFA] focus-visible:ring-red-500/30"
-                    />
+                    <Input {...field} className="h-9" />
                   </FormControl>
-                  <FormMessage className="text-red-400 text-xs" />
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
@@ -122,33 +119,28 @@ export function SeoConfigForm({ config }: { config: SeoConfig }) {
               name="title_template"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-[0.8125rem] text-[#A1A1AA]">Title Template</FormLabel>
+                  <FormLabel className="text-sm text-text-secondary">Title Template</FormLabel>
                   <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="%s | Xphere"
-                      className="h-9 bg-[#0A0A0B] border-[#2A2A2F] text-[#FAFAFA] font-mono text-sm focus-visible:ring-red-500/30"
-                    />
+                    <Input {...field} placeholder="%s | Xphere" className="h-9 font-mono text-sm" />
                   </FormControl>
-                  <FormDescription className="text-[0.75rem] text-[#52525B]">
-                    Use %s as a placeholder for the page title. E.g. "%s | Xphere"
+                  <FormDescription className="text-xs text-text-tertiary">
+                    Use %s as a placeholder for the page title. E.g. &quot;%s | Xphere&quot;
                   </FormDescription>
-                  <FormMessage className="text-red-400 text-xs" />
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
           </CardContent>
         </Card>
 
-        <Card className="bg-[#111113] border-[#2A2A2F]">
+        <Card>
           <CardHeader className="pb-3 pt-4 px-4">
-            <p className="text-sm font-semibold text-[#FAFAFA]">Favicon</p>
+            <p className="text-sm font-semibold text-text-primary">Favicon</p>
           </CardHeader>
-          <Separator className="bg-[#2A2A2F]" />
+          <Separator className="bg-border-subtle" />
           <CardContent className="p-4">
             <div className="flex items-center gap-4">
-              {/* Preview */}
-              <div className="h-12 w-12 rounded-lg border border-[#2A2A2F] bg-[#0A0A0B] flex items-center justify-center shrink-0 overflow-hidden">
+              <div className="h-12 w-12 rounded-lg border border-border-subtle bg-bg-primary flex items-center justify-center shrink-0 overflow-hidden">
                 {faviconUrl ? (
                   <Image
                     src={faviconUrl}
@@ -159,21 +151,21 @@ export function SeoConfigForm({ config }: { config: SeoConfig }) {
                     unoptimized
                   />
                 ) : (
-                  <ImagePlus className="h-5 w-5 text-[#3F3F46]" />
+                  <ImagePlus className="h-5 w-5 text-text-tertiary" />
                 )}
               </div>
 
               <div className="flex-1 min-w-0">
-                <p className="text-[0.8125rem] text-[#A1A1AA]">
+                <p className="text-sm text-text-secondary">
                   {faviconUrl ? (
-                    <span className="truncate block text-[#FAFAFA] font-mono text-xs">
+                    <span className="truncate block text-text-primary font-mono text-xs">
                       {faviconUrl.split('/').pop()}
                     </span>
                   ) : (
                     'No favicon uploaded'
                   )}
                 </p>
-                <p className="text-[0.75rem] text-[#52525B] mt-0.5">
+                <p className="text-xs text-text-tertiary mt-0.5">
                   PNG, ICO, SVG or WEBP · max 2 MB · recommended 32×32 px
                 </p>
               </div>
@@ -192,7 +184,7 @@ export function SeoConfigForm({ config }: { config: SeoConfig }) {
                   size="sm"
                   disabled={isUploading}
                   onClick={() => fileInputRef.current?.click()}
-                  className="h-8 text-xs border-[#2A2A2F] bg-[#0A0A0B] text-[#A1A1AA] hover:bg-[#1A1A1F] hover:text-[#FAFAFA]"
+                  className="h-8 text-xs"
                 >
                   {isUploading ? (
                     <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
@@ -207,7 +199,7 @@ export function SeoConfigForm({ config }: { config: SeoConfig }) {
                     variant="outline"
                     size="sm"
                     onClick={() => setFaviconUrl(null)}
-                    className="h-8 w-8 p-0 border-[#2A2A2F] bg-[#0A0A0B] text-[#A1A1AA] hover:bg-red-950/40 hover:border-red-900/50 hover:text-red-400"
+                    className="h-8 w-8 p-0 hover:bg-destructive/10 hover:border-destructive/30 hover:text-destructive"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
@@ -217,31 +209,28 @@ export function SeoConfigForm({ config }: { config: SeoConfig }) {
           </CardContent>
         </Card>
 
-        <Card className="bg-[#111113] border-[#2A2A2F]">
+        <Card>
           <CardHeader className="pb-3 pt-4 px-4">
-            <p className="text-sm font-semibold text-[#FAFAFA]">Meta Tags</p>
+            <p className="text-sm font-semibold text-text-primary">Meta Tags</p>
           </CardHeader>
-          <Separator className="bg-[#2A2A2F]" />
+          <Separator className="bg-border-subtle" />
           <CardContent className="p-4 space-y-4">
             <FormField
               control={form.control}
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-[0.8125rem] text-[#A1A1AA]">
+                  <FormLabel className="text-sm text-text-secondary">
                     Default Description
-                    <span className="ml-2 text-[#52525B] font-normal">({(field.value ?? '').length}/160)</span>
+                    <span className="ml-2 text-text-tertiary font-normal">({(field.value ?? '').length}/160)</span>
                   </FormLabel>
                   <FormControl>
-                    <Input
-                      {...field}
-                      className="h-9 bg-[#0A0A0B] border-[#2A2A2F] text-[#FAFAFA] focus-visible:ring-red-500/30"
-                    />
+                    <Input {...field} className="h-9" />
                   </FormControl>
-                  <FormDescription className="text-[0.75rem] text-[#52525B]">
+                  <FormDescription className="text-xs text-text-tertiary">
                     Used as the meta description on public pages and Open Graph previews.
                   </FormDescription>
-                  <FormMessage className="text-red-400 text-xs" />
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
@@ -251,19 +240,19 @@ export function SeoConfigForm({ config }: { config: SeoConfig }) {
               name="og_image_url"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-[0.8125rem] text-[#A1A1AA]">OG Image URL</FormLabel>
+                  <FormLabel className="text-sm text-text-secondary">OG Image URL</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
                       value={field.value ?? ''}
                       placeholder="https://xphere.app/og-image.png"
-                      className="h-9 bg-[#0A0A0B] border-[#2A2A2F] text-[#FAFAFA] placeholder:text-[#3F3F46] focus-visible:ring-red-500/30"
+                      className="h-9"
                     />
                   </FormControl>
-                  <FormDescription className="text-[0.75rem] text-[#52525B]">
+                  <FormDescription className="text-xs text-text-tertiary">
                     Recommended: 1200×630px. Shown in link previews on Twitter, Slack, WhatsApp.
                   </FormDescription>
-                  <FormMessage className="text-red-400 text-xs" />
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
@@ -273,18 +262,18 @@ export function SeoConfigForm({ config }: { config: SeoConfig }) {
               name="keywords_raw"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-[0.8125rem] text-[#A1A1AA]">Keywords</FormLabel>
+                  <FormLabel className="text-sm text-text-secondary">Keywords</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
                       placeholder="AI operations, agency platform, workflow automation"
-                      className="h-9 bg-[#0A0A0B] border-[#2A2A2F] text-[#FAFAFA] placeholder:text-[#3F3F46] focus-visible:ring-red-500/30"
+                      className="h-9"
                     />
                   </FormControl>
-                  <FormDescription className="text-[0.75rem] text-[#52525B]">
+                  <FormDescription className="text-xs text-text-tertiary">
                     Comma-separated. Minimal SEO impact today but useful for internal tagging.
                   </FormDescription>
-                  <FormMessage className="text-red-400 text-xs" />
+                  <FormMessage className="text-xs" />
                 </FormItem>
               )}
             />
@@ -293,15 +282,11 @@ export function SeoConfigForm({ config }: { config: SeoConfig }) {
 
         <div className="flex items-center justify-between pt-1">
           {lastSaved ? (
-            <p className="text-[0.75rem] text-[#52525B]">Saved at {lastSaved}</p>
+            <p className="text-xs text-text-tertiary">Saved at {lastSaved}</p>
           ) : (
             <span />
           )}
-          <Button
-            type="submit"
-            disabled={isPending}
-            className="bg-red-600 hover:bg-red-700 text-white h-9 px-5 text-sm"
-          >
+          <Button type="submit" disabled={isPending} className="h-9 px-5 text-sm">
             <Save className="h-4 w-4 mr-2" />
             {isPending ? 'Saving…' : 'Save SEO Settings'}
           </Button>

@@ -1,6 +1,8 @@
 ---
 id: SEED-020
-status: dormant
+status: shipped
+shipped: 2026-05-20
+milestone_shipped: v1 (BYOK, chat panel, 27 CRM tools, conversation history, run debug)
 planted: 2026-05-19
 enriched: 2026-05-19 (after analyzing Vercel Chatbot template v3.1 / AI SDK 6 patterns)
 planted_during: post-SEED-019 Visual Automation Builder Phases A–D

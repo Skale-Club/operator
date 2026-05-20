@@ -1,6 +1,8 @@
 ---
 id: SEED-019
-status: dormant
+status: shipped
+shipped: 2026-05-20
+phases_shipped: [A, B, C, D]
 planted: 2026-05-19
 planted_during: post-v2.8 Scheduling Hardening
 research: .planning/research/SEED-019-visual-flow-builder-research.md
