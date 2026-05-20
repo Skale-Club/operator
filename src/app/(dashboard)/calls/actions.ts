@@ -113,6 +113,37 @@ export async function getUnifiedCall(id: string): Promise<UnifiedCallWithContact
   return { ...data, contact }
 }
 
+// ─── Dial-pad contact search ─────────────────────────────────────────────────
+
+export interface DialPadContactHit {
+  id: string
+  name: string | null
+  phone: string | null
+  company: string | null
+}
+
+export async function searchContactsForDialPad(q: string): Promise<DialPadContactHit[]> {
+  if (!q || q.trim().length < 3) return []
+  const user = await getUser()
+  if (!user) return []
+  const supabase = await createClient()
+  const escaped = q.trim().replace(/[%_]/g, (m) => `\\${m}`)
+  const { data } = await supabase
+    .from('contacts')
+    .select('id, name, phone, company')
+    .or(
+      [
+        `name.ilike.%${escaped}%`,
+        `phone.ilike.%${escaped}%`,
+        `company.ilike.%${escaped}%`,
+      ].join(','),
+    )
+    .not('phone', 'is', null)
+    .order('updated_at', { ascending: false })
+    .limit(8)
+  return data ?? []
+}
+
 // ─── Legacy: Vapi-only calls (kept for /phone backward compat) ───────────────
 
 export async function getCalls({

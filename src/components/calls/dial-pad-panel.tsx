@@ -15,6 +15,9 @@ import {
   Mic,
   MicOff,
   ChevronDown,
+  Search,
+  X,
+  Building2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -28,6 +31,10 @@ import {
   toggleRecordCalls,
   type OrgPhoneNumber,
 } from '@/app/(dashboard)/voice/actions'
+import {
+  searchContactsForDialPad,
+  type DialPadContactHit,
+} from '@/app/(dashboard)/calls/actions'
 import { useTwilioDevice } from './twilio-device-provider'
 import { useCallRecorder } from '@/hooks/use-call-recorder'
 import { useDialPadPrefill, useDialPadToggle } from './dial-pad-context'
@@ -62,6 +69,9 @@ export function DialPadPanel({ initialRecordCalls, routingMode }: DialPadPanelPr
   const [fromNumber, setFromNumber] = React.useState<string>('')
   const [elapsed, setElapsed] = React.useState(0)
   const timerRef = React.useRef<ReturnType<typeof setInterval> | null>(null)
+  const [search, setSearch] = React.useState('')
+  const [searchResults, setSearchResults] = React.useState<DialPadContactHit[]>([])
+  const [searching, setSearching] = React.useState(false)
 
   const device = useTwilioDevice()
   const isOnCall = device.activeCall !== null || (calling && routingMode !== 'browser')
@@ -91,6 +101,36 @@ export function DialPadPanel({ initialRecordCalls, routingMode }: DialPadPanelPr
     setOpen((v) => !v)
   }, [])
   useDialPadToggle(handleToggle)
+
+  // Contact search — fires after 3 chars with a small debounce. Matches name,
+  // company, or phone via ilike on the contacts table.
+  React.useEffect(() => {
+    const q = search.trim()
+    if (q.length < 3) {
+      setSearchResults([])
+      setSearching(false)
+      return
+    }
+    setSearching(true)
+    let cancelled = false
+    const handle = setTimeout(async () => {
+      const results = await searchContactsForDialPad(q)
+      if (cancelled) return
+      setSearchResults(results)
+      setSearching(false)
+    }, 220)
+    return () => {
+      cancelled = true
+      clearTimeout(handle)
+    }
+  }, [search])
+
+  function handlePickContact(hit: DialPadContactHit) {
+    if (!hit.phone) return
+    setNumber(hit.phone)
+    setSearch('')
+    setSearchResults([])
+  }
 
   // Call duration timer
   React.useEffect(() => {
@@ -199,11 +239,14 @@ export function DialPadPanel({ initialRecordCalls, routingMode }: DialPadPanelPr
 
   if (!open) return null
 
+  const trimmedSearch = search.trim()
+  const showResults = trimmedSearch.length >= 3
+
   return (
     <div className="fixed top-16 right-4 z-50">
-      <div className="w-[272px] rounded-[18px] border border-border bg-bg-primary shadow-2xl flex flex-col overflow-hidden">
+      <div className="w-[272px] rounded-[18px] border border-border bg-bg-primary shadow-2xl flex flex-col overflow-hidden max-h-[calc(100dvh-5rem)]">
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <div className="flex items-center justify-between border-b border-border px-4 py-3 shrink-0">
             <div className="flex items-center gap-2">
               <PhoneCall className="h-4 w-4 text-accent" />
               <span className="text-[13px] font-semibold text-text-primary">Dial pad</span>
@@ -218,7 +261,70 @@ export function DialPadPanel({ initialRecordCalls, routingMode }: DialPadPanelPr
             </button>
           </div>
 
-          <div className="p-4 space-y-4">
+          <div className="p-4 space-y-4 overflow-y-auto">
+            {/* Contact search — name / company / phone, min 3 chars */}
+            <div className="space-y-2">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-text-tertiary" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search name, company or phone"
+                  className="h-9 pl-8 pr-8 text-[12.5px]"
+                />
+                {search && (
+                  <button
+                    type="button"
+                    onClick={() => setSearch('')}
+                    aria-label="Clear search"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-primary"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {showResults && (
+                <div className="rounded-[10px] border border-border bg-bg-secondary max-h-[200px] overflow-y-auto">
+                  {searching && (
+                    <div className="px-3 py-2 text-[11.5px] text-text-tertiary">
+                      Searching…
+                    </div>
+                  )}
+                  {!searching && searchResults.length === 0 && (
+                    <div className="px-3 py-2 text-[11.5px] text-text-tertiary">
+                      No contacts found.
+                    </div>
+                  )}
+                  {!searching &&
+                    searchResults.map((c) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => handlePickContact(c)}
+                        className="block w-full border-b border-border px-3 py-2 text-left transition-colors last:border-b-0 hover:bg-bg-tertiary"
+                      >
+                        <div className="truncate text-[12px] font-medium text-text-primary">
+                          {c.name || c.phone || 'Unnamed contact'}
+                        </div>
+                        <div className="mt-0.5 flex items-center gap-1.5 truncate text-[10.5px] text-text-tertiary">
+                          {c.company && (
+                            <span className="inline-flex items-center gap-1 truncate">
+                              <Building2 className="h-3 w-3 shrink-0" />
+                              <span className="truncate">{c.company}</span>
+                            </span>
+                          )}
+                          {c.company && c.phone && <span>·</span>}
+                          {c.phone && (
+                            <span className="truncate font-mono">{c.phone}</span>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                </div>
+              )}
+            </div>
+
             {/* Active call view (browser mode) */}
             {device.activeCall && (
               <div className="rounded-[12px] border border-accent/30 bg-accent/[0.06] p-3 space-y-3">
