@@ -12,7 +12,7 @@ import {
 } from 'lucide-react'
 import { formatDistanceToNow, parseISO } from 'date-fns'
 import { Card, CardContent } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
+import { WorkflowToggle } from './workflow-toggle'
 
 interface WorkflowSummary {
   id: string
@@ -117,23 +117,12 @@ export function WorkflowsList({ workflows }: Props) {
                   </span>
                 </td>
                 <td className="px-4 py-3">
-                  {w.health_blocked ? (
-                    <Badge
-                      variant="secondary"
-                      className="bg-red-500/15 text-red-500 text-[10px]"
-                      title={w.health_blocked_reason ?? undefined}
-                    >
-                      Blocked
-                    </Badge>
-                  ) : w.is_active ? (
-                    <Badge variant="secondary" className="bg-emerald-500/15 text-emerald-500 text-[10px]">
-                      Active
-                    </Badge>
-                  ) : (
-                    <Badge variant="secondary" className="bg-zinc-500/15 text-zinc-400 text-[10px]">
-                      Inactive
-                    </Badge>
-                  )}
+                  <WorkflowToggle
+                    workflowId={w.id}
+                    initialActive={w.is_active}
+                    blocked={w.health_blocked}
+                    blockedReason={w.health_blocked_reason}
+                  />
                 </td>
                 <td className="px-4 py-3 text-right text-[11px] text-text-tertiary tabular-nums">
                   {formatDistanceToNow(parseISO(w.updated_at), { addSuffix: true })}

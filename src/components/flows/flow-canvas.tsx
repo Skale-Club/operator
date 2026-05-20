@@ -26,6 +26,7 @@ import { toast } from 'sonner'
 interface FlowCanvasProps {
   workflowId: string
   workflowName: string
+  isActive: boolean
   initialDefinition: FlowDefinition
   activeIntegrations: IntegrationKey[]
 }
@@ -39,7 +40,7 @@ const NODE_TYPE_COLORS: Record<string, string> = {
   end: '#64748b',
 }
 
-function CanvasInner({ workflowId, workflowName, initialDefinition, activeIntegrations }: FlowCanvasProps) {
+function CanvasInner({ workflowId, workflowName, isActive, initialDefinition, activeIntegrations }: FlowCanvasProps) {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const [, setRfInstance] = useState<ReactFlowInstance | null>(null)
   const [aiOpen, setAiOpen] = useState(false)
@@ -100,6 +101,7 @@ function CanvasInner({ workflowId, workflowName, initialDefinition, activeIntegr
         <FlowToolbar
           workflowId={workflowId}
           workflowName={workflowName}
+          isActive={isActive}
           onToggleAi={() => setAiOpen((v) => !v)}
           aiOpen={aiOpen}
         />
