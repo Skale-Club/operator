@@ -29,6 +29,7 @@ import {
   Phone,
   CheckCheck,
   ChevronDown,
+  Filter as FilterIcon,
 } from 'lucide-react'
 import Link from 'next/link'
 
@@ -128,6 +129,12 @@ interface ChatHeaderProps {
   onToggleInfoPanel: () => void
   /** Phone for the "Call" quick-action — null hides the button. */
   callPhone?: string | null
+  /** SEED-039: distinct channels that appear in the current thread. */
+  threadChannels?: string[]
+  /** SEED-039: currently selected channel filters (null/empty = show all). */
+  channelFilter?: string[] | null
+  /** SEED-039: toggle a channel into/out of the filter set. */
+  onChannelFilterChange?: (next: string[] | null) => void
 }
 
 export function ChatHeader({
@@ -147,6 +154,9 @@ export function ChatHeader({
   infoPanelOpen,
   onToggleInfoPanel,
   callPhone,
+  threadChannels = [],
+  channelFilter = null,
+  onChannelFilterChange,
 }: ChatHeaderProps) {
   const [showDelete, setShowDelete] = useState(false)
   const [waitingOpen, setWaitingOpen] = useState(false)
@@ -317,6 +327,93 @@ export function ChatHeader({
             selectedLabels={conversation.labels ?? []}
             onChange={(next) => onLabelsChange(conversation.id, next)}
           />
+        )}
+
+        {/* SEED-039: channel filter — only shown when the thread spans more
+            than one distinct channel. */}
+        {threadChannels.length > 1 && onChannelFilterChange && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  'h-8 w-8',
+                  channelFilter && channelFilter.length > 0 && 'text-accent',
+                )}
+                aria-label="Filter messages by channel"
+                title="Filter by channel"
+              >
+                <FilterIcon className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-[200px] p-2">
+              <div className="mb-1.5 px-1 text-[10px] font-medium uppercase tracking-wide text-text-tertiary">
+                Show messages from
+              </div>
+              <button
+                type="button"
+                onClick={() => onChannelFilterChange(null)}
+                className={cn(
+                  'flex w-full items-center gap-2 rounded-[6px] px-2 py-1 text-[12px] hover:bg-bg-tertiary',
+                  (!channelFilter || channelFilter.length === 0) && 'text-accent',
+                )}
+              >
+                <span className="h-2 w-2 rounded-full bg-text-tertiary" />
+                All channels
+                {(!channelFilter || channelFilter.length === 0) && (
+                  <CheckCheck className="ml-auto h-3.5 w-3.5" />
+                )}
+              </button>
+              <div className="my-1 h-px bg-border-subtle" />
+              {threadChannels.map((ch) => {
+                const selected = channelFilter?.includes(ch) ?? false
+                const label =
+                  ch === 'whatsapp' || ch === 'ghl_whatsapp'
+                    ? 'WhatsApp'
+                    : ch === 'sms' || ch === 'ghl_sms'
+                      ? 'SMS'
+                      : ch === 'instagram'
+                        ? 'Instagram'
+                        : ch === 'messenger'
+                          ? 'Messenger'
+                          : ch === 'telegram'
+                            ? 'Telegram'
+                            : ch === 'voice'
+                              ? 'Voice'
+                              : ch === 'widget' || ch === 'web'
+                                ? 'Web'
+                                : ch
+                return (
+                  <button
+                    key={ch}
+                    type="button"
+                    onClick={() => {
+                      const current = channelFilter ?? []
+                      const next = current.includes(ch)
+                        ? current.filter((c) => c !== ch)
+                        : [...current, ch]
+                      onChannelFilterChange(next.length === 0 ? null : next)
+                    }}
+                    className={cn(
+                      'flex w-full items-center gap-2 rounded-[6px] px-2 py-1 text-[12px] hover:bg-bg-tertiary',
+                      selected && 'text-accent',
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        'h-3.5 w-3.5 shrink-0 rounded border',
+                        selected ? 'border-accent bg-accent' : 'border-border-subtle',
+                      )}
+                    >
+                      {selected && <CheckCheck className="h-3 w-3 text-white" />}
+                    </span>
+                    {label}
+                  </button>
+                )
+              })}
+            </PopoverContent>
+          </Popover>
         )}
 
         <TooltipProvider delayDuration={200}>

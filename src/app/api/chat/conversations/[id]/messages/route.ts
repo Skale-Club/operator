@@ -47,7 +47,7 @@ export async function GET(
 
   let query = supabase
     .from('conversation_messages')
-    .select('id, conversation_id, org_id, role, content, created_at, metadata')
+    .select('id, conversation_id, org_id, role, content, created_at, metadata, channel')
     .eq('conversation_id', id)
     .order('created_at', { ascending: false })
     .limit(limit + 1)  // fetch one extra to determine hasMore
@@ -79,6 +79,7 @@ export async function GET(
     content: row.content,
     createdAt: row.created_at,
     metadata: row.metadata as Record<string, unknown> | null,
+    channel: (row as { channel?: string | null }).channel ?? null,
   }))
 
   return Response.json({ messages, hasMore })
@@ -158,6 +159,10 @@ export async function POST(
   if (operatorName) msgMetadata.sender_name = operatorName
   if (media?.length) msgMetadata.media = media
 
+  // SEED-039: stamp channel on each message so multi-channel threads can be
+  // filtered + rendered with per-message origin pills. We default to the
+  // conversation's primary channel; a follow-up will let operators pick a
+  // different channel via the composer ChannelSelector.
   const { data: msg, error } = await supabase
     .from('conversation_messages')
     .insert({
@@ -166,9 +171,10 @@ export async function POST(
       role,
       content,
       message_type: messageType,
+      channel: conv.channel ?? null,
       ...(Object.keys(msgMetadata).length > 0 ? { metadata: msgMetadata } : {}),
     })
-    .select('id, conversation_id, role, content, created_at, metadata')
+    .select('id, conversation_id, role, content, created_at, metadata, channel')
     .single()
 
   if (error) {

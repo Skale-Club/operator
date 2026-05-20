@@ -98,6 +98,7 @@ function mapMessageRow(row: Record<string, unknown>): ConversationMessage {
     content: row.content as string,
     createdAt: row.created_at as string,
     metadata: (row.metadata as Record<string, unknown> | null) ?? null,
+    channel: (row.channel as string | null | undefined) ?? null,
   }
 }
 
@@ -473,7 +474,11 @@ export function ChatLayout({ currentOrgId, currentUserId, agentMap }: ChatLayout
 
   async function handleSendMessage(
     content: string,
-    opts?: { media?: Array<{ url: string; mime_type: string; filename?: string; size?: number }> }
+    opts?: {
+      media?: Array<{ url: string; mime_type: string; filename?: string; size?: number }>
+      /** SEED-039: optional channel override for cross-channel send. */
+      channel?: string
+    },
   ) {
     if (!selectedId) return
     const tempId = `temp-${crypto.randomUUID()}`
@@ -484,9 +489,14 @@ export function ChatLayout({ currentOrgId, currentUserId, agentMap }: ChatLayout
       content,
       createdAt: new Date().toISOString(),
       metadata: opts?.media?.length ? { media: opts.media } : undefined,
+      channel: opts?.channel ?? null,
     }
     setMessages((prev) => [...prev, tempMsg])
     try {
+      // TODO(SEED-039 phases_pending): when opts.channel differs from the
+      // conversation's primary channel, route the outbound send through that
+      // channel's transport instead. For v1 we still always use the parent
+      // conversation's primary channel.
       const res = await fetch(`/api/chat/conversations/${selectedId}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -646,6 +656,28 @@ export function ChatLayout({ currentOrgId, currentUserId, agentMap }: ChatLayout
     [conversations, pinned],
   )
 
+  // SEED-039: derive composer channels for the selected conversation.
+  // We compose this from cheap conversation-level signals (no extra fetch):
+  //   - The conversation's primary channel is always available + active.
+  //   - When a phone is present, surface SMS + WhatsApp as alternatives.
+  // Cross-channel send is a UI-only scaffold for v1: the messages route still
+  // sends via the conversation's primary transport (see SEED-039 phases_pending).
+  const composerChannels = useMemo(() => {
+    if (!selected) return undefined
+    const out: Array<{ channel: string; active?: boolean }> = []
+    const primary = selected.channel
+    if (primary) out.push({ channel: primary, active: true })
+    if (selected.visitorPhone) {
+      if (!out.some((c) => c.channel === 'whatsapp' || c.channel === 'ghl_whatsapp')) {
+        out.push({ channel: 'whatsapp' })
+      }
+      if (!out.some((c) => c.channel === 'sms' || c.channel === 'ghl_sms')) {
+        out.push({ channel: 'sms' })
+      }
+    }
+    return out.length > 1 ? out : undefined
+  }, [selected])
+
   // ───────────────────────── Render ─────────────────────────
 
   return (
@@ -720,6 +752,7 @@ export function ChatLayout({ currentOrgId, currentUserId, agentMap }: ChatLayout
             infoPanelOpen={infoOpen}
             onToggleInfoPanel={() => setInfoOpen((v) => !v)}
             agentMap={agentMap}
+            composerChannels={composerChannels}
           />
         </div>
         {infoOpen && (
@@ -801,6 +834,7 @@ export function ChatLayout({ currentOrgId, currentUserId, agentMap }: ChatLayout
               infoPanelOpen={false}
               onToggleInfoPanel={() => setMobileView('info')}
               agentMap={agentMap}
+              composerChannels={composerChannels}
             />
           </div>
         )}

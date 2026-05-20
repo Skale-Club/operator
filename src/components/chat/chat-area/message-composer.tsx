@@ -14,7 +14,7 @@
  */
 
 import { KeyboardEvent, useEffect, useRef, useState } from 'react'
-import { Send, Paperclip, Smile, Mic, X, FileText } from 'lucide-react'
+import { Send, Paperclip, Smile, Mic, X, FileText, ChevronDown } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -23,7 +23,44 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { ChannelBadge, type Channel } from '@/components/design-system/channel-badge'
 import { cn } from '@/lib/utils'
+
+const CHANNEL_MAP: Record<string, Channel> = {
+  whatsapp: 'whatsapp',
+  ghl_whatsapp: 'whatsapp',
+  instagram: 'instagram',
+  messenger: 'messenger',
+  sms: 'sms',
+  ghl_sms: 'sms',
+  voice: 'voice',
+  widget: 'web',
+  web: 'web',
+}
+
+function channelLabelOf(ch: string): string {
+  if (ch === 'whatsapp' || ch === 'ghl_whatsapp') return 'WhatsApp'
+  if (ch === 'sms' || ch === 'ghl_sms') return 'SMS'
+  if (ch === 'instagram') return 'Instagram'
+  if (ch === 'messenger') return 'Messenger'
+  if (ch === 'telegram') return 'Telegram'
+  if (ch === 'voice') return 'Voice'
+  if (ch === 'widget' || ch === 'web') return 'Web'
+  return ch
+}
+
+export interface ComposerChannel {
+  channel: string
+  /** True when the contact already has an open conversation on this channel. */
+  active?: boolean
+}
 
 interface MediaItem {
   url: string
@@ -34,6 +71,8 @@ interface MediaItem {
 
 interface SendMessageOpts {
   media?: MediaItem[]
+  /** SEED-039: explicit channel selection for this outbound message. */
+  channel?: string
 }
 
 interface MessageComposerProps {
@@ -47,6 +86,16 @@ interface MessageComposerProps {
   /** Optional hint banner (e.g. "Bot is active — pause bot to send manually"). */
   disabledHint?: string
   onResumeManual?: () => void
+  /**
+   * SEED-039: channels this contact can be reached on. When more than one is
+   * provided, the composer footer renders a small Select so the operator can
+   * pick which transport to send through.
+   */
+  availableChannels?: ComposerChannel[]
+  /** SEED-039: current outbound channel; defaults to the conversation primary. */
+  activeChannel?: string | null
+  /** SEED-039: fired when the operator changes channel. */
+  onActiveChannelChange?: (channel: string) => void
 }
 
 const MAX_ROWS = 8
@@ -59,6 +108,9 @@ export function MessageComposer({
   disabled,
   disabledHint,
   onResumeManual,
+  availableChannels,
+  activeChannel,
+  onActiveChannelChange,
 }: MessageComposerProps) {
   const [value, setValue] = useState('')
   const [isSending, setIsSending] = useState(false)
@@ -87,19 +139,20 @@ export function MessageComposer({
     setValue('')
     setIsSending(true)
     try {
-      const opts: SendMessageOpts | undefined = pendingFileUrl
-        ? {
-            media: [
-              {
-                url: pendingFileUrl,
-                mime_type: pendingFileMime,
-                filename: pendingFile?.name,
-                size: pendingFile?.size,
-              },
-            ],
-          }
-        : undefined
-      await onSendMessage(content, opts)
+      const opts: SendMessageOpts = {}
+      if (pendingFileUrl) {
+        opts.media = [
+          {
+            url: pendingFileUrl,
+            mime_type: pendingFileMime,
+            filename: pendingFile?.name,
+            size: pendingFile?.size,
+          },
+        ]
+      }
+      // SEED-039: include the selected channel when the operator picked one.
+      if (activeChannel) opts.channel = activeChannel
+      await onSendMessage(content, Object.keys(opts).length > 0 ? opts : undefined)
       // Clear pending file after successful send
       clearPendingFile()
     } finally {
@@ -317,7 +370,59 @@ export function MessageComposer({
           </kbd>{' '}
           for new line
         </span>
-        {channelLabel && <span>Sending via {channelLabel}</span>}
+        {availableChannels && availableChannels.length > 1 && onActiveChannelChange ? (
+          (() => {
+            const current = activeChannel ?? availableChannels[0].channel
+            const currentBadge = (CHANNEL_MAP[current] ?? 'unknown') as Channel
+            return (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-1 text-[10.5px] text-text-secondary hover:text-text-primary transition-colors"
+                  >
+                    <ChannelBadge
+                      channel={currentBadge}
+                      showLabel={false}
+                      size="sm"
+                      className="!h-3.5 !w-3.5"
+                    />
+                    <span>Via {channelLabelOf(current)}</span>
+                    <ChevronDown className="h-3 w-3 opacity-60" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-[200px]">
+                  <DropdownMenuLabel className="text-[10px] uppercase tracking-wide text-text-tertiary">
+                    Send via
+                  </DropdownMenuLabel>
+                  {availableChannels.map((opt) => {
+                    const badge = (CHANNEL_MAP[opt.channel] ?? 'unknown') as Channel
+                    return (
+                      <DropdownMenuItem
+                        key={opt.channel}
+                        onClick={() => onActiveChannelChange(opt.channel)}
+                        className={cn(opt.channel === current && 'text-accent')}
+                      >
+                        <ChannelBadge
+                          channel={badge}
+                          showLabel={false}
+                          size="sm"
+                          className="!h-3.5 !w-3.5 mr-2"
+                        />
+                        {channelLabelOf(opt.channel)}
+                        {opt.active && (
+                          <span className="ml-auto text-[10px] text-emerald-400">active</span>
+                        )}
+                      </DropdownMenuItem>
+                    )
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )
+          })()
+        ) : (
+          channelLabel && <span>Sending via {channelLabel}</span>
+        )}
       </div>
     </div>
   )

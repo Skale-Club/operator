@@ -71,4 +71,11 @@ export interface ConversationMessage {
   metadata?: Record<string, unknown> | null
   /** SEED-030: primary content type (text | image | audio | video | document | sticker | location | mixed) */
   message_type?: string
+  /**
+   * SEED-039: origin channel for this individual message. Distinct from
+   * `conversation.channel` because a single thread can intermix messages from
+   * different transports (e.g. customer replies on WhatsApp then Instagram).
+   * NULL on legacy rows — UI falls back to the conversation's primary channel.
+   */
+  channel?: string | null
 }

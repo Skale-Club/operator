@@ -23,8 +23,21 @@ import { ChevronDown, Info } from 'lucide-react'
 import { ConversationMessage, MediaAttachment } from '@/types/chat'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { ChannelBadge, type Channel } from '@/components/design-system/channel-badge'
 import { cn } from '@/lib/utils'
 import { MediaBlock } from './media-block'
+
+const CHANNEL_MAP: Record<string, Channel> = {
+  whatsapp: 'whatsapp',
+  ghl_whatsapp: 'whatsapp',
+  instagram: 'instagram',
+  messenger: 'messenger',
+  sms: 'sms',
+  ghl_sms: 'sms',
+  voice: 'voice',
+  widget: 'web',
+  web: 'web',
+}
 
 interface MessageListProps {
   messages: ConversationMessage[]
@@ -35,6 +48,30 @@ interface MessageListProps {
   isAgentThinking?: boolean
   /** OBS-08: Maps agent_id → agent name for per-message badges. */
   agentMap?: Record<string, string>
+  /**
+   * SEED-039: conversation's primary channel. Messages whose `channel` field
+   * differs render with a small per-message channel pill near the timestamp.
+   */
+  primaryChannel?: string | null
+}
+
+function resolveChannel(m: ConversationMessage): string | null {
+  const raw = m.channel
+  if (typeof raw === 'string' && raw) return raw
+  const meta = m.metadata as Record<string, unknown> | null | undefined
+  const fromMeta = meta && typeof meta.channel === 'string' ? (meta.channel as string) : null
+  return fromMeta
+}
+
+function channelLabelOf(ch: string): string {
+  if (ch === 'whatsapp' || ch === 'ghl_whatsapp') return 'WhatsApp'
+  if (ch === 'sms' || ch === 'ghl_sms') return 'SMS'
+  if (ch === 'instagram') return 'Instagram'
+  if (ch === 'messenger') return 'Messenger'
+  if (ch === 'telegram') return 'Telegram'
+  if (ch === 'voice') return 'Voice'
+  if (ch === 'widget' || ch === 'web') return 'Web'
+  return ch
 }
 
 function formatTime(iso: string): string {
@@ -68,6 +105,7 @@ export function MessageList({
   isTyping = false,
   isAgentThinking = false,
   agentMap,
+  primaryChannel = null,
 }: MessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const endRef = useRef<HTMLDivElement>(null)
@@ -171,6 +209,16 @@ export function MessageList({
                 const agentId = message.metadata?.agent_id as string | undefined
                 const agentName = agentId ? agentMap?.[agentId] ?? null : null
 
+                // SEED-039: per-message channel indicator when it differs
+                // from the conversation's primary channel.
+                const msgChannel = resolveChannel(message)
+                const showChannelPill = Boolean(
+                  msgChannel && primaryChannel && msgChannel !== primaryChannel,
+                )
+                const channelBadge = (msgChannel
+                  ? (CHANNEL_MAP[msgChannel] ?? 'unknown')
+                  : 'unknown') as Channel
+
                 const mediaItems = message.metadata?.media as MediaAttachment[] | undefined
 
                 if (isVisitor) {
@@ -198,9 +246,22 @@ export function MessageList({
                           ))}
                           {message.content && <span>{message.content}</span>}
                         </div>
-                        <span className="mt-0.5 px-1 text-[10.5px] tabular-nums text-text-tertiary opacity-0 transition-opacity group-hover:opacity-100">
-                          {formatTime(message.createdAt)}
-                        </span>
+                        <div className="mt-0.5 flex items-center gap-1.5 px-1">
+                          {showChannelPill && msgChannel && (
+                            <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wide text-text-tertiary">
+                              <ChannelBadge
+                                channel={channelBadge}
+                                showLabel={false}
+                                size="sm"
+                                className="!h-3 !w-3"
+                              />
+                              {channelLabelOf(msgChannel)}
+                            </span>
+                          )}
+                          <span className="text-[10.5px] tabular-nums text-text-tertiary opacity-0 transition-opacity group-hover:opacity-100">
+                            {formatTime(message.createdAt)}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   )
@@ -224,11 +285,24 @@ export function MessageList({
                         ))}
                         {message.content && <span>{message.content}</span>}
                       </div>
-                      <div className="mt-0.5 flex items-center gap-2 px-1 opacity-0 transition-opacity group-hover:opacity-100">
-                        {agentName && (
-                          <span className="text-[10.5px] text-text-tertiary">via {agentName}</span>
+                      <div className="mt-0.5 flex items-center gap-2 px-1">
+                        {showChannelPill && msgChannel && (
+                          <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wide text-text-tertiary">
+                            <ChannelBadge
+                              channel={channelBadge}
+                              showLabel={false}
+                              size="sm"
+                              className="!h-3 !w-3"
+                            />
+                            {channelLabelOf(msgChannel)}
+                          </span>
                         )}
-                        <span className="text-[10.5px] tabular-nums text-text-tertiary">
+                        {agentName && (
+                          <span className="text-[10.5px] text-text-tertiary opacity-0 transition-opacity group-hover:opacity-100">
+                            via {agentName}
+                          </span>
+                        )}
+                        <span className="text-[10.5px] tabular-nums text-text-tertiary opacity-0 transition-opacity group-hover:opacity-100">
                           {formatTime(message.createdAt)}
                         </span>
                       </div>

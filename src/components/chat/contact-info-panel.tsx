@@ -1,12 +1,20 @@
 'use client'
 
 /**
- * Inline contact info panel (v2.2 / SEED-011).
+ * Contact info panel (SEED-039 rewrite).
  *
- * Adapts the slide-in ContactDetailSheet for the right column of the chat
- * inbox. When `contactId` is null but `phone`/`name`/`email` are present, we
- * render a "Not registered" card with a CTA to create the contact pre-filled
- * with whatever signals we have from the conversation.
+ * The right sidebar of the chat inbox. Surfaces the full client picture:
+ *   - Inline-editable contact fields (name, phone, email, company)
+ *   - Available reach channels derived from phone/email + open conversations
+ *   - Quick action buttons (task / schedule / note / deal)
+ *   - Collapsible sections in order: Info, Tasks, Bookings, Notes,
+ *     Opportunities, Other conversations
+ *   - Custom fields rendered using FIELD_RENDER_CONFIG (read-only display for
+ *     non-text types, inline editable for text/long_text/number/email/url)
+ *
+ * Renders gracefully when `contactId` is null — falls back to the
+ * UnregisteredCard with a CTA to create the contact pre-filled with whatever
+ * signals the conversation already has.
  */
 
 import * as React from 'react'
@@ -17,7 +25,6 @@ import {
   Building2,
   Calendar,
   Pencil,
-  MessageSquare,
   PhoneCall,
   TrendingUp,
   UserPlus,
@@ -26,29 +33,40 @@ import {
   ChevronDown,
   X,
   PanelRightClose,
+  CheckCircle2,
+  Circle,
+  CalendarCheck,
+  CalendarPlus,
+  Briefcase,
+  ListTodo,
 } from 'lucide-react'
 
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { ChannelBadge, type Channel } from '@/components/design-system/channel-badge'
-import { getContact, type ContactDetail } from '@/app/(dashboard)/contacts/actions'
+import {
+  getContact,
+  updateContactField,
+  addContactNote,
+  type ContactDetail,
+} from '@/app/(dashboard)/contacts/actions'
 import { NewContactDialog } from '@/components/contacts/new-contact-dialog'
 import { InlineContactPicker } from '@/components/chat/inline-contact-picker'
+import { InlineEditField } from '@/components/chat/inline-edit-field'
+import { FIELD_RENDER_CONFIG } from '@/lib/custom-fields/render-config'
+import type { CustomFieldType } from '@/types/database'
 import { formatCurrency } from '@/lib/pipeline/format'
 import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
 
 interface ContactInfoPanelProps {
   contactId: string | null
-  /** Used for the "Link existing contact" picker when contactId is null. */
   conversationId?: string | null
-  /** Fallback values when the conversation isn't linked to a contact yet. */
   fallbackName?: string | null
   fallbackPhone?: string | null
   fallbackEmail?: string | null
-  /** Mobile sheet close button (X). Renders on mobile only. */
   onClose?: () => void
-  /** Desktop collapse button. Renders on md+ when provided. */
   onCollapse?: () => void
 }
 
@@ -74,6 +92,67 @@ function relativeTime(iso: string | null): string {
   return new Date(iso).toLocaleDateString()
 }
 
+function shortDate(iso: string | null): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  const now = new Date()
+  const sameDay =
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate()
+  const tomorrow = new Date()
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  const isTomorrow =
+    d.getFullYear() === tomorrow.getFullYear() &&
+    d.getMonth() === tomorrow.getMonth() &&
+    d.getDate() === tomorrow.getDate()
+  if (sameDay) return `Today ${d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`
+  if (isTomorrow) return `Tomorrow ${d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}`
+  return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+}
+
+function dueChipStyle(iso: string | null): { label: string; cls: string } {
+  if (!iso) return { label: 'No date', cls: 'bg-bg-tertiary text-text-tertiary' }
+  const due = new Date(iso).getTime()
+  const now = Date.now()
+  const diffMs = due - now
+  const day = 24 * 60 * 60 * 1000
+  if (diffMs < 0) return { label: shortDate(iso), cls: 'bg-rose-500/15 text-rose-400' }
+  if (diffMs < day) return { label: shortDate(iso), cls: 'bg-amber-500/15 text-amber-400' }
+  return { label: shortDate(iso), cls: 'bg-bg-tertiary text-text-tertiary' }
+}
+
+interface ReachChannel {
+  channel: Channel
+  label: string
+  active: boolean
+}
+
+function availableChannelsForContact(contact: ContactDetail): ReachChannel[] {
+  const out: ReachChannel[] = []
+  const openByChannel = new Set(
+    (contact.conversations ?? [])
+      .filter((c) => c.status === 'open' || c.status === 'pending' || c.status === 'waiting')
+      .map((c) => c.channel),
+  )
+
+  if (contact.phone) {
+    out.push({ channel: 'whatsapp', label: 'WhatsApp', active: openByChannel.has('whatsapp') || openByChannel.has('ghl_whatsapp') })
+    out.push({ channel: 'sms', label: 'SMS', active: openByChannel.has('sms') || openByChannel.has('ghl_sms') })
+    if (openByChannel.has('voice')) out.push({ channel: 'voice', label: 'Voice', active: true })
+  }
+  if (openByChannel.has('messenger')) {
+    out.push({ channel: 'messenger', label: 'Messenger', active: true })
+  }
+  if (openByChannel.has('instagram')) {
+    out.push({ channel: 'instagram', label: 'Instagram', active: true })
+  }
+  if (openByChannel.has('widget') || openByChannel.has('web')) {
+    out.push({ channel: 'web', label: 'Web', active: true })
+  }
+  return out
+}
+
 export function ContactInfoPanel({
   contactId,
   conversationId,
@@ -85,6 +164,7 @@ export function ContactInfoPanel({
 }: ContactInfoPanelProps) {
   const [contact, setContact] = React.useState<ContactDetail | null>(null)
   const [loading, setLoading] = React.useState(false)
+  const [refreshKey, setRefreshKey] = React.useState(0)
 
   React.useEffect(() => {
     if (!contactId) {
@@ -101,7 +181,35 @@ export function ContactInfoPanel({
     return () => {
       cancelled = true
     }
-  }, [contactId])
+  }, [contactId, refreshKey])
+
+  const refresh = React.useCallback(() => setRefreshKey((k) => k + 1), [])
+
+  const saveField = React.useCallback(
+    (field: string) => async (value: string) => {
+      if (!contactId) throw new Error('No contact')
+      const res = await updateContactField(contactId, { field, value })
+      if (!res.ok) throw new Error(res.error ?? 'Save failed')
+      // Update local state with the new value so subsequent renders pick it up
+      // without a full refetch.
+      setContact((prev) => {
+        if (!prev) return prev
+        if (field === 'name') return { ...prev, name: value || null }
+        if (field === 'phone') return { ...prev, phone: value || null }
+        if (field === 'email') return { ...prev, email: value || null }
+        if (field === 'company') return { ...prev, company: value || null }
+        if (field.startsWith('custom_fields.')) {
+          const key = field.slice('custom_fields.'.length)
+          const cf = { ...((prev.custom_fields as Record<string, unknown> | null) ?? {}) }
+          if (value.trim() === '') delete cf[key]
+          else cf[key] = value
+          return { ...prev, custom_fields: cf }
+        }
+        return prev
+      })
+    },
+    [contactId],
+  )
 
   if (!contactId) {
     return (
@@ -135,6 +243,9 @@ export function ContactInfoPanel({
       </div>
     )
   }
+
+  const reach = availableChannelsForContact(contact)
+  const customFields = (contact.custom_fields as Record<string, unknown> | null) ?? {}
 
   return (
     <div className="flex h-full flex-col border-l border-border-subtle bg-bg-secondary/40">
@@ -172,11 +283,15 @@ export function ContactInfoPanel({
             </AvatarFallback>
           </Avatar>
           <div className="min-w-0 flex-1">
-            <h3 className="truncate text-[16px] font-semibold tracking-tight text-text-primary">
-              {contact.name || 'Unnamed contact'}
-            </h3>
+            <InlineEditField
+              value={contact.name}
+              placeholder="Unnamed contact"
+              onSave={saveField('name')}
+              ariaLabel="Edit name"
+              className="!px-1 [&_span]:text-[16px] [&_span]:font-semibold [&_span]:tracking-tight"
+            />
             {contact.company && (
-              <p className="mt-0.5 truncate text-[12px] text-text-secondary">{contact.company}</p>
+              <p className="mt-0.5 truncate text-[12px] text-text-secondary px-1">{contact.company}</p>
             )}
             {contact.tags.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-1">
@@ -193,23 +308,49 @@ export function ContactInfoPanel({
           </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-3 gap-1.5">
-          <Button asChild size="sm" variant="secondary" className="h-8">
-            <Link href={`/contacts?id=${contact.id}`}>
-              <Pencil className="h-3 w-3" />
-              Edit
+        {/* SEED-039: available reach channels */}
+        {reach.length > 0 && (
+          <div className="mt-3 flex flex-wrap items-center gap-1.5">
+            <span className="text-[10px] uppercase tracking-wide text-text-tertiary mr-0.5">
+              Reachable on
+            </span>
+            {reach.map((r) => (
+              <span
+                key={`${r.channel}-${r.label}`}
+                className={cn(
+                  'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-medium ring-1',
+                  r.active
+                    ? 'bg-emerald-500/15 text-emerald-400 ring-emerald-500/30'
+                    : 'bg-bg-tertiary text-text-tertiary ring-border-subtle',
+                )}
+                title={r.active ? `${r.label} — open conversation` : `${r.label} — available`}
+              >
+                <ChannelBadge channel={r.channel} showLabel={false} size="sm" className="!h-3.5 !w-3.5" />
+                {r.label}
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* SEED-039: quick actions */}
+        <div className="mt-4 grid grid-cols-4 gap-1.5">
+          <Button asChild size="sm" variant="secondary" className="h-8 px-2 text-[11.5px]">
+            <Link href={`/tasks?contactId=${contact.id}&compose=1`} title="Create task">
+              <ListTodo className="h-3 w-3" />
+              Task
             </Link>
           </Button>
-          <Button asChild size="sm" variant="secondary" className="h-8">
-            <Link href={`/pipeline/new?contact_id=${contact.id}`}>
-              <Plus className="h-3 w-3" />
+          <Button asChild size="sm" variant="secondary" className="h-8 px-2 text-[11.5px]">
+            <Link href={`/scheduling?contactId=${contact.id}`} title="Schedule a meeting">
+              <CalendarPlus className="h-3 w-3" />
+              Schedule
+            </Link>
+          </Button>
+          <NoteQuickAction contactId={contact.id} onSaved={refresh} />
+          <Button asChild size="sm" variant="secondary" className="h-8 px-2 text-[11.5px]">
+            <Link href={`/pipeline/new?contact_id=${contact.id}`} title="Create deal">
+              <Briefcase className="h-3 w-3" />
               Deal
-            </Link>
-          </Button>
-          <Button asChild size="sm" variant="secondary" className="h-8">
-            <Link href={`/contacts?id=${contact.id}#notes`}>
-              <StickyNote className="h-3 w-3" />
-              Note
             </Link>
           </Button>
         </div>
@@ -217,10 +358,45 @@ export function ContactInfoPanel({
 
       <ScrollArea className="min-h-0 flex-1">
         <div className="px-5 py-5 space-y-4">
-          <Section title="Info" defaultOpen>
-            <InfoRow icon={Phone} label="Phone" value={contact.phone} />
-            <InfoRow icon={Mail} label="Email" value={contact.email} />
-            <InfoRow icon={Building2} label="Company" value={contact.company} />
+          {/* ── Info ── */}
+          <Section
+            title="Info"
+            defaultOpen
+            actions={
+              <Link
+                href={`/contacts?id=${contact.id}`}
+                className="text-[10px] text-text-tertiary hover:text-text-secondary"
+              >
+                <Pencil className="h-3 w-3 inline" /> Edit
+              </Link>
+            }
+          >
+            <InlineRow icon={Phone} label="Phone">
+              <InlineEditField
+                value={contact.phone}
+                placeholder="Add phone"
+                type="tel"
+                onSave={saveField('phone')}
+                ariaLabel="Edit phone"
+              />
+            </InlineRow>
+            <InlineRow icon={Mail} label="Email">
+              <InlineEditField
+                value={contact.email}
+                placeholder="Add email"
+                type="email"
+                onSave={saveField('email')}
+                ariaLabel="Edit email"
+              />
+            </InlineRow>
+            <InlineRow icon={Building2} label="Company">
+              <InlineEditField
+                value={contact.company}
+                placeholder="Add company"
+                onSave={saveField('company')}
+                ariaLabel="Edit company"
+              />
+            </InlineRow>
             <InfoRow
               icon={Calendar}
               label="Created"
@@ -236,8 +412,199 @@ export function ContactInfoPanel({
                 </p>
               </div>
             )}
+
+            {/* SEED-039: custom fields rendered inline. */}
+            {contact.customFieldDefs.length > 0 && (
+              <div className="mt-2 space-y-2">
+                {contact.customFieldDefs.map((def) => {
+                  const raw = customFields[def.key]
+                  const config = FIELD_RENDER_CONFIG[def.type as CustomFieldType]
+                  const display = raw !== undefined && raw !== null && config
+                    ? config.displayFormatter(raw)
+                    : ''
+                  const editableTypes = ['text', 'long_text', 'number', 'integer', 'url', 'email', 'phone', 'date']
+                  const editable = editableTypes.includes(def.type)
+                  return (
+                    <div key={def.id} className="flex items-start gap-2.5">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px] bg-bg-tertiary ring-1 ring-border-subtle text-text-tertiary">
+                        <Pencil className="h-3 w-3" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[10px] uppercase tracking-wide text-text-tertiary">
+                          {def.label}
+                        </div>
+                        {editable ? (
+                          <InlineEditField
+                            value={display || null}
+                            placeholder="—"
+                            type={def.type === 'email' ? 'email' : 'text'}
+                            multiline={def.type === 'long_text'}
+                            onSave={saveField(`custom_fields.${def.key}`)}
+                            ariaLabel={`Edit ${def.label}`}
+                          />
+                        ) : (
+                          <div
+                            className={cn(
+                              'text-[12.5px] px-1',
+                              display ? 'text-text-primary' : 'italic text-text-tertiary',
+                            )}
+                          >
+                            {display || '—'}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </Section>
 
+          {/* ── Tasks ── */}
+          <Section
+            title={`Tasks ${contact.tasks.length > 0 ? `(${contact.tasks.length})` : ''}`}
+            defaultOpen={contact.tasks.length > 0}
+            actions={
+              <Link
+                href={`/tasks?contactId=${contact.id}&compose=1`}
+                className="text-[10px] text-text-tertiary hover:text-text-secondary"
+              >
+                <Plus className="h-3 w-3 inline" /> New
+              </Link>
+            }
+          >
+            {contact.tasks.length === 0 ? (
+              <EmptyMini text="No tasks yet." />
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                {contact.tasks.map((t) => {
+                  const due = dueChipStyle(t.due_date)
+                  const done = t.status === 'done'
+                  return (
+                    <Link
+                      key={t.id}
+                      href={`/tasks?id=${t.id}`}
+                      className="group flex items-center gap-2.5 rounded-[8px] border border-border-subtle bg-bg-secondary px-2.5 py-2 hover:border-border-strong transition-colors"
+                    >
+                      {done ? (
+                        <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
+                      ) : (
+                        <Circle className="h-3.5 w-3.5 shrink-0 text-text-tertiary" />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div
+                          className={cn(
+                            'truncate text-[12px]',
+                            done ? 'text-text-tertiary line-through' : 'text-text-primary',
+                          )}
+                        >
+                          {t.title}
+                        </div>
+                        {t.priority !== 'medium' && (
+                          <span className="text-[10px] uppercase tracking-wide text-text-tertiary">
+                            {t.priority}
+                          </span>
+                        )}
+                      </div>
+                      <span
+                        className={cn(
+                          'shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium',
+                          due.cls,
+                        )}
+                      >
+                        {due.label}
+                      </span>
+                    </Link>
+                  )
+                })}
+              </div>
+            )}
+          </Section>
+
+          {/* ── Bookings ── */}
+          <Section
+            title={`Bookings ${contact.bookings.length > 0 ? `(${contact.bookings.length})` : ''}`}
+            defaultOpen={contact.bookings.length > 0}
+            actions={
+              <Link
+                href={`/scheduling?contactId=${contact.id}`}
+                className="text-[10px] text-text-tertiary hover:text-text-secondary"
+              >
+                <Plus className="h-3 w-3 inline" /> New
+              </Link>
+            }
+          >
+            {contact.bookings.length === 0 ? (
+              <EmptyMini text="No bookings." />
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                {contact.bookings.map((b) => {
+                  const statusCls =
+                    b.status === 'cancelled'
+                      ? 'bg-rose-500/15 text-rose-400'
+                      : b.status === 'no_show'
+                        ? 'bg-amber-500/15 text-amber-400'
+                        : 'bg-emerald-500/15 text-emerald-400'
+                  return (
+                    <Link
+                      key={b.id}
+                      href={`/scheduling/bookings/${b.id}`}
+                      className="group flex items-center gap-2.5 rounded-[8px] border border-border-subtle bg-bg-secondary px-2.5 py-2 hover:border-border-strong transition-colors"
+                    >
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[6px] bg-accent-muted text-accent">
+                        <CalendarCheck className="h-3 w-3" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-[12px] text-text-primary">
+                          {b.event_type_name || 'Booking'}
+                        </div>
+                        <div className="text-[10.5px] text-text-tertiary">
+                          {shortDate(b.start_at)}
+                        </div>
+                      </div>
+                      <span
+                        className={cn(
+                          'shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium capitalize',
+                          statusCls,
+                        )}
+                      >
+                        {b.status.replace('_', ' ')}
+                      </span>
+                    </Link>
+                  )
+                })}
+              </div>
+            )}
+          </Section>
+
+          {/* ── Notes (notes table) ── */}
+          <Section
+            title={`Notes ${contact.contact_notes.length > 0 ? `(${contact.contact_notes.length})` : ''}`}
+            defaultOpen={contact.contact_notes.length > 0}
+            actions={<NoteQuickActionInline contactId={contact.id} onSaved={refresh} />}
+          >
+            {contact.contact_notes.length === 0 ? (
+              <EmptyMini text="No notes yet." />
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                {contact.contact_notes.map((n) => (
+                  <div
+                    key={n.id}
+                    className="rounded-[8px] border border-border-subtle bg-bg-secondary px-2.5 py-2"
+                  >
+                    <p className="line-clamp-3 text-[12px] leading-relaxed text-text-primary">
+                      {n.content}
+                    </p>
+                    <p className="mt-1 text-[10.5px] text-text-tertiary">
+                      {relativeTime(n.created_at)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Section>
+
+          {/* ── Opportunities ── */}
           <Section
             title={`Opportunities ${contact.opportunities.length > 0 ? `(${contact.opportunities.length})` : ''}`}
             defaultOpen={contact.opportunities.length > 0}
@@ -281,9 +648,10 @@ export function ContactInfoPanel({
             )}
           </Section>
 
+          {/* ── Recent calls ── */}
           <Section
             title={`Recent calls ${contact.call_logs.length > 0 ? `(${contact.call_logs.length})` : ''}`}
-            defaultOpen={contact.call_logs.length > 0}
+            defaultOpen={false}
           >
             {contact.call_logs.length === 0 ? (
               <EmptyMini text="No calls yet." />
@@ -324,6 +692,7 @@ export function ContactInfoPanel({
             )}
           </Section>
 
+          {/* ── Other conversations ── */}
           <Section
             title={`Other conversations ${contact.conversations.length > 1 ? `(${contact.conversations.length})` : ''}`}
             defaultOpen={false}
@@ -362,28 +731,52 @@ function Section({
   title,
   children,
   defaultOpen = true,
+  actions,
 }: {
   title: string
   children: React.ReactNode
   defaultOpen?: boolean
+  actions?: React.ReactNode
 }) {
   const [open, setOpen] = React.useState(defaultOpen)
   return (
     <div className="flex flex-col gap-2">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center justify-between text-[10.5px] font-medium uppercase tracking-[0.08em] text-text-tertiary hover:text-text-secondary transition-colors"
-      >
-        <span>{title}</span>
-        <ChevronDown
-          className={cn(
-            'h-3 w-3 transition-transform',
-            !open && '-rotate-90',
-          )}
-        />
-      </button>
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="flex items-center gap-1 text-[10.5px] font-medium uppercase tracking-[0.08em] text-text-tertiary hover:text-text-secondary transition-colors"
+        >
+          <ChevronDown
+            className={cn('h-3 w-3 transition-transform', !open && '-rotate-90')}
+          />
+          <span>{title}</span>
+        </button>
+        {open && actions ? <div className="text-[10px]">{actions}</div> : null}
+      </div>
       {open && <div className="flex flex-col gap-2">{children}</div>}
+    </div>
+  )
+}
+
+function InlineRow({
+  icon: Icon,
+  label,
+  children,
+}: {
+  icon: React.ComponentType<{ className?: string }>
+  label: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="flex items-start gap-2.5">
+      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[6px] bg-bg-tertiary ring-1 ring-border-subtle text-text-tertiary">
+        <Icon className="h-3 w-3" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="text-[10px] uppercase tracking-wide text-text-tertiary">{label}</div>
+        {children}
+      </div>
     </div>
   )
 }
@@ -406,7 +799,7 @@ function InfoRow({
         <div className="text-[10px] uppercase tracking-wide text-text-tertiary">{label}</div>
         <div
           className={cn(
-            'text-[12.5px]',
+            'text-[12.5px] px-1',
             value ? 'text-text-primary' : 'italic text-text-tertiary',
           )}
         >
@@ -421,6 +814,160 @@ function EmptyMini({ text }: { text: string }) {
   return (
     <div className="rounded-[8px] border border-dashed border-border-subtle bg-bg-secondary/40 px-3 py-3 text-center text-[11.5px] text-text-tertiary">
       {text}
+    </div>
+  )
+}
+
+/**
+ * Quick action button that opens an inline note composer next to the contact
+ * header. Kept here (instead of a separate file) so the panel ships as a
+ * single self-contained component.
+ */
+function NoteQuickAction({
+  contactId,
+  onSaved,
+}: {
+  contactId: string
+  onSaved: () => void
+}) {
+  const [open, setOpen] = React.useState(false)
+  const [value, setValue] = React.useState('')
+  const [saving, setSaving] = React.useState(false)
+
+  async function save() {
+    const text = value.trim()
+    if (!text || saving) return
+    setSaving(true)
+    const res = await addContactNote(contactId, text)
+    setSaving(false)
+    if (!res.ok) {
+      toast.error(res.error ?? 'Could not save note')
+      return
+    }
+    toast.success('Note added')
+    setValue('')
+    setOpen(false)
+    onSaved()
+  }
+
+  return (
+    <>
+      <Button
+        type="button"
+        size="sm"
+        variant="secondary"
+        className="h-8 px-2 text-[11.5px]"
+        onClick={() => setOpen((v) => !v)}
+        title="Add note"
+      >
+        <StickyNote className="h-3 w-3" />
+        Note
+      </Button>
+      {open && (
+        <div className="col-span-4 mt-2 flex flex-col gap-1.5">
+          <textarea
+            autoFocus
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            placeholder="Add a note about this contact…"
+            rows={3}
+            className="w-full resize-y rounded-[8px] border border-border-subtle bg-bg-primary px-2 py-1.5 text-[12.5px] text-text-primary outline-none focus:border-accent/60 focus:ring-[3px] focus:ring-accent/15"
+          />
+          <div className="flex justify-end gap-1.5">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 px-2 text-[11.5px]"
+              onClick={() => {
+                setOpen(false)
+                setValue('')
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              className="h-7 px-2 text-[11.5px]"
+              onClick={save}
+              disabled={saving || !value.trim()}
+            >
+              Save
+            </Button>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
+/** Lightweight "+ New" inside the Notes section header. */
+function NoteQuickActionInline({
+  contactId,
+  onSaved,
+}: {
+  contactId: string
+  onSaved: () => void
+}) {
+  const [composing, setComposing] = React.useState(false)
+  const [value, setValue] = React.useState('')
+  const [saving, setSaving] = React.useState(false)
+
+  async function save() {
+    const text = value.trim()
+    if (!text || saving) return
+    setSaving(true)
+    const res = await addContactNote(contactId, text)
+    setSaving(false)
+    if (!res.ok) {
+      toast.error(res.error ?? 'Could not save note')
+      return
+    }
+    toast.success('Note added')
+    setValue('')
+    setComposing(false)
+    onSaved()
+  }
+
+  if (!composing) {
+    return (
+      <button
+        type="button"
+        onClick={() => setComposing(true)}
+        className="text-[10px] text-text-tertiary hover:text-text-secondary"
+      >
+        <Plus className="h-3 w-3 inline" /> New
+      </button>
+    )
+  }
+
+  return (
+    <div className="flex items-center gap-1">
+      <textarea
+        autoFocus
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        placeholder="New note…"
+        rows={2}
+        className="w-40 resize-none rounded-[6px] border border-border-subtle bg-bg-primary px-2 py-1 text-[11.5px] text-text-primary outline-none focus:border-accent/60"
+      />
+      <button
+        type="button"
+        onClick={save}
+        disabled={saving || !value.trim()}
+        className="text-[10px] text-accent hover:underline disabled:text-text-tertiary"
+      >
+        Save
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          setComposing(false)
+          setValue('')
+        }}
+        className="text-[10px] text-text-tertiary hover:text-text-secondary"
+      >
+        Cancel
+      </button>
     </div>
   )
 }

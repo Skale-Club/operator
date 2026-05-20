@@ -10,7 +10,7 @@
  * This file is presentation glue + the empty branch.
  */
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { MessageSquare } from 'lucide-react'
 
 import {
@@ -23,7 +23,10 @@ import {
 import { ChatHeader } from '@/components/chat/chat-area/chat-header'
 import { MessageList } from '@/components/chat/chat-area/message-list'
 import { MessageBanner } from '@/components/chat/chat-area/message-banner'
-import { MessageComposer } from '@/components/chat/chat-area/message-composer'
+import {
+  MessageComposer,
+  type ComposerChannel,
+} from '@/components/chat/chat-area/message-composer'
 import { EmptyState } from '@/components/empty-states/empty-state'
 import type { OrgMember } from '@/app/(dashboard)/chat/actions'
 
@@ -45,7 +48,14 @@ interface ChatAreaProps {
   isTyping?: boolean
   /** "Agent thinking" — set while runAgent is processing. */
   isAgentThinking?: boolean
-  onSendMessage: (content: string, opts?: { media?: Array<{ url: string; mime_type: string; filename?: string; size?: number }> }) => Promise<void>
+  onSendMessage: (
+    content: string,
+    opts?: {
+      media?: Array<{ url: string; mime_type: string; filename?: string; size?: number }>
+      /** SEED-039: explicit channel override. */
+      channel?: string
+    },
+  ) => Promise<void>
   onTyping?: () => void
   /** SEED-035: accepts 5 status values plus optional wait_until ISO string. */
   onStatusChange: (status: ConversationStatus, waitUntil?: string | null) => void
@@ -66,6 +76,8 @@ interface ChatAreaProps {
   infoPanelOpen: boolean
   onToggleInfoPanel: () => void
   agentMap?: Record<string, string>
+  /** SEED-039: channels this contact can be reached on (for composer Select). */
+  composerChannels?: ComposerChannel[]
 }
 
 export function ChatArea({
@@ -91,8 +103,13 @@ export function ChatArea({
   infoPanelOpen,
   onToggleInfoPanel,
   agentMap,
+  composerChannels,
 }: ChatAreaProps) {
   const [showDebug, setShowDebug] = useState(false)
+  // SEED-039: per-thread channel filter (client-side, no refetch).
+  const [channelFilter, setChannelFilter] = useState<string[] | null>(null)
+  // SEED-039: operator-selected outbound channel for the composer.
+  const [activeChannel, setActiveChannel] = useState<string | null>(null)
 
   if (!conversation) {
     return (
@@ -108,9 +125,30 @@ export function ChatArea({
     )
   }
 
-  const visibleMessages = messages.filter(
-    (m) => showDebug || !m.metadata?.internal,
-  )
+  // SEED-039: derive distinct channels present in the thread (for filter UI).
+  const threadChannels = useMemo(() => {
+    const set = new Set<string>()
+    for (const m of messages) {
+      const ch =
+        (m.channel as string | null | undefined) ??
+        ((m.metadata as Record<string, unknown> | null | undefined)?.channel as string | undefined) ??
+        null
+      if (ch) set.add(ch)
+    }
+    return Array.from(set)
+  }, [messages])
+
+  const visibleMessages = messages.filter((m) => {
+    if (!showDebug && m.metadata?.internal) return false
+    if (channelFilter && channelFilter.length > 0) {
+      const ch =
+        (m.channel as string | null | undefined) ??
+        ((m.metadata as Record<string, unknown> | null | undefined)?.channel as string | undefined) ??
+        conversation.channel
+      if (!ch || !channelFilter.includes(ch)) return false
+    }
+    return true
+  })
 
   const isBotActive = conversation.botStatus === 'active'
 
@@ -133,6 +171,9 @@ export function ChatArea({
         infoPanelOpen={infoPanelOpen}
         onToggleInfoPanel={onToggleInfoPanel}
         callPhone={conversation.visitorPhone ?? null}
+        threadChannels={threadChannels}
+        channelFilter={channelFilter}
+        onChannelFilterChange={setChannelFilter}
       />
 
       {/* Internal/debug toggle — small, optional, off by default */}
@@ -154,6 +195,7 @@ export function ChatArea({
         isTyping={isTyping}
         isAgentThinking={isAgentThinking}
         agentMap={agentMap}
+        primaryChannel={conversation.channel}
       />
       <MessageBanner conversation={conversation} />
       <MessageComposer
@@ -171,6 +213,9 @@ export function ChatArea({
             ? () => onBotStatusToggle(conversation.id, conversation.botStatus)
             : undefined
         }
+        availableChannels={composerChannels}
+        activeChannel={activeChannel ?? conversation.channel}
+        onActiveChannelChange={setActiveChannel}
       />
     </div>
   )

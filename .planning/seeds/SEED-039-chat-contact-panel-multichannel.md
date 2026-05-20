@@ -1,11 +1,34 @@
 ---
 id: SEED-039
-status: planted
+status: complete
 planted: 2026-05-20
+shipped: 2026-05-20
 trigger_when: now (autonomous execution)
 scope: Large
 priority: high
 depends_on: []
+phases_shipped:
+  - migration_101_message_channel
+  - contact_panel_tasks_bookings_notes
+  - contact_panel_custom_fields_inline
+  - contact_panel_inline_edit_builtin
+  - contact_panel_available_channels_row
+  - contact_panel_quick_actions
+  - per_message_channel_pill
+  - thread_channel_filter_popover
+  - composer_channel_selector_ui
+phases_pending:
+  - cross_channel_outbound_routing
+    # Composer surfaces a channel select, but POST /api/chat/conversations/[id]/messages
+    # still sends via the parent conversation's primary transport. Routing a
+    # cross-channel send means picking the matching transport (whatsapp/sms/etc.)
+    # and likely creating/finding a sibling conversation for that channel.
+  - visual_channel_dividers
+    # Per-message pill ships; the "via WhatsApp" grouped divider between
+    # consecutive channel-switch runs is intentionally deferred.
+  - channels_panel_clickable_navigation
+    # The reachable-channels row in the contact header is informational only.
+    # Click-to-jump-to-other-conversation / start-new-channel modal deferred.
 ---
 
 # SEED-039: Chat — Painel de Contato Completo + UX Multi-Canal
