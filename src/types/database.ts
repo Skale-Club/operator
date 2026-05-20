@@ -3289,6 +3289,74 @@ export interface Database {
           }
         ]
       }
+      tenant_locations: {
+        Row: {
+          id: string
+          org_id: string
+          name: string
+          address_line_1: string
+          address_line_2: string | null
+          city: string
+          state: string | null
+          postal_code: string | null
+          country: string
+          latitude: number | null
+          longitude: number | null
+          phone: string | null
+          business_hours: Json
+          notes: string | null
+          is_default: boolean
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          org_id: string
+          name: string
+          address_line_1: string
+          address_line_2?: string | null
+          city: string
+          state?: string | null
+          postal_code?: string | null
+          country?: string
+          latitude?: number | null
+          longitude?: number | null
+          phone?: string | null
+          business_hours?: Json
+          notes?: string | null
+          is_default?: boolean
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          name?: string
+          address_line_1?: string
+          address_line_2?: string | null
+          city?: string
+          state?: string | null
+          postal_code?: string | null
+          country?: string
+          latitude?: number | null
+          longitude?: number | null
+          phone?: string | null
+          business_hours?: Json
+          notes?: string | null
+          is_default?: boolean
+          is_active?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'tenant_locations_org_id_fkey'
+            columns: ['org_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          }
+        ]
+      }
       notes: {
         Row: {
           id: string
