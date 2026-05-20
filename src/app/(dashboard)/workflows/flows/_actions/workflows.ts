@@ -89,13 +89,26 @@ export async function createWorkflow(
   const { data: orgId } = await supabase.rpc('get_current_org_id')
   if (!orgId) return { ok: false, error: 'no_active_org' }
 
+  // Resolve unique slug — if base slug is taken, try base_1, base_2, ...
+  let slug = parsed.data.slug
+  const { data: existing } = await supabase
+    .from('workflows')
+    .select('slug')
+    .ilike('slug', `${slug}%`)
+  const takenSlugs = new Set((existing ?? []).map((r) => r.slug))
+  if (takenSlugs.has(slug)) {
+    let n = 1
+    while (takenSlugs.has(`${slug}_${n}`)) n++
+    slug = `${slug}_${n}`
+  }
+
   // Create header
   const { data: workflow, error: wErr } = await supabase
     .from('workflows')
     .insert({
       org_id: orgId as string,
       name: parsed.data.name,
-      slug: parsed.data.slug,
+      slug,
       description: parsed.data.description ?? null,
       created_by: user.id,
     })
