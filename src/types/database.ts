@@ -303,6 +303,10 @@ export interface Database {
           manychat_channel_id: string | null
           created_at: string
           updated_at: string
+          health_status: 'connected' | 'degraded' | 'disconnected' | 'unknown'
+          last_checked_at: string | null
+          last_error: string | null
+          failure_count: number
         }
         Insert: {
           id?: string
@@ -317,6 +321,10 @@ export interface Database {
           manychat_channel_id?: string | null
           created_at?: string
           updated_at?: string
+          health_status?: 'connected' | 'degraded' | 'disconnected' | 'unknown'
+          last_checked_at?: string | null
+          last_error?: string | null
+          failure_count?: number
         }
         Update: {
           name?: string
@@ -327,6 +335,10 @@ export interface Database {
           is_active?: boolean
           manychat_channel_id?: string | null
           updated_at?: string
+          health_status?: 'connected' | 'degraded' | 'disconnected' | 'unknown'
+          last_checked_at?: string | null
+          last_error?: string | null
+          failure_count?: number
         }
         Relationships: [
           {
@@ -2396,6 +2408,10 @@ export interface Database {
           cancel_token: string
           created_at: string
           updated_at: string
+          location_kind: string | null
+          location_data: Json
+          meeting_url: string | null
+          meeting_phone: string | null
         }
         Insert: {
           id?: string
@@ -2413,6 +2429,10 @@ export interface Database {
           cancel_token?: string
           created_at?: string
           updated_at?: string
+          location_kind?: string | null
+          location_data?: Json
+          meeting_url?: string | null
+          meeting_phone?: string | null
         }
         Update: {
           booker_name?: string
@@ -2425,6 +2445,10 @@ export interface Database {
           status?: 'confirmed' | 'cancelled' | 'no_show'
           linked_contact_id?: string | null
           updated_at?: string
+          location_kind?: string | null
+          location_data?: Json
+          meeting_url?: string | null
+          meeting_phone?: string | null
         }
         Relationships: [
           {
@@ -2585,6 +2609,78 @@ export interface Database {
             columns: ['org_id']
             isOneToOne: false
             referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      event_dispatches: {
+        Row: {
+          id: string
+          org_id: string
+          event_type: string
+          source_table: string
+          source_id: string
+          workflow_ids: string[]
+          payload: Json
+          parent_id: string | null
+          depth: number
+          dispatched_at: string
+        }
+        Insert: {
+          id?: string
+          org_id: string
+          event_type: string
+          source_table: string
+          source_id: string
+          workflow_ids?: string[]
+          payload?: Json
+          parent_id?: string | null
+          depth?: number
+          dispatched_at?: string
+        }
+        Update: {
+          workflow_ids?: string[]
+          payload?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'event_dispatches_org_id_fkey'
+            columns: ['org_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      scheduled_workflow_ticks: {
+        Row: {
+          workflow_id: string
+          booking_id: string
+          event_type: string
+          fired_minute: string
+          dispatched_at: string
+        }
+        Insert: {
+          workflow_id: string
+          booking_id: string
+          event_type: string
+          fired_minute: string
+          dispatched_at?: string
+        }
+        Update: Record<string, never>
+        Relationships: [
+          {
+            foreignKeyName: 'scheduled_workflow_ticks_workflow_id_fkey'
+            columns: ['workflow_id']
+            isOneToOne: false
+            referencedRelation: 'workflows'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'scheduled_workflow_ticks_booking_id_fkey'
+            columns: ['booking_id']
+            isOneToOne: false
+            referencedRelation: 'bookings'
             referencedColumns: ['id']
           }
         ]
@@ -3277,6 +3373,74 @@ export interface Database {
           }
         ]
       }
+      tenant_locations: {
+        Row: {
+          id: string
+          org_id: string
+          name: string
+          address_line_1: string
+          address_line_2: string | null
+          city: string
+          state: string | null
+          postal_code: string | null
+          country: string
+          latitude: number | null
+          longitude: number | null
+          phone: string | null
+          business_hours: Json
+          notes: string | null
+          is_default: boolean
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          org_id: string
+          name: string
+          address_line_1: string
+          address_line_2?: string | null
+          city: string
+          state?: string | null
+          postal_code?: string | null
+          country?: string
+          latitude?: number | null
+          longitude?: number | null
+          phone?: string | null
+          business_hours?: Json
+          notes?: string | null
+          is_default?: boolean
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          name?: string
+          address_line_1?: string
+          address_line_2?: string | null
+          city?: string
+          state?: string | null
+          postal_code?: string | null
+          country?: string
+          latitude?: number | null
+          longitude?: number | null
+          phone?: string | null
+          business_hours?: Json
+          notes?: string | null
+          is_default?: boolean
+          is_active?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'tenant_locations_org_id_fkey'
+            columns: ['org_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          }
+        ]
+      }
       notes: {
         Row: {
           id: string
@@ -3378,6 +3542,13 @@ export interface Database {
           created_by: string | null
           created_at: string
           updated_at: string
+          kind: 'flow' | 'tool'
+          tool_name: string | null
+          trigger_type: 'tool_call' | 'event' | 'schedule' | 'manual' | 'webhook_url'
+          trigger_config: Record<string, unknown>
+          health_blocked: boolean
+          health_blocked_reason: string | null
+          legacy_tool_config_id: string | null
         }
         Insert: {
           id?: string
@@ -3390,6 +3561,13 @@ export interface Database {
           created_by?: string | null
           created_at?: string
           updated_at?: string
+          kind?: 'flow' | 'tool'
+          tool_name?: string | null
+          trigger_type?: 'tool_call' | 'event' | 'schedule' | 'manual' | 'webhook_url'
+          trigger_config?: Record<string, unknown>
+          health_blocked?: boolean
+          health_blocked_reason?: string | null
+          legacy_tool_config_id?: string | null
         }
         Update: {
           id?: string
@@ -3402,6 +3580,13 @@ export interface Database {
           created_by?: string | null
           created_at?: string
           updated_at?: string
+          kind?: 'flow' | 'tool'
+          tool_name?: string | null
+          trigger_type?: 'tool_call' | 'event' | 'schedule' | 'manual' | 'webhook_url'
+          trigger_config?: Record<string, unknown>
+          health_blocked?: boolean
+          health_blocked_reason?: string | null
+          legacy_tool_config_id?: string | null
         }
         Relationships: [
           {

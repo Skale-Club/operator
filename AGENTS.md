@@ -23,11 +23,13 @@ The canonical production host is `https://xphere.skale.club`. When documenting o
 
 Before making non-trivial changes, ground yourself in these files:
 
-1. [`README.md`](/c:/Users/Vanildo/Dev/operator/README.md)
-2. [`CLAUDE.md`](/c:/Users/Vanildo/Dev/operator/CLAUDE.md)
-3. [`PROJECT.md`](/c:/Users/Vanildo/Dev/operator/.planning/PROJECT.md)
-4. [`STATE.md`](/c:/Users/Vanildo/Dev/operator/.planning/STATE.md)
-5. Relevant phase or milestone artifacts in [`.planning/milestones`](/c:/Users/Vanildo/Dev/operator/.planning/milestones)
+1. [`README.md`](/README.md)
+2. [`CLAUDE.md`](/CLAUDE.md)
+3. [`WORKFLOWS.md`](/WORKFLOWS.md) — required before authoring any workflow
+4. [`PROJECT.md`](/.planning/PROJECT.md)
+5. [`STATE.md`](/.planning/STATE.md)
+6. Relevant phase or milestone artifacts in [`.planning/milestones`](/.planning/milestones)
+7. For workflow authoring specifically: [`.planning/agents/workflow-authoring.md`](/.planning/agents/workflow-authoring.md)
 
 ## Repo Facts
 
@@ -129,6 +131,28 @@ npx vitest
 ```
 
 Use narrower test selection when the change is localized, but favor `npm run build` before finishing any non-trivial task.
+
+## Workflows (Unified System — SEED-025)
+
+This platform has a **single unified workflow system**. There is no separate "Automations". Both invokable tools (1-node, callable by name) and multi-step flows (DAGs) live in the same `workflows` table, distinguished by `kind` (`'tool' | 'flow'`).
+
+**Before authoring any workflow** — manually, via Copilot, or as an external coding agent — you must read:
+
+1. [`WORKFLOWS.md`](/WORKFLOWS.md) — the authoring contract (mental model, YAML format, validation, submission)
+2. [`.planning/agents/workflow-authoring.md`](/.planning/agents/workflow-authoring.md) — decision tree, scope reference, pre-flight checklist, pattern catalog, anti-patterns
+3. [`.planning/workflows/examples/`](/.planning/workflows/examples) — canonical YAML examples (copy and adapt rather than hand-rolling from scratch)
+
+**The validator is the contract.** Run `npm run workflows:validate <file>` locally or POST to `/api/workflows/validate` for dry-run. Every error has a structured `suggestion` field engineered for direct LLM consumption — iterate until clean before submitting.
+
+**Org-filtered spec.** `GET /api/workflows/spec` is the source of truth for what's authorable per org. Disconnected integrations are filtered out server-side — an AI literally cannot generate a workflow referencing a capability that doesn't exist for the target org. Use the static spec in `src/lib/workflows/spec.ts` (or the JSONSchema in `docs/workflows/`) when no live org context is available.
+
+**Where workflows live.**
+
+- Runtime per-tenant workflows: `workflows` + `workflow_versions` (RLS-scoped)
+- Platform-default workflows: `supabase/seeds/workflows/*.yaml` (validated in CI, loaded on deploy)
+- Examples / reference: `.planning/workflows/examples/`
+
+**Coordinate seeds.** SEED-025 (data model + engine), SEED-026 (AI authoring), SEED-027 (calendar triggers), SEED-028 (meeting locations). Status of each is in the `.planning/seeds/` frontmatter (`planted` / `shipped`).
 
 ## Areas To Be Extra Careful With
 
