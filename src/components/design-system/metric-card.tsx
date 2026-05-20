@@ -193,7 +193,7 @@ export function MetricCard({
       )}
 
       {data && data.length > 0 && (
-        <div className="absolute inset-0 overflow-hidden rounded-[12px] pointer-events-none" aria-hidden>
+        <div className="absolute inset-x-0 bottom-0 h-[55%] overflow-hidden rounded-b-[12px] pointer-events-none" aria-hidden>
           <ResponsiveContainer width="100%" height="100%" minWidth={0}>
             <AreaChart data={data} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
               <defs>
