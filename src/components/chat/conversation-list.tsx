@@ -345,7 +345,8 @@ export function ConversationList({
             onChange={(e) => setSearch(e.target.value)}
             className="h-9 pl-9 pr-12 text-[13px] rounded-[8px] bg-bg-primary border-border-subtle focus-visible:border-accent focus-visible:ring-[3px] focus-visible:ring-accent/15"
           />
-          <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-[5px] border border-border-subtle bg-bg-tertiary px-1.5 py-0.5 text-[10px] font-mono text-text-tertiary">
+          {/* SEED-040: hide the ⌘K hint on touch devices — it's noise there. */}
+          <kbd className="hidden md:block absolute right-2.5 top-1/2 -translate-y-1/2 rounded-[5px] border border-border-subtle bg-bg-tertiary px-1.5 py-0.5 text-[10px] font-mono text-text-tertiary">
             ⌘K
           </kbd>
         </div>
@@ -730,9 +731,15 @@ function ConversationCardBase({
         )}
       </div>
 
-      {/* Hover-only quick actions (right side) */}
+      {/*
+        Quick actions (right side).
+        SEED-040: on mobile (no hover), these are always visible so users can
+        pin/star/menu without a long-press. On md+ we fall back to the original
+        hover-reveal pattern (opacity 0 → 1 on group-hover) to keep the inbox
+        visually quiet.
+      */}
       <div
-        className="absolute right-2 top-2 hidden gap-0.5 rounded-[6px] bg-bg-elevated/95 p-0.5 ring-1 ring-border-subtle shadow-sm group-hover:flex"
+        className="absolute right-2 top-2 flex gap-0.5 rounded-[6px] bg-bg-elevated/95 p-0.5 ring-1 ring-border-subtle shadow-sm opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:focus-within:opacity-100"
         onClick={(e) => e.stopPropagation()}
       >
         {onPin && (

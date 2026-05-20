@@ -16,6 +16,7 @@ import { Filter, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
@@ -85,6 +86,18 @@ export function countActiveFilters(f: AdvancedFilters): number {
 export function FilterPanel({ value, onChange, members, labels }: FilterPanelProps) {
   const [open, setOpen] = useState(false)
   const [local, setLocal] = useState<AdvancedFilters>(value)
+  // SEED-040: detect mobile breakpoint client-side so we can swap Popover
+  // (desktop) for Sheet (mobile). Defaults to false so SSR + first paint match
+  // desktop, then we re-evaluate on mount.
+  const [isMobile, setIsMobile] = useState(false)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const mq = window.matchMedia('(max-width: 767px)')
+    const update = () => setIsMobile(mq.matches)
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
 
   // Sync down when value changes externally (e.g. reset).
   useEffect(() => {
@@ -116,44 +129,24 @@ export function FilterPanel({ value, onChange, members, labels }: FilterPanelPro
     onChange(EMPTY_FILTERS)
   }
 
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          aria-label="Advanced filters"
-          title="Advanced filters"
-          className={cn(
-            'relative inline-flex h-7 w-7 items-center justify-center rounded-[6px] transition-colors',
-            activeCount > 0
-              ? 'bg-accent-muted text-accent ring-1 ring-accent/30'
-              : 'bg-bg-tertiary/50 text-text-secondary hover:bg-bg-tertiary hover:text-text-primary',
-          )}
-        >
-          <Filter className="h-3.5 w-3.5" />
-          {activeCount > 0 && (
-            <span className="absolute -top-1 -right-1 h-4 min-w-[16px] px-1 rounded-full bg-accent text-white text-[9px] font-semibold leading-4 text-center">
-              {activeCount}
-            </span>
-          )}
-        </button>
-      </PopoverTrigger>
-      <PopoverContent align="start" className="w-[320px] p-0">
-        <div className="flex items-center justify-between border-b border-border-subtle px-3 py-2">
-          <span className="text-[12px] font-semibold text-text-primary">Filters</span>
-          {activeCount > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 px-2 text-[11px]"
-              onClick={clearAll}
-            >
-              <X className="h-3 w-3 mr-1" /> Clear all
-            </Button>
-          )}
-        </div>
-        <ScrollArea className="max-h-[420px]">
-          <div className="p-3 space-y-4">
+  // SEED-040: shared body — rendered inside Popover (desktop) and Sheet (mobile).
+  const body = (
+    <>
+      <div className="flex items-center justify-between border-b border-border-subtle px-3 py-2">
+        <span className="text-[12px] font-semibold text-text-primary">Filters</span>
+        {activeCount > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 px-2 text-[11px]"
+            onClick={clearAll}
+          >
+            <X className="h-3 w-3 mr-1" /> Clear all
+          </Button>
+        )}
+      </div>
+      <ScrollArea className="max-h-[420px] md:max-h-[420px]">
+        <div className="p-3 space-y-4">
             <FilterGroup title="Status">
               {STATUSES.map((s) => (
                 <FilterCheckbox
@@ -277,6 +270,72 @@ export function FilterPanel({ value, onChange, members, labels }: FilterPanelPro
             </FilterGroup>
           </div>
         </ScrollArea>
+      </>
+  )
+
+  const triggerClass = cn(
+    'relative inline-flex h-7 w-7 items-center justify-center rounded-[6px] transition-colors',
+    activeCount > 0
+      ? 'bg-accent-muted text-accent ring-1 ring-accent/30'
+      : 'bg-bg-tertiary/50 text-text-secondary hover:bg-bg-tertiary hover:text-text-primary',
+  )
+  const triggerInner = (
+    <>
+      <Filter className="h-3.5 w-3.5" />
+      {activeCount > 0 && (
+        <span className="absolute -top-1 -right-1 h-4 min-w-[16px] px-1 rounded-full bg-accent text-white text-[9px] font-semibold leading-4 text-center">
+          {activeCount}
+        </span>
+      )}
+    </>
+  )
+
+  // SEED-040: render a bottom Sheet on mobile so the filter UI fills the
+  // viewport ergonomically, and a Popover on md+ where the original anchored
+  // popover pattern is more space-efficient.
+  if (isMobile) {
+    return (
+      <>
+        <button
+          type="button"
+          aria-label="Advanced filters"
+          title="Advanced filters"
+          className={triggerClass}
+          onClick={() => setOpen(true)}
+        >
+          {triggerInner}
+        </button>
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetContent
+            side="bottom"
+            className="max-h-[85vh] overflow-hidden p-0 pb-safe rounded-t-[16px]"
+          >
+            <SheetHeader className="px-4 pt-3 pb-1">
+              <SheetTitle className="text-[13px] font-semibold text-text-primary">
+                Filters
+              </SheetTitle>
+            </SheetHeader>
+            {body}
+          </SheetContent>
+        </Sheet>
+      </>
+    )
+  }
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label="Advanced filters"
+          title="Advanced filters"
+          className={triggerClass}
+        >
+          {triggerInner}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-[320px] p-0">
+        {body}
       </PopoverContent>
     </Popover>
   )

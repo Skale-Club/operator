@@ -201,7 +201,10 @@ export function ChatHeader({
   }
 
   return (
-    <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border-subtle bg-bg-primary/95 px-4 py-3 backdrop-blur">
+    // SEED-040: `pt-safe-3` extends padding under the iPhone notch / Dynamic
+    // Island. On non-iOS the env(safe-area-inset-top) is 0 so it collapses to
+    // the original py-3 spacing.
+    <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border-subtle bg-bg-primary/95 px-4 pb-3 pt-safe-3 backdrop-blur">
       {/* Left cluster — back + avatar + identity */}
       <div className="flex min-w-0 items-center gap-3">
         <Button
@@ -451,11 +454,17 @@ export function ChatHeader({
             <TooltipContent>{isBotActive ? 'Pause bot' : 'Resume bot'}</TooltipContent>
           </Tooltip>
 
+          {/*
+            SEED-040: Assign/Pin/Star/Priority are hidden on mobile to keep
+            the header within a single phone-width row. They remain reachable
+            via the ··· menu (TODO: surface them there explicitly in a future
+            seed) and via the contact info panel.
+          */}
           <DropdownMenu>
             <Tooltip>
               <TooltipTrigger asChild>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Button variant="ghost" size="icon" className="hidden md:inline-flex h-8 w-8">
                     <UserPlus className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -502,7 +511,7 @@ export function ChatHeader({
               <Button
                 variant="ghost"
                 size="icon"
-                className={cn('h-8 w-8', conversation.pinned && 'text-accent')}
+                className={cn('hidden md:inline-flex h-8 w-8', conversation.pinned && 'text-accent')}
                 onClick={() => onPinToggle(conversation.id, !conversation.pinned)}
                 aria-label={conversation.pinned ? 'Unpin' : 'Pin'}
               >
@@ -518,7 +527,7 @@ export function ChatHeader({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className={cn('h-8 w-8', starred && 'text-amber-400')}
+                  className={cn('hidden md:inline-flex h-8 w-8', starred && 'text-amber-400')}
                   onClick={() => onStarToggle(conversation.id, !starred)}
                   aria-label={starred ? 'Unstar' : 'Star'}
                 >
@@ -535,7 +544,7 @@ export function ChatHeader({
                 variant="ghost"
                 size="icon"
                 className={cn(
-                  'h-8 w-8',
+                  'hidden md:inline-flex h-8 w-8',
                   priority === 'urgent' && 'text-danger',
                   priority === 'high' && 'text-warning',
                 )}
@@ -552,10 +561,16 @@ export function ChatHeader({
 
           <Tooltip>
             <TooltipTrigger asChild>
+              {/*
+                SEED-040: the info-panel toggle is visible on all viewports.
+                On desktop it shows/hides the right column; on mobile the
+                parent (chat-layout) interprets the same callback as a swap
+                to the contact-info pane.
+              */}
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 hidden md:inline-flex"
+                className="h-8 w-8"
                 onClick={onToggleInfoPanel}
                 aria-label={infoPanelOpen ? 'Hide contact info' : 'Show contact info'}
               >
@@ -573,6 +588,36 @@ export function ChatHeader({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            {/*
+              SEED-040: on mobile we hide pin/star/priority from the header
+              row to fit the viewport, so we surface them here instead.
+              Desktop already has icon buttons for these — duplicating in the
+              menu is harmless and discoverable.
+            */}
+            <DropdownMenuItem
+              className="md:hidden"
+              onClick={() => onPinToggle(conversation.id, !conversation.pinned)}
+            >
+              <Pin className="h-3.5 w-3.5 mr-2" />
+              {conversation.pinned ? 'Unpin' : 'Pin to top'}
+            </DropdownMenuItem>
+            {onStarToggle && (
+              <DropdownMenuItem
+                className="md:hidden"
+                onClick={() => onStarToggle(conversation.id, !starred)}
+              >
+                <Star className="h-3.5 w-3.5 mr-2" />
+                {starred ? 'Remove star' : 'Star'}
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem
+              className="md:hidden"
+              onClick={() => onPriorityCycle(conversation.id, PRIORITY_CYCLE[priority])}
+            >
+              <Flag className="h-3.5 w-3.5 mr-2" />
+              Priority: {priority === 'normal' ? 'Normal' : priority === 'high' ? 'High' : 'Urgent'}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator className="md:hidden" />
             <DropdownMenuItem
               onClick={() => setShowDelete(true)}
               className="text-rose-500 focus:text-rose-500"

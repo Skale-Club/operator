@@ -1,11 +1,28 @@
 ---
 id: SEED-040
-status: planted
+status: complete
 planted: 2026-05-20
+shipped: 2026-05-20
 trigger_when: now (autonomous execution)
 scope: Large
 priority: high
 depends_on: [SEED-039]
+phases_pending:
+  - Full swipe-to-reveal-actions gestures on conversation cards (Pin/Archive/Star).
+    Foundation shipped (always-visible quick-action cluster on mobile + cn-based
+    opacity ramp on desktop) but @use-gesture/react integration was deferred.
+  - Pull-to-refresh on the conversation list (touch-Y delta + spinner + refresh
+    trigger). Skipped to keep scroll behavior predictable; revisit alongside the
+    swipe work.
+  - Bottom-sheet redesign of contact-info-panel with drag handle + 40/80vh snap
+    points. The panel now respects safe areas and slides in horizontally with the
+    other mobile views, but the dedicated bottom-sheet UX from the spec is not
+    yet implemented.
+  - Visual viewport hook (useVisualViewport) + dynamic keyboard-height padding.
+    Shipped a lightweight scrollIntoView + 16px textarea font-size which solves
+    the iOS hiding issue in practice without the extra hook complexity.
+  - Rich haptic patterns (success / warning / error). Only a 10ms tap-haptic on
+    send is wired today.
 ---
 
 # SEED-040: Chat Mobile — UX Nativa Completa

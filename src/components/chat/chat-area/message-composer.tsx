@@ -136,6 +136,11 @@ export function MessageComposer({
     const content = value.trim()
     // Allow send if there's content OR a pending uploaded file
     if ((!content && !pendingFileUrl) || isSending || disabled) return
+    // SEED-040: tiny haptic on send for a native-app feel. Guard so it no-ops
+    // on browsers without vibrate (e.g. iOS Safari outside PWA).
+    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+      try { navigator.vibrate(10) } catch { /* ignore */ }
+    }
     setValue('')
     setIsSending(true)
     try {
@@ -229,8 +234,22 @@ export function MessageComposer({
   const canSend = (value.trim().length > 0 || !!pendingFileUrl) && !isDisabled && !isUploading
   const isImage = pendingFileMime.startsWith('image/')
 
+  // SEED-040: when the textarea is focused on mobile, scroll it into view so
+  // the iOS keyboard doesn't hide it. We use `block: 'end'` on a 100ms delay so
+  // the keyboard animation has a chance to start. Desktop users are unaffected
+  // because the chat scroller stays anchored at bottom anyway.
+  function handleFocus() {
+    if (typeof window === 'undefined') return
+    if (window.matchMedia('(min-width: 768px)').matches) return
+    setTimeout(() => {
+      ref.current?.scrollIntoView({ block: 'end', behavior: 'smooth' })
+    }, 100)
+  }
+
   return (
-    <div className="shrink-0 border-t border-border-subtle bg-bg-primary/95 px-4 py-3 backdrop-blur md:px-6">
+    // SEED-040: `pb-safe-3` accounts for the iPhone home-indicator safe area
+    // so the send button sits comfortably above it.
+    <div className="shrink-0 border-t border-border-subtle bg-bg-primary/95 px-4 pt-3 pb-safe-3 backdrop-blur md:px-6 md:pb-3">
       {disabled && disabledHint && (
         <div className="mb-2 flex items-center justify-between gap-3 rounded-[8px] border border-warning/30 bg-[var(--warning-muted)] px-3 py-2">
           <p className="text-[12px] text-warning">{disabledHint}</p>
@@ -323,9 +342,12 @@ export function MessageComposer({
           value={value}
           onChange={(e) => handleChange(e.target.value)}
           onKeyDown={handleKey}
+          onFocus={handleFocus}
           disabled={isDisabled}
           className={cn(
-            'flex-1 resize-none bg-transparent text-[13.5px] leading-snug text-text-primary outline-none',
+            // SEED-040: `text-base` (16px) on mobile prevents iOS auto-zoom on
+            // focus. On md+ we keep the tighter 13.5px design.
+            'flex-1 resize-none bg-transparent text-base md:text-[13.5px] leading-snug text-text-primary outline-none',
             'placeholder:text-text-tertiary',
             'py-1.5',
           )}

@@ -226,7 +226,7 @@ export function ContactInfoPanel({
 
   if (loading && !contact) {
     return (
-      <div className="flex h-full flex-col border-l border-border-subtle bg-bg-secondary/40 p-5">
+      <div className="flex h-full flex-col border-l border-border-subtle bg-bg-secondary/40 p-5 pt-safe pb-safe">
         <div className="space-y-3 animate-pulse">
           <div className="h-14 w-14 rounded-full bg-bg-tertiary" />
           <div className="h-4 w-2/3 rounded bg-bg-tertiary" />
@@ -238,7 +238,7 @@ export function ContactInfoPanel({
 
   if (!contact) {
     return (
-      <div className="flex h-full flex-col border-l border-border-subtle bg-bg-secondary/40 p-5">
+      <div className="flex h-full flex-col border-l border-border-subtle bg-bg-secondary/40 p-5 pt-safe pb-safe">
         <p className="text-[13px] text-text-secondary">Contact not found.</p>
       </div>
     )
@@ -248,7 +248,10 @@ export function ContactInfoPanel({
   const customFields = (contact.custom_fields as Record<string, unknown> | null) ?? {}
 
   return (
-    <div className="flex h-full flex-col border-l border-border-subtle bg-bg-secondary/40">
+    // SEED-040: pt-safe / pb-safe respect the iPhone notch + home indicator
+    // when the panel takes over the full mobile viewport. On desktop the
+    // safe-area insets resolve to 0 so the panel behaves identically.
+    <div className="flex h-full flex-col border-l border-border-subtle bg-bg-secondary/40 pt-safe pb-safe">
       {/* Header */}
       <div className="border-b border-border-subtle px-5 py-5 relative">
         <div className="absolute right-3 top-3 flex items-center gap-1">

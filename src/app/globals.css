@@ -321,6 +321,35 @@
  * ============================================================================ */
 
 @layer utilities {
+  /* ─────────────────────────────────────────────────────────────────
+   * SEED-040: Safe-area utilities (iPhone notch / Dynamic Island /
+   * home indicator). Used together with `viewportFit: 'cover'` in
+   * `src/app/layout.tsx`. On non-iOS devices `env(safe-area-inset-*)`
+   * resolves to 0px, so these are no-ops outside the iPhone case.
+   * ───────────────────────────────────────────────────────────────── */
+  .pt-safe { padding-top: env(safe-area-inset-top); }
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+  .pl-safe { padding-left: env(safe-area-inset-left); }
+  .pr-safe { padding-right: env(safe-area-inset-right); }
+
+  /* Padding utilities that *add* the safe inset on top of an explicit value. */
+  .pt-safe-2 { padding-top: calc(0.5rem  + env(safe-area-inset-top)); }
+  .pt-safe-3 { padding-top: calc(0.75rem + env(safe-area-inset-top)); }
+  .pt-safe-4 { padding-top: calc(1rem    + env(safe-area-inset-top)); }
+  .pb-safe-2 { padding-bottom: calc(0.5rem  + env(safe-area-inset-bottom)); }
+  .pb-safe-3 { padding-bottom: calc(0.75rem + env(safe-area-inset-bottom)); }
+  .pb-safe-4 { padding-bottom: calc(1rem    + env(safe-area-inset-bottom)); }
+
+  .h-safe-bottom { height: env(safe-area-inset-bottom); }
+
+  /* Mobile chat shell uses dynamic viewport height so the composer survives
+   * the iOS soft-keyboard appearing/disappearing without `resize` events. */
+  .h-dvh { height: 100dvh; }
+  .min-h-dvh { min-height: 100dvh; }
+
+  /* Prevents iOS from zooming into a textarea on focus (font-size < 16px). */
+  .no-ios-zoom { font-size: 16px; }
+
   /* Glow on hover for primary CTAs */
   .shadow-glow { box-shadow: var(--shadow-glow); }
   .shadow-elevation-sm { box-shadow: var(--shadow-sm); }

@@ -52,6 +52,7 @@ import { ChatArea } from '@/components/chat/chat-area'
 import { ContactInfoPanel } from '@/components/chat/contact-info-panel'
 import { usePaginatedConversations } from '@/hooks/use-paginated-conversations'
 import { PushPermissionBanner } from '@/components/chat/push-permission-banner'
+import { cn } from '@/lib/utils'
 
 const INBOX_MIN_WIDTH = 260
 const INBOX_DEFAULT_WIDTH = 300
@@ -772,10 +773,38 @@ export function ChatLayout({ currentOrgId, currentUserId, agentMap }: ChatLayout
         )}
       </div>
 
-      {/* Mobile — single-column with drawer-style navigation */}
-      <div className="md:hidden flex h-full min-h-0 w-full overflow-hidden">
-        {mobileView === 'list' && (
-          <div className="h-full min-h-0 w-full">
+      {/*
+        Mobile — single column at a time, slid in/out with CSS transforms.
+        SEED-040: rather than mounting/unmounting on view change (which caused
+        a hard cut), we always render the three columns side-by-side in an
+        absolute stack and translate the container based on `mobileView`. The
+        list lives at translateX(0), chat at translateX(-100%), info at
+        translateX(-200%). Each panel is `inset-0 absolute`, so they only
+        paint when in view.
+
+        Note: panels keep `pointer-events-none` when off-screen so taps don't
+        bleed through during the transition.
+      */}
+      <div className="md:hidden relative flex h-full min-h-0 w-full overflow-hidden">
+        <div
+          className="absolute inset-0 flex w-[300%] transition-transform duration-300 ease-out"
+          style={{
+            transform:
+              mobileView === 'list'
+                ? 'translateX(0%)'
+                : mobileView === 'chat'
+                  ? 'translateX(-33.3333%)'
+                  : 'translateX(-66.6667%)',
+          }}
+        >
+          {/* List pane (1/3) */}
+          <div
+            className={cn(
+              'h-full min-h-0 w-1/3 shrink-0 overflow-hidden',
+              mobileView !== 'list' && 'pointer-events-none',
+            )}
+            aria-hidden={mobileView !== 'list'}
+          >
             <ConversationList
               conversations={conversations}
               pinned={pinned}
@@ -812,9 +841,15 @@ export function ChatLayout({ currentOrgId, currentUserId, agentMap }: ChatLayout
               orgLabels={orgLabels}
             />
           </div>
-        )}
-        {mobileView === 'chat' && (
-          <div className="h-full min-h-0 w-full">
+
+          {/* Chat pane (1/3) */}
+          <div
+            className={cn(
+              'h-full min-h-0 w-1/3 shrink-0 overflow-hidden',
+              mobileView !== 'chat' && 'pointer-events-none',
+            )}
+            aria-hidden={mobileView !== 'chat'}
+          >
             <ChatArea
               conversation={selected}
               messages={messages}
@@ -837,9 +872,15 @@ export function ChatLayout({ currentOrgId, currentUserId, agentMap }: ChatLayout
               composerChannels={composerChannels}
             />
           </div>
-        )}
-        {mobileView === 'info' && (
-          <div className="h-full min-h-0 w-full">
+
+          {/* Info pane (1/3) */}
+          <div
+            className={cn(
+              'h-full min-h-0 w-1/3 shrink-0 overflow-hidden',
+              mobileView !== 'info' && 'pointer-events-none',
+            )}
+            aria-hidden={mobileView !== 'info'}
+          >
             <ContactInfoPanel
               contactId={selected?.contactId ?? null}
               fallbackName={selected?.visitorName ?? null}
@@ -848,7 +889,7 @@ export function ChatLayout({ currentOrgId, currentUserId, agentMap }: ChatLayout
               onClose={() => setMobileView('chat')}
             />
           </div>
-        )}
+        </div>
       </div>
     </div>
   )
