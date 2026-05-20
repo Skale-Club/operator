@@ -5,6 +5,7 @@ import { createClient, getUser } from '@/lib/supabase/server'
 import { PageContainer, PageHeader } from '@/components/layout/page-header'
 import { WorkspaceBrandingForm } from '@/components/settings/workspace-branding-form'
 import { WhatsAppProviderSettings } from './whatsapp-provider-settings'
+import { LabelsSettings } from './labels-settings'
 import { getActiveWhatsAppProvider } from './actions'
 
 export default async function WorkspaceSettingsPage() {
@@ -45,6 +46,9 @@ export default async function WorkspaceSettingsPage() {
       />
       <div className="mt-8">
         <WhatsAppProviderSettings initial={whatsapp} />
+      </div>
+      <div className="mt-8">
+        <LabelsSettings />
       </div>
     </PageContainer>
   )
