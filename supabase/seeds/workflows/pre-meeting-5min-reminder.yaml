@@ -1,0 +1,25 @@
+# Platform-default workflow — ships to every org.
+# Sends an SMS 5 minutes before any confirmed meeting with the meeting link.
+# Triggers via SEED-027 tick scheduler matching meeting.starts_in with offset -5m.
+# Requires twilio integration (will be filtered out for orgs without it).
+
+name: Pre-meeting reminder — 5 minutes
+description: |
+  Platform-default. Sends a 5-minute heads-up SMS to the meeting attendee
+  with the dynamic meeting link.
+trigger:
+  type: event
+  event: meeting.starts_in
+  config:
+    offset: "-5m"
+
+nodes:
+  - id: notify
+    kind: send_sms
+    integration: twilio
+    to: "{{meeting.attendee_contact.phone}}"
+    body: "Hi {{meeting.attendee_contact.name}}, your appointment starts in 5 minutes: {{meeting.link}}"
+
+edges:
+  - from: trigger
+    to: notify

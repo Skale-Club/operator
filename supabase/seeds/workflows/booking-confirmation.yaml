@@ -1,0 +1,21 @@
+# Platform-default workflow — ships to every org.
+# Acknowledges a new booking confirmation via SMS with all relevant info.
+
+name: Booking confirmation SMS
+description: |
+  Platform-default. Sends a confirmation SMS the moment a booking
+  transitions to 'confirmed'.
+trigger:
+  type: event
+  event: meeting.confirmed
+
+nodes:
+  - id: confirm_sms
+    kind: send_sms
+    integration: twilio
+    to: "{{meeting.attendee_contact.phone}}"
+    body: "Hi {{meeting.attendee_contact.name}}, your {{meeting.event_type.name}} is confirmed for {{meeting.starts_at}}. Details: {{meeting.link}}"
+
+edges:
+  - from: trigger
+    to: confirm_sms
