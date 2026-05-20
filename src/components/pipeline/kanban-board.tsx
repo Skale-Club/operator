@@ -38,21 +38,25 @@ import { OpportunityDetailSheet } from './opportunity-detail-sheet'
 
 type StageRow = Database['public']['Tables']['pipeline_stages']['Row']
 
+const DEFAULT_CARD_FIELDS = ['contact_name', 'value', 'days_in_stage']
+
 interface KanbanBoardProps {
   pipelineId: string
   stages: StageRow[]
   opportunities: OpportunityWithContact[]
+  cardFields?: string[]
 }
 
 interface ColumnProps {
   stage: StageRow
   opportunities: OpportunityWithContact[]
+  cardFields: string[]
   onOpen: (id: string) => void
   onAction: (action: 'won' | 'lost' | 'delete' | 'edit', id: string) => void
   isOver: boolean
 }
 
-function StageColumn({ stage, opportunities, onOpen, onAction, isOver }: ColumnProps) {
+function StageColumn({ stage, opportunities, cardFields, onOpen, onAction, isOver }: ColumnProps) {
   // Make the whole column a sortable drop area by using the SortableContext id
   const { setNodeRef } = useSortable({
     id: `column-${stage.id}`,
@@ -105,7 +109,7 @@ function StageColumn({ stage, opportunities, onOpen, onAction, isOver }: ColumnP
             </div>
           ) : (
             opportunities.map((o) => (
-              <OpportunityCard key={o.id} opportunity={o} onOpen={onOpen} onAction={onAction} />
+              <OpportunityCard key={o.id} opportunity={o} visibleFields={cardFields} onOpen={onOpen} onAction={onAction} />
             ))
           )}
         </SortableContext>
@@ -114,7 +118,7 @@ function StageColumn({ stage, opportunities, onOpen, onAction, isOver }: ColumnP
   )
 }
 
-export function KanbanBoard({ stages, opportunities }: KanbanBoardProps) {
+export function KanbanBoard({ stages, opportunities, cardFields = DEFAULT_CARD_FIELDS }: KanbanBoardProps) {
   const router = useRouter()
 
   // Local optimistic state so drag-and-drop feels instant.
@@ -293,6 +297,7 @@ export function KanbanBoard({ stages, opportunities }: KanbanBoardProps) {
             key={s.id}
             stage={s}
             opportunities={byStage.get(s.id) ?? []}
+            cardFields={cardFields}
             onOpen={handleOpen}
             onAction={handleAction}
             isOver={overColumnId === s.id}
@@ -308,6 +313,7 @@ export function KanbanBoard({ stages, opportunities }: KanbanBoardProps) {
           {activeOpp ? (
             <OpportunityCard
               opportunity={activeOpp}
+              visibleFields={cardFields}
               onOpen={() => {}}
               onAction={() => {}}
               isOverlay

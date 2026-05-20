@@ -829,3 +829,21 @@ export async function exportOpportunitiesCsv(): Promise<{ error?: string; csv?: 
 
   return { csv: lines.join('\n') }
 }
+
+// ─── Card Layout ──────────────────────────────────────────────────────────────
+
+export async function updatePipelineCardFields(
+  pipelineId: string,
+  fields: string[],
+): Promise<{ error?: string } | void> {
+  const user = await getUser()
+  if (!user) return { error: 'Not authenticated.' }
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('pipelines')
+    .update({ card_fields: fields, updated_at: new Date().toISOString() })
+    .eq('id', pipelineId)
+  if (error) return { error: error.message }
+  revalidatePath('/pipeline')
+  revalidatePath('/pipeline/settings')
+}

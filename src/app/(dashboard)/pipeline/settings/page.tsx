@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 
 import { getPipelines, getStages } from '../actions'
+import { getDefinitions } from '@/app/(dashboard)/settings/custom-fields/actions'
 import { PipelineSettingsClient } from '@/components/pipeline/pipeline-settings-client'
 import { Button } from '@/components/ui/button'
 
@@ -19,7 +20,15 @@ export default async function PipelineSettingsPage({ searchParams }: PipelineSet
     pipelines.find((p) => p.is_default) ??
     pipelines[0] ??
     null
-  const stages = active ? await getStages(active.id) : []
+
+  const [stages, customFieldsResult] = await Promise.all([
+    active ? getStages(active.id) : Promise.resolve([]),
+    getDefinitions({ entity: 'opportunity' }),
+  ])
+
+  const customFields = customFieldsResult.ok
+    ? customFieldsResult.data.map((f) => ({ key: `custom::${f.id}`, label: f.label }))
+    : []
 
   return (
     <div className="mx-auto w-full max-w-none px-4 sm:px-6 lg:px-8 py-8 space-y-6">
@@ -35,6 +44,8 @@ export default async function PipelineSettingsPage({ searchParams }: PipelineSet
         pipelines={pipelines}
         activeId={active?.id ?? null}
         stages={stages}
+        activePipelineCardFields={(active?.card_fields as string[] | undefined) ?? ['contact_name', 'value', 'days_in_stage']}
+        customFields={customFields}
       />
     </div>
   )

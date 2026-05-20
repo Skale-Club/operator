@@ -68,7 +68,11 @@ export default async function PipelinePage({ searchParams }: PipelinePageProps) 
         </div>
       ) : (
         <Suspense fallback={<TableSkeleton rows={6} columns={5} />}>
-          <KanbanBody pipelineId={activePipeline.id} assignedTo={assignedTo} />
+          <KanbanBody
+            pipelineId={activePipeline.id}
+            cardFields={(activePipeline.card_fields as string[]) ?? ['contact_name', 'value', 'days_in_stage']}
+            assignedTo={assignedTo}
+          />
         </Suspense>
       )}
     </div>
@@ -77,9 +81,11 @@ export default async function PipelinePage({ searchParams }: PipelinePageProps) 
 
 async function KanbanBody({
   pipelineId,
+  cardFields,
   assignedTo,
 }: {
   pipelineId: string
+  cardFields: string[]
   assignedTo?: string
 }) {
   const [stages, opportunities] = await Promise.all([
@@ -106,6 +112,7 @@ async function KanbanBody({
       pipelineId={pipelineId}
       stages={stages}
       opportunities={opportunities}
+      cardFields={cardFields}
     />
   )
 }

@@ -2039,6 +2039,7 @@ export interface Database {
           name: string
           is_default: boolean
           position: number
+          card_fields: string[]
           created_at: string
           updated_at: string
         }
@@ -2048,6 +2049,7 @@ export interface Database {
           name: string
           is_default?: boolean
           position?: number
+          card_fields?: string[]
           created_at?: string
           updated_at?: string
         }
@@ -2055,6 +2057,7 @@ export interface Database {
           name?: string
           is_default?: boolean
           position?: number
+          card_fields?: string[]
           updated_at?: string
         }
         Relationships: [

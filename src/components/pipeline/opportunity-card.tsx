@@ -21,8 +21,11 @@ import {
 } from '@/lib/pipeline/format'
 import type { OpportunityWithContact } from '@/app/(dashboard)/pipeline/actions'
 
+const DEFAULT_FIELDS = ['contact_name', 'value', 'days_in_stage']
+
 interface OpportunityCardProps {
   opportunity: OpportunityWithContact
+  visibleFields?: string[]
   onOpen: (id: string) => void
   onAction: (action: 'won' | 'lost' | 'delete' | 'edit', id: string) => void
   isOverlay?: boolean
@@ -36,6 +39,7 @@ const TONE_PILL: Record<'neutral' | 'warning' | 'danger', string> = {
 
 export function OpportunityCard({
   opportunity,
+  visibleFields = DEFAULT_FIELDS,
   onOpen,
   onAction,
   isOverlay = false,
@@ -61,6 +65,9 @@ export function OpportunityCard({
   const days = daysSince(opportunity.updated_at)
   const tone = ageTone(days)
   const contactName = opportunity.contact?.name ?? opportunity.contact?.phone ?? 'Unassigned'
+
+  const showValue = visibleFields.includes('value')
+  const showDays = visibleFields.includes('days_in_stage')
 
   // Click vs drag: dnd-kit's PointerSensor with `distance: 6` only activates
   // drag once the pointer travels > 6px. If the user releases without
@@ -130,24 +137,32 @@ export function OpportunityCard({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          <div className="mt-0.5 text-[11.5px] text-text-tertiary truncate">{contactName}</div>
+          {visibleFields.includes('contact_name') && (
+            <div className="mt-0.5 text-[11.5px] text-text-tertiary truncate">{contactName}</div>
+          )}
         </div>
       </div>
 
-      <div className="mt-2.5 flex items-center justify-between gap-2">
-        <span className="text-[13px] font-semibold tabular-nums text-text-primary">
-          {formatCurrency(Number(opportunity.value), opportunity.currency)}
-        </span>
-        <span
-          className={cn(
-            'inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium tabular-nums',
-            TONE_PILL[tone],
+      {(showValue || showDays) && (
+        <div className="mt-2.5 flex items-center justify-between gap-2">
+          {showValue && (
+            <span className="text-[13px] font-semibold tabular-nums text-text-primary">
+              {formatCurrency(Number(opportunity.value), opportunity.currency)}
+            </span>
           )}
-          title={`${days} day${days === 1 ? '' : 's'} in stage`}
-        >
-          {days}d
-        </span>
-      </div>
+          {showDays && (
+            <span
+              className={cn(
+                'inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium tabular-nums ml-auto',
+                TONE_PILL[tone],
+              )}
+              title={`${days} day${days === 1 ? '' : 's'} in stage`}
+            >
+              {days}d
+            </span>
+          )}
+        </div>
+      )}
     </div>
   )
 }

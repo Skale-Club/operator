@@ -28,20 +28,31 @@ import {
   reorderStages,
 } from '@/app/(dashboard)/pipeline/actions'
 import type { Database } from '@/types/database'
+import { CardLayoutTab } from './card-layout-tab'
 
 type PipelineRow = Database['public']['Tables']['pipelines']['Row']
 type StageRowType = Database['public']['Tables']['pipeline_stages']['Row']
 
 const PRESET_COLORS = ['#6366F1', '#0EA5E9', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6']
 
+type ActiveTab = 'stages' | 'card_layout'
+
+interface CustomFieldDef {
+  key: string
+  label: string
+}
+
 interface Props {
   pipelines: PipelineRow[]
   activeId: string | null
   stages: StageRowType[]
+  activePipelineCardFields?: string[]
+  customFields?: CustomFieldDef[]
 }
 
-export function PipelineSettingsClient({ pipelines, activeId, stages }: Props) {
+export function PipelineSettingsClient({ pipelines, activeId, stages, activePipelineCardFields, customFields = [] }: Props) {
   const router = useRouter()
+  const [activeTab, setActiveTab] = React.useState<ActiveTab>('stages')
   const [newPipelineName, setNewPipelineName] = React.useState('')
   const [editPipelineId, setEditPipelineId] = React.useState<string | null>(null)
   const [editPipelineName, setEditPipelineName] = React.useState('')
@@ -49,6 +60,7 @@ export function PipelineSettingsClient({ pipelines, activeId, stages }: Props) {
   const [newStageColor, setNewStageColor] = React.useState(PRESET_COLORS[0])
   const [orderedStages, setOrderedStages] = React.useState<StageRowType[]>(stages)
   React.useEffect(() => setOrderedStages(stages), [stages])
+  React.useEffect(() => setActiveTab('stages'), [activeId])
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
 
@@ -216,55 +228,90 @@ export function PipelineSettingsClient({ pipelines, activeId, stages }: Props) {
         </CardContent>
       </Card>
 
-      {/* Stages of active pipeline */}
+      {/* Right panel: Stages / Card Layout */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-[13px]">Stages</CardTitle>
+          <div className="flex items-center gap-0.5 rounded-[8px] border border-border-subtle bg-bg-tertiary p-0.5 w-fit">
+            <button
+              onClick={() => setActiveTab('stages')}
+              className={cn(
+                'rounded-[6px] px-3 py-1 text-[12px] font-medium transition-colors',
+                activeTab === 'stages'
+                  ? 'bg-bg-secondary text-text-primary shadow-elevation-sm'
+                  : 'text-text-tertiary hover:text-text-primary',
+              )}
+            >
+              Stages
+            </button>
+            <button
+              onClick={() => setActiveTab('card_layout')}
+              className={cn(
+                'rounded-[6px] px-3 py-1 text-[12px] font-medium transition-colors',
+                activeTab === 'card_layout'
+                  ? 'bg-bg-secondary text-text-primary shadow-elevation-sm'
+                  : 'text-text-tertiary hover:text-text-primary',
+              )}
+            >
+              Card Layout
+            </button>
+          </div>
         </CardHeader>
         <CardContent>
-          {!activeId ? (
-            <p className="text-[12.5px] text-text-tertiary">Select a pipeline to manage its stages.</p>
+          {activeTab === 'card_layout' ? (
+            !activeId ? (
+              <p className="text-[12.5px] text-text-tertiary">Select a pipeline to configure its card layout.</p>
+            ) : (
+              <CardLayoutTab
+                pipelineId={activeId}
+                initialFields={activePipelineCardFields ?? ['contact_name', 'value', 'days_in_stage']}
+                customFields={customFields}
+              />
+            )
           ) : (
-            <>
-              <DndContext sensors={sensors} onDragEnd={handleStageDragEnd}>
-                <SortableContext items={orderedStages.map((s) => s.id)} strategy={verticalListSortingStrategy}>
-                  <div className="space-y-1.5">
-                    {orderedStages.map((s) => (
-                      <StageRow key={s.id} stage={s} />
+            !activeId ? (
+              <p className="text-[12.5px] text-text-tertiary">Select a pipeline to manage its stages.</p>
+            ) : (
+              <>
+                <DndContext sensors={sensors} onDragEnd={handleStageDragEnd}>
+                  <SortableContext items={orderedStages.map((s) => s.id)} strategy={verticalListSortingStrategy}>
+                    <div className="space-y-1.5">
+                      {orderedStages.map((s) => (
+                        <StageRow key={s.id} stage={s} />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+
+                <div className="mt-4 border-t border-border-subtle pt-4 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      placeholder="New stage name"
+                      value={newStageName}
+                      onChange={(e) => setNewStageName(e.target.value)}
+                      className="h-8 text-[12.5px] flex-1"
+                    />
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] uppercase tracking-wide text-text-tertiary mr-1">colour</span>
+                    {PRESET_COLORS.map((c) => (
+                      <button
+                        key={c}
+                        onClick={() => setNewStageColor(c)}
+                        className={cn(
+                          'h-5 w-5 rounded-full ring-2 transition-all',
+                          newStageColor === c ? 'ring-text-primary scale-110' : 'ring-transparent',
+                        )}
+                        style={{ backgroundColor: c }}
+                        aria-label={`Pick ${c}`}
+                      />
                     ))}
                   </div>
-                </SortableContext>
-              </DndContext>
-
-              <div className="mt-4 border-t border-border-subtle pt-4 space-y-3">
-                <div className="flex items-center gap-2">
-                  <Input
-                    placeholder="New stage name"
-                    value={newStageName}
-                    onChange={(e) => setNewStageName(e.target.value)}
-                    className="h-8 text-[12.5px] flex-1"
-                  />
+                  <Button onClick={handleCreateStage} size="sm" disabled={!newStageName.trim()}>
+                    <Plus className="h-3.5 w-3.5" /> Add stage
+                  </Button>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[11px] uppercase tracking-wide text-text-tertiary mr-1">colour</span>
-                  {PRESET_COLORS.map((c) => (
-                    <button
-                      key={c}
-                      onClick={() => setNewStageColor(c)}
-                      className={cn(
-                        'h-5 w-5 rounded-full ring-2 transition-all',
-                        newStageColor === c ? 'ring-text-primary scale-110' : 'ring-transparent',
-                      )}
-                      style={{ backgroundColor: c }}
-                      aria-label={`Pick ${c}`}
-                    />
-                  ))}
-                </div>
-                <Button onClick={handleCreateStage} size="sm" disabled={!newStageName.trim()}>
-                  <Plus className="h-3.5 w-3.5" /> Add stage
-                </Button>
-              </div>
-            </>
+              </>
+            )
           )}
         </CardContent>
       </Card>
