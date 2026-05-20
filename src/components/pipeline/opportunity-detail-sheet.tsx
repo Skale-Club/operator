@@ -266,16 +266,17 @@ export function OpportunityDetailSheet({
           </>
         ) : (
           <div className="flex flex-col overflow-hidden h-full">
-            {/* Header */}
-            <DialogHeader className="border-b border-border-subtle px-6 py-5 pr-14 space-y-3">
+            {/* Header — title, value (big), stage/status chips, actions */}
+            <DialogHeader className="border-b border-border-subtle px-6 pt-5 pb-5 pr-14 space-y-0">
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-text-tertiary">
+                <div className="min-w-0 flex-1 space-y-2">
+                  {/* Chips: stage + status */}
+                  <div className="flex flex-wrap items-center gap-1.5">
                     {stage && (
                       <span
-                        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10.5px] font-medium"
+                        className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium"
                         style={{
-                          backgroundColor: `${stage.color}22`,
+                          backgroundColor: `${stage.color}1f`,
                           color: stage.color,
                         }}
                       >
@@ -283,42 +284,56 @@ export function OpportunityDetailSheet({
                         {stage.name}
                       </span>
                     )}
-                    <span className="capitalize text-text-tertiary">· {status}</span>
+                    <span
+                      className={cn(
+                        'inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10.5px] font-medium uppercase tracking-wider',
+                        status === 'won' && 'bg-emerald-500/10 text-emerald-400',
+                        status === 'lost' && 'bg-rose-500/10 text-rose-400',
+                        status === 'open' && 'bg-bg-tertiary text-text-tertiary',
+                      )}
+                    >
+                      {status}
+                    </span>
                   </div>
-                  <DialogTitle className="mt-1 text-[18px] truncate">
+                  {/* Title */}
+                  <DialogTitle className="text-[22px] leading-[1.2] font-semibold tracking-[-0.01em] truncate">
                     {editing ? 'Edit opportunity' : opp.title}
                   </DialogTitle>
+                  {/* Value — big, prominent */}
                   {!editing && (
-                    <DialogDescription className="text-[14px] text-accent font-semibold tabular-nums">
-                      {formatCurrency(Number(opp.value), opp.currency)}
+                    <DialogDescription asChild>
+                      <div className="text-[28px] leading-[1.1] font-semibold tabular-nums text-accent">
+                        {formatCurrency(Number(opp.value), opp.currency)}
+                      </div>
                     </DialogDescription>
                   )}
+                  {/* Tags */}
+                  {!editing && selectedTags.length > 0 && (
+                    <div className="flex flex-wrap gap-1 pt-1">
+                      {selectedTags.map((t) => (
+                        <TagBadge key={t.id} name={t.name} color={t.color} />
+                      ))}
+                    </div>
+                  )}
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 shrink-0">
                   {!editing && (
-                    <Button size="sm" variant="secondary" onClick={() => setEditing(true)}>
+                    <Button size="sm" variant="secondary" onClick={() => setEditing(true)} className="gap-1.5">
                       <Pencil className="h-3.5 w-3.5" /> Edit
                     </Button>
                   )}
                   <Button
-                    size="sm"
+                    size="icon-sm"
                     variant="ghost"
                     onClick={handleDelete}
                     disabled={deleting}
-                    className="text-rose-400 hover:text-rose-300"
+                    className="text-rose-400 hover:text-rose-300 hover:bg-rose-500/10"
+                    aria-label="Delete opportunity"
                   >
                     {deleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
                   </Button>
                 </div>
               </div>
-
-              {!editing && selectedTags.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {selectedTags.map((t) => (
-                    <TagBadge key={t.id} name={t.name} color={t.color} />
-                  ))}
-                </div>
-              )}
             </DialogHeader>
 
             <Tabs defaultValue="info" className="flex flex-col flex-1 overflow-hidden">
@@ -483,43 +498,67 @@ export function OpportunityDetailSheet({
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    <MetaRow icon={Calendar} label="Expected close" value={opp.expected_close_date ?? 'Not set'} />
-                    <MetaRow icon={Calendar} label="Created" value={new Date(opp.created_at).toLocaleDateString()} />
-                    <MetaRow icon={Calendar} label="Last updated" value={new Date(opp.updated_at).toLocaleDateString()} />
+                  <div className="space-y-5">
+                    {/* Metadata grid */}
+                    <div>
+                      <SectionLabel>Details</SectionLabel>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <MetaCard
+                          icon={Calendar}
+                          label="Expected close"
+                          value={opp.expected_close_date ? new Date(opp.expected_close_date).toLocaleDateString() : 'Not set'}
+                          accent={opp.expected_close_date ? 'text-text-primary' : 'text-text-tertiary'}
+                        />
+                        <MetaCard
+                          icon={Calendar}
+                          label="Created"
+                          value={new Date(opp.created_at).toLocaleDateString()}
+                          accent="text-text-secondary"
+                        />
+                        <MetaCard
+                          icon={Calendar}
+                          label="Last updated"
+                          value={new Date(opp.updated_at).toLocaleDateString()}
+                          accent="text-text-secondary"
+                        />
+                      </div>
+                    </div>
 
+                    {/* Custom fields */}
                     <CustomFieldsDisplay
                       entity="opportunity"
                       customFields={opp.custom_fields as Record<string, unknown>}
                     />
 
+                    {/* Contact card */}
                     {opp.contact && (
-                      <>
-                        <div className="border-t border-border-subtle pt-3 -mx-2 px-2 text-[11px] uppercase tracking-wide text-text-tertiary">
-                          Contact
-                        </div>
+                      <div>
+                        <SectionLabel>Contact</SectionLabel>
                         <Link
                           href={`/contacts?id=${opp.contact.id}`}
-                          className="block rounded-[10px] border border-border-subtle bg-bg-tertiary/40 p-3 transition-colors hover:bg-bg-tertiary/70"
+                          className="group block rounded-[12px] border border-border-subtle bg-bg-secondary p-4 transition-colors hover:border-border hover:bg-bg-tertiary"
                         >
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-9 w-9">
-                              <AvatarFallback className="text-[11px] font-semibold bg-accent-muted text-accent">
+                          <div className="flex items-start gap-3">
+                            <Avatar className="h-11 w-11 shrink-0">
+                              <AvatarFallback className="text-[13px] font-semibold bg-accent-muted text-accent">
                                 {initialsOf(opp.contact.name ?? opp.contact.phone ?? '')}
                               </AvatarFallback>
                             </Avatar>
-                            <div className="min-w-0 flex-1">
-                              <div className="text-[13px] font-medium text-text-primary truncate">
-                                {opp.contact.name ?? '(unnamed)'}
+                            <div className="min-w-0 flex-1 space-y-1">
+                              <div className="flex items-center gap-2">
+                                <div className="text-[14px] font-semibold text-text-primary truncate">
+                                  {opp.contact.name ?? '(unnamed)'}
+                                </div>
+                                <UserIcon className="h-3 w-3 text-text-tertiary opacity-0 group-hover:opacity-100" />
                               </div>
-                              <div className="flex items-center gap-3 text-[11.5px] text-text-tertiary">
+                              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-text-tertiary">
                                 {opp.contact.phone && (
-                                  <span className="inline-flex items-center gap-1">
+                                  <span className="inline-flex items-center gap-1.5">
                                     <Phone className="h-3 w-3" /> {opp.contact.phone}
                                   </span>
                                 )}
                                 {opp.contact.email && (
-                                  <span className="inline-flex items-center gap-1">
+                                  <span className="inline-flex items-center gap-1.5">
                                     <Mail className="h-3 w-3" /> {opp.contact.email}
                                   </span>
                                 )}
@@ -527,7 +566,7 @@ export function OpportunityDetailSheet({
                             </div>
                           </div>
                         </Link>
-                      </>
+                      </div>
                     )}
                   </div>
                 )}
@@ -588,24 +627,32 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   )
 }
 
-function MetaRow({
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mb-2 text-[10.5px] font-medium uppercase tracking-[0.08em] text-text-tertiary">
+      {children}
+    </div>
+  )
+}
+
+function MetaCard({
   icon: Icon,
   label,
   value,
+  accent = 'text-text-primary',
 }: {
   icon: React.ComponentType<{ className?: string }>
   label: string
   value: string
+  accent?: string
 }) {
   return (
-    <div className="flex items-start gap-3">
-      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[8px] bg-bg-tertiary text-text-tertiary">
-        <Icon className="h-3.5 w-3.5" />
+    <div className="rounded-[10px] border border-border-subtle bg-bg-secondary p-3">
+      <div className="flex items-center gap-1.5 mb-1.5">
+        <Icon className="h-3 w-3 text-text-tertiary" />
+        <span className="text-[10.5px] uppercase tracking-wide text-text-tertiary font-medium">{label}</span>
       </div>
-      <div className="min-w-0">
-        <div className="text-[10.5px] uppercase tracking-wide text-text-tertiary">{label}</div>
-        <div className="text-[12.5px] text-text-primary truncate">{value || '—'}</div>
-      </div>
+      <div className={cn('text-[13px] font-medium truncate', accent)}>{value || '—'}</div>
     </div>
   )
 }

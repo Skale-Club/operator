@@ -1,26 +1,48 @@
 # Roadmap: v2.9 UX Polish & Feature Completeness
 
-**Milestone:** v2.9
-**Theme:** UX Polish, Notifications, Light Theme, Workflows Unification
+**Workstream:** v29-ux-polish
+**Phases:** 2 (103–104) | **Requirements:** 8 (NOTIF-01..05, THEME-01..03)
 
-## Active Phases
+---
 
-### Phase 103 — In-App Notification System
-**Goal:** Real-time in-app notifications delivered via Supabase Realtime, persisted in DB, with bell icon in header.
-- Notification bell in header with unread count badge
-- Notification panel/dropdown with list of events
-- Types: new conversation, missed call, new contact, campaign finished, flow run failed
-- Mark as read (individual + mark all read)
-- Supabase Realtime for live delivery
-- Persistence in DB (notifications table, per-org, per-user)
+## Phase 103: NOTIFICATIONS
 
-### Phase 104 — Light Theme
-**Goal:** Full light mode with theme toggle persisted per user and system preference detection.
-- Full light mode via CSS variables / Tailwind dark: prefix
-- Theme toggle (dark/light) in header or settings
-- Persisted per user (DB or localStorage)
-- All dashboard pages, sidebar, components adapted
-- System preference detection on first visit
+**Goal:** Real-time in-app notification system — bell icon in header opens a dropdown popover with persisted notifications delivered via Supabase Realtime.
+**Depends on:** Nothing
+**Requirements:** NOTIF-01, NOTIF-02, NOTIF-03, NOTIF-04, NOTIF-05
+**UI hint:** yes
+**Success Criteria:**
+1. `notifications` table in Supabase with columns: id, org_id, user_id, type, payload (jsonb), read_at, created_at — RLS scoped to org
+2. Bell icon in `top-bar.tsx` shows numeric unread count badge (replaces mock `hasNotifications`)
+3. Clicking bell opens a Popover with list of notifications — dropdown style, inline below bell
+4. Notification types handled: `new_conversation`, `missed_call`, `flow_failed`
+5. Each notification is clickable and navigates to the relevant resource
+6. "Mark all as read" button at top of panel
+7. Read notifications visible for 30 days in dimmer tone
+8. Supabase Realtime subscription updates unread count live
+9. `npm run build` exits 0
 
-## Upcoming Phases (v2.9)
-- Phase 97–102: UX Polish, Header Reorg, Flow Canvas, Workflows Unification (see milestones/v2.9-ROADMAP.md)
+**Plans:** 3
+- [ ] 103-01-PLAN.md — DB migration: notifications table + RLS policies
+- [ ] 103-02-PLAN.md — Notification panel component + bell wiring in top-bar
+- [ ] 103-03-PLAN.md — Event emitters: insert notifications from conversation/call/flow webhooks
+
+---
+
+## Phase 104: LIGHT-THEME
+
+**Goal:** Full light mode — remove forcedTheme="dark" lock, define light CSS variables, ThemeToggle already in header.
+**Depends on:** Nothing
+**Requirements:** THEME-01, THEME-02, THEME-03
+**UI hint:** yes
+**Success Criteria:**
+1. `layout.tsx` has `defaultTheme="system"` and `enableSystem={true}` — `forcedTheme="dark"` removed
+2. `globals.css` has `:root { }` block with light-mode values for all CSS custom properties
+3. Theme persists across page reloads via next-themes localStorage
+4. Dashboard, sidebar, all pages look correct in both dark and light mode
+5. ThemeToggle in header switches theme without flash
+6. `npm run build` exits 0
+
+**Plans:** 2
+- [ ] 104-01-PLAN.md — Remove forcedTheme lock + define light CSS variables in globals.css
+- [ ] 104-02-PLAN.md — Audit and fix dark:-prefixed classes + component-level light mode corrections
