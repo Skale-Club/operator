@@ -28,6 +28,7 @@ import {
   type OpportunityFilters,
 } from '@/lib/pipeline/zod-schemas'
 import { validateCustomFields } from '@/lib/custom-fields'
+import { emitOpportunityEvent } from '@/lib/pipeline/events'
 import { getDefinitions } from '@/app/(dashboard)/settings/custom-fields/actions'
 import { FIELD_RENDER_CONFIG } from '@/lib/custom-fields/render-config'
 import type { CustomFieldType } from '@/types/database'
@@ -395,6 +396,12 @@ export async function createOpportunity(
     created_by: user.id,
   })
 
+  // SEED-036: fire opportunity.created event for any matching workflow.
+  // Fire-and-forget so the user response isn't blocked by workflow execution.
+  void emitOpportunityEvent(orgId, 'opportunity.created', {
+    opportunity_id: inserted.id,
+  })
+
   revalidatePath('/pipeline')
   revalidatePath('/pipeline/list')
   return { id: inserted.id }
@@ -430,8 +437,48 @@ export async function updateOpportunity(
   if (input.status !== undefined) patch.status = input.status as OpportunityStatus
   if (Object.keys(cfPayloadUpdate).length > 0) patch.custom_fields = cfPayloadUpdate
 
+  // Snapshot the row before the update so SEED-036 events can diff fields.
+  const { data: before } = await supabase
+    .from('opportunities')
+    .select('id, org_id, title, value, assigned_to, status, expected_close_date')
+    .eq('id', id)
+    .maybeSingle()
+
   const { error } = await supabase.from('opportunities').update(patch).eq('id', id)
   if (error) return { error: error.message }
+
+  // SEED-036: compute changes and emit events.
+  if (before) {
+    const beforeRow = before as Record<string, unknown>
+    const changes: Record<string, { from: unknown; to: unknown }> = {}
+    for (const key of Object.keys(patch) as Array<keyof typeof patch>) {
+      const beforeVal = beforeRow[key as string]
+      const afterVal = patch[key]
+      if (beforeVal !== afterVal) {
+        changes[key as string] = { from: beforeVal ?? null, to: afterVal ?? null }
+      }
+    }
+    if (Object.keys(changes).length > 0) {
+      const orgId = before.org_id as string
+      if ('assigned_to' in changes) {
+        void emitOpportunityEvent(orgId, 'opportunity.assigned', {
+          opportunity_id: id,
+          changes: { assigned_to: changes.assigned_to },
+        })
+      }
+      if ('value' in changes) {
+        void emitOpportunityEvent(orgId, 'opportunity.value_changed', {
+          opportunity_id: id,
+          changes: { value: changes.value },
+        })
+      }
+      void emitOpportunityEvent(orgId, 'opportunity.updated', {
+        opportunity_id: id,
+        changes,
+      })
+    }
+  }
+
   revalidatePath('/pipeline')
   revalidatePath(`/pipeline/${id}`)
 }
@@ -463,8 +510,25 @@ export async function deleteOpportunity(
   const user = await getUser()
   if (!user) return { error: 'Not authenticated.' }
   const supabase = await createClient()
+
+  // SEED-036: snapshot before delete so workflows triggered by
+  // opportunity.deleted can still read opportunity fields.
+  const { data: snapshot } = await supabase
+    .from('opportunities')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle()
+
   const { error } = await supabase.from('opportunities').delete().eq('id', id)
   if (error) return { error: error.message }
+
+  if (snapshot) {
+    void emitOpportunityEvent(snapshot.org_id as string, 'opportunity.deleted', {
+      opportunity_id: id,
+      opportunity_snapshot: snapshot as unknown as Record<string, unknown>,
+    })
+  }
+
   revalidatePath('/pipeline')
 }
 
@@ -566,6 +630,19 @@ export async function moveOpportunity(
       },
       created_by: user.id,
     })
+
+    // SEED-036: fire the matching pipeline event. won/lost take precedence
+    // over the generic stage_changed so workflows can react narrowly.
+    const eventType = nextStage.is_won
+      ? 'opportunity.won'
+      : nextStage.is_lost
+        ? 'opportunity.lost'
+        : 'opportunity.stage_changed'
+    void emitOpportunityEvent(current.org_id as string, eventType, {
+      opportunity_id: id,
+      from_stage_id: current.stage_id as string,
+      to_stage_id: stageId,
+    })
   }
 
   revalidatePath('/pipeline')
@@ -633,6 +710,13 @@ export async function addNote(
     .select('id')
     .single()
   if (error || !data) return { error: error?.message ?? 'Insert failed' }
+
+  // SEED-036: fire opportunity.note_added so workflows can react to manual notes.
+  void emitOpportunityEvent(orgId, 'opportunity.note_added', {
+    opportunity_id: opportunityId,
+    note: { content: parsed.data.content },
+  })
+
   revalidatePath(`/pipeline/${opportunityId}`)
   return { id: data.id }
 }

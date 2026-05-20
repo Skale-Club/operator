@@ -21,6 +21,15 @@ import { sendSmsViaGhl } from '@/lib/ghl/send-sms'
 import { sendWhatsappMessageAction } from '@/lib/action-engine/executors/send-whatsapp-message'
 import { sendWhatsappMentionAllAction } from '@/lib/action-engine/executors/send-whatsapp-mention-all'
 import { executeSendTelegramNotification } from '@/lib/action-engine/executors/send-telegram-notification'
+import {
+  executePipelineMoveOpportunity,
+  executePipelineUpdateOpportunity,
+  executePipelineMarkWon,
+  executePipelineMarkLost,
+  executePipelineAddNote,
+  executePipelineAssignUser,
+  executePipelineCreateOpportunity,
+} from '@/lib/action-engine/executors/pipeline-actions'
 import type { GhlCredentials } from '@/lib/ghl/client'
 import type { Database, Json } from '@/types/database'
 import type { SupabaseClient } from '@supabase/supabase-js'
@@ -138,6 +147,20 @@ export async function executeAction(
       if (!result.ok) throw new Error(result.error ?? 'send_telegram_notification failed')
       return `Telegram sent. Message IDs: ${result.messageIds.join(', ')}`
     }
+    case 'pipeline_move_opportunity':
+      return executePipelineMoveOpportunity(params as unknown as Parameters<typeof executePipelineMoveOpportunity>[0], ctx)
+    case 'pipeline_update_opportunity':
+      return executePipelineUpdateOpportunity(params as unknown as Parameters<typeof executePipelineUpdateOpportunity>[0], ctx)
+    case 'pipeline_mark_won':
+      return executePipelineMarkWon(params as unknown as Parameters<typeof executePipelineMarkWon>[0], ctx)
+    case 'pipeline_mark_lost':
+      return executePipelineMarkLost(params as unknown as Parameters<typeof executePipelineMarkLost>[0], ctx)
+    case 'pipeline_add_note':
+      return executePipelineAddNote(params as unknown as Parameters<typeof executePipelineAddNote>[0], ctx)
+    case 'pipeline_assign_user':
+      return executePipelineAssignUser(params as unknown as Parameters<typeof executePipelineAssignUser>[0], ctx)
+    case 'pipeline_create_opportunity':
+      return executePipelineCreateOpportunity(params as unknown as Parameters<typeof executePipelineCreateOpportunity>[0], ctx)
     default: {
       // TypeScript exhaustiveness check
       const _exhaustive: never = actionType

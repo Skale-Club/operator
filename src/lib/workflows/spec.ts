@@ -123,6 +123,45 @@ export const TRIGGERS: TriggerSpec[] = [
     description: 'Time-based: fires when a booking end_at passes.',
     variables: ['meeting.*', 'trigger.fired_at'],
   },
+
+  // ─── Pipeline events (SEED-036). Emitted by lib/pipeline/events.ts when
+  // the user (or another workflow) mutates an opportunity.
+  {
+    type: 'event:opportunity.created',
+    description: 'A new opportunity was inserted into the pipeline.',
+    variables: ['opportunity.*', 'contact.*', 'stage.*', 'pipeline.*', 'trigger.fired_at'],
+  },
+  {
+    type: 'event:opportunity.stage_changed',
+    description:
+      'An opportunity was moved between stages (excludes won/lost — those have their own events).',
+    variables: ['opportunity.*', 'contact.*', 'stage.from.*', 'stage.to.*', 'pipeline.*', 'trigger.fired_at'],
+  },
+  {
+    type: 'event:opportunity.won',
+    description: 'An opportunity was moved to a stage flagged is_won.',
+    variables: ['opportunity.*', 'contact.*', 'stage.*', 'pipeline.*', 'trigger.fired_at'],
+  },
+  {
+    type: 'event:opportunity.lost',
+    description: 'An opportunity was moved to a stage flagged is_lost.',
+    variables: ['opportunity.*', 'contact.*', 'stage.*', 'pipeline.*', 'trigger.fired_at'],
+  },
+  {
+    type: 'event:opportunity.updated',
+    description: 'An opportunity field was edited. Payload includes a changes object with {from, to} per field.',
+    variables: ['opportunity.*', 'contact.*', 'changes.*', 'trigger.fired_at'],
+  },
+  {
+    type: 'event:opportunity.assigned',
+    description: 'The assigned_to user on an opportunity changed.',
+    variables: ['opportunity.*', 'contact.*', 'changes.*', 'trigger.fired_at'],
+  },
+  {
+    type: 'event:opportunity.value_changed',
+    description: 'The value of an opportunity changed.',
+    variables: ['opportunity.*', 'contact.*', 'changes.*', 'trigger.fired_at'],
+  },
 ]
 
 // ─── Node types ───────────────────────────────────────────────────────────────
@@ -255,6 +294,112 @@ export const NODES: NodeSpec[] = [
     },
   },
 
+  // ─── Action — pipeline (SEED-036). Built-in nodes; no integration required.
+  {
+    type: 'pipeline_move_opportunity',
+    kind: 'action',
+    description: 'Move an opportunity to a different stage. Resolves stage by id or by name (case-insensitive).',
+    params_schema: {
+      type: 'object',
+      properties: {
+        opportunity_id: { type: 'string' },
+        stage_id: { type: 'string', description: 'Target stage UUID. Either this or stage_name is required.' },
+        stage_name: { type: 'string', description: 'Target stage name; resolved within the opportunity\'s pipeline.' },
+      },
+      required: ['opportunity_id'],
+    },
+    examples: [
+      { opportunity_id: '{{opportunity.id}}', stage_name: 'Onboarding' },
+    ],
+  },
+  {
+    type: 'pipeline_update_opportunity',
+    kind: 'action',
+    description: 'Update one or more fields on an opportunity.',
+    params_schema: {
+      type: 'object',
+      properties: {
+        opportunity_id: { type: 'string' },
+        title: { type: 'string' },
+        value: { type: 'number' },
+        expected_close_date: { type: 'string', description: 'ISO date (YYYY-MM-DD).' },
+        assigned_to: { type: 'string', description: 'User UUID.' },
+        status: { type: 'string', enum: ['open', 'won', 'lost'] },
+      },
+      required: ['opportunity_id'],
+    },
+  },
+  {
+    type: 'pipeline_mark_won',
+    kind: 'action',
+    description: 'Move the opportunity to the first stage flagged is_won in its pipeline.',
+    params_schema: {
+      type: 'object',
+      properties: { opportunity_id: { type: 'string' } },
+      required: ['opportunity_id'],
+    },
+  },
+  {
+    type: 'pipeline_mark_lost',
+    kind: 'action',
+    description: 'Move the opportunity to the first stage flagged is_lost; optional reason note.',
+    params_schema: {
+      type: 'object',
+      properties: {
+        opportunity_id: { type: 'string' },
+        reason: { type: 'string' },
+      },
+      required: ['opportunity_id'],
+    },
+  },
+  {
+    type: 'pipeline_add_note',
+    kind: 'action',
+    description: 'Append a note to the opportunity activity feed.',
+    params_schema: {
+      type: 'object',
+      properties: {
+        opportunity_id: { type: 'string' },
+        content: { type: 'string' },
+      },
+      required: ['opportunity_id', 'content'],
+    },
+  },
+  {
+    type: 'pipeline_assign_user',
+    kind: 'action',
+    description: 'Set the assigned_to user on an opportunity.',
+    params_schema: {
+      type: 'object',
+      properties: {
+        opportunity_id: { type: 'string' },
+        user_id: { type: 'string' },
+      },
+      required: ['opportunity_id', 'user_id'],
+    },
+  },
+  {
+    type: 'pipeline_create_opportunity',
+    kind: 'action',
+    description:
+      'Create a new opportunity. Defaults to the org default pipeline and the first stage when not specified. ' +
+      'contact_id is optional; contact_phone triggers a lookup if contact_id is not known.',
+    params_schema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string' },
+        pipeline_id: { type: 'string' },
+        stage_id: { type: 'string' },
+        stage_name: { type: 'string' },
+        contact_id: { type: 'string' },
+        contact_phone: { type: 'string', description: 'E.164 phone; if matched in contacts, links the opportunity.' },
+        value: { type: 'number' },
+        assigned_to: { type: 'string' },
+      },
+      required: ['title'],
+    },
+  },
+
   // ─── Control flow
   {
     type: 'condition',
@@ -293,6 +438,10 @@ export const VARIABLE_NAMESPACES = {
   input: 'Free-form payload passed to the trigger (tool-call args, webhook body, etc.).',
   contact: 'Contact CRM fields when the trigger has a linked contact.',
   meeting: 'Booking fields when the trigger is a calendar event (SEED-027).',
+  opportunity: 'Opportunity fields when the trigger is a pipeline event (SEED-036).',
+  stage: 'Pipeline stage fields (with stage.from / stage.to on stage_changed).',
+  pipeline: 'Pipeline metadata (id, name) for pipeline events.',
+  changes: 'Diff of changed fields ({ from, to } per field) on opportunity.updated/assigned/value_changed.',
 }
 
 // ─── Spec assembly ────────────────────────────────────────────────────────────

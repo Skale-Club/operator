@@ -48,6 +48,13 @@ const ACTION_TYPE_LABELS: Record<ToolConfigRow['action_type'], string> = {
   send_whatsapp_message: 'WhatsApp: Send Message',
   send_whatsapp_mention_all: 'WhatsApp: Group Mention-All',
   send_telegram_notification: 'Telegram: Notification',
+  pipeline_move_opportunity: 'Pipeline: Move Opportunity',
+  pipeline_update_opportunity: 'Pipeline: Update Opportunity',
+  pipeline_mark_won: 'Pipeline: Mark Won',
+  pipeline_mark_lost: 'Pipeline: Mark Lost',
+  pipeline_add_note: 'Pipeline: Add Note',
+  pipeline_assign_user: 'Pipeline: Assign User',
+  pipeline_create_opportunity: 'Pipeline: Create Opportunity',
 }
 
 function buildPageUrl(

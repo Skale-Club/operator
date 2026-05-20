@@ -62,6 +62,13 @@ function buildInitialScope(triggerType: string): Set<string> {
     scope.add('meeting')
     scope.add('contact')
   }
+  if (triggerType.startsWith('event:opportunity.')) {
+    scope.add('opportunity')
+    scope.add('contact')
+    scope.add('stage')
+    scope.add('pipeline')
+    scope.add('changes')
+  }
   if (triggerType.startsWith('event:contact.')) {
     scope.add('contact')
   }

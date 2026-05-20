@@ -53,6 +53,13 @@ const toolConfigSchema = z.object({
     'send_whatsapp_message',
     'send_whatsapp_mention_all',
     'send_telegram_notification',
+    'pipeline_move_opportunity',
+    'pipeline_update_opportunity',
+    'pipeline_mark_won',
+    'pipeline_mark_lost',
+    'pipeline_add_note',
+    'pipeline_assign_user',
+    'pipeline_create_opportunity',
   ]),
   integrationId: z.string().optional().nullable(),
   fallbackMessage: z
@@ -113,6 +120,13 @@ const ACTION_TYPE_OPTIONS = [
   { value: 'send_whatsapp_message',    label: 'WhatsApp: Send Message' },
   { value: 'send_whatsapp_mention_all', label: 'WhatsApp: Group Mention-All' },
   { value: 'send_telegram_notification', label: 'Telegram: Notification' },
+  { value: 'pipeline_move_opportunity',  label: 'Pipeline: Move Opportunity' },
+  { value: 'pipeline_update_opportunity', label: 'Pipeline: Update Opportunity' },
+  { value: 'pipeline_mark_won',           label: 'Pipeline: Mark Won' },
+  { value: 'pipeline_mark_lost',          label: 'Pipeline: Mark Lost' },
+  { value: 'pipeline_add_note',           label: 'Pipeline: Add Note' },
+  { value: 'pipeline_assign_user',        label: 'Pipeline: Assign User' },
+  { value: 'pipeline_create_opportunity', label: 'Pipeline: Create Opportunity' },
 ] as const
 
 interface ToolConfigFormProps {

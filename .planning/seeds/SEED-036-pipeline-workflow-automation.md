@@ -1,12 +1,15 @@
 ---
 id: SEED-036
-status: planted
+status: complete
 planted: 2026-05-20
+shipped: 2026-05-20
 trigger_when: now (autonomous execution)
 scope: Large
 priority: high
 depends_on: [SEED-025]
 related: [SEED-033]
+phases_shipped: [events, executors, instrumentation, seed_workflows]
+phases_pending: [time_based_scheduler]
 ---
 
 # SEED-036: Pipeline Workflow Automation

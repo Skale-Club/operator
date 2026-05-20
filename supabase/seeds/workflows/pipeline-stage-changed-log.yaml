@@ -1,0 +1,21 @@
+# Platform-default workflow — example: when an opportunity moves between
+# stages, append an audit note to its activity feed. Useful as a starter
+# template that orgs can copy and customize.
+
+name: Stage alterado — Registrar nota
+description: |
+  Platform-default. Quando uma oportunidade muda de stage (sem ser won/lost),
+  adiciona uma nota automática ao histórico da oportunidade com o novo stage.
+trigger:
+  type: event
+  event: opportunity.stage_changed
+
+nodes:
+  - id: log_change
+    kind: pipeline_add_note
+    opportunity_id: "{{opportunity.id}}"
+    content: "Stage alterado para {{stage.to.name}} (automação)."
+
+edges:
+  - from: trigger
+    to: log_change
