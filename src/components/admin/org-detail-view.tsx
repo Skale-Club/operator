@@ -1,15 +1,15 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useMemo } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Users, Phone, MessageSquare, Contact2, Save } from 'lucide-react'
+import { ArrowLeft, Users, Phone, MessageSquare, Contact2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Separator } from '@/components/ui/separator'
+import { AdminSaveBar } from '@/components/admin/admin-save-bar'
 import { updateOrgSettings } from '@/app/(admin)/admin/_actions/get-org-detail'
 import type { OrgDetail } from '@/app/(admin)/admin/_actions/get-org-detail'
 
@@ -45,21 +45,27 @@ function MetricCard({ icon: Icon, label, value }: { icon: React.ComponentType<{ 
   )
 }
 
+const initFlags = (s: Record<string, unknown>) => ({
+  ai_calling_enabled: Boolean(s.ai_calling_enabled),
+  bulk_import_enabled: Boolean(s.bulk_import_enabled),
+  advanced_pipeline_enabled: Boolean(s.advanced_pipeline_enabled),
+})
+
 export function OrgDetailView({ org }: { org: OrgDetail }) {
-  const [flags, setFlags] = useState<Record<string, boolean>>(() => {
-    const s = org.settings
-    return {
-      ai_calling_enabled: Boolean(s.ai_calling_enabled),
-      bulk_import_enabled: Boolean(s.bulk_import_enabled),
-      advanced_pipeline_enabled: Boolean(s.advanced_pipeline_enabled),
-    }
-  })
+  const [savedFlags, setSavedFlags] = useState(() => initFlags(org.settings))
+  const [flags, setFlags] = useState(() => initFlags(org.settings))
   const [isPending, startTransition] = useTransition()
+
+  const isDirty = useMemo(
+    () => JSON.stringify(flags) !== JSON.stringify(savedFlags),
+    [flags, savedFlags],
+  )
 
   function handleSave() {
     startTransition(async () => {
       try {
         await updateOrgSettings(org.id, { ...org.settings, ...flags })
+        setSavedFlags({ ...flags })
         toast.success('Preferences saved')
       } catch {
         toast.error('Failed to save preferences. Try again.')
@@ -159,12 +165,6 @@ export function OrgDetailView({ org }: { org: OrgDetail }) {
                   />
                 </div>
               ))}
-              <div className="pt-4">
-                <Button onClick={handleSave} disabled={isPending} className="w-full">
-                  <Save className="h-4 w-4 mr-2" />
-                  {isPending ? 'Saving…' : 'Save Feature Flags'}
-                </Button>
-              </div>
             </CardContent>
           </Card>
 
@@ -184,6 +184,8 @@ export function OrgDetailView({ org }: { org: OrgDetail }) {
           </Card>
         </div>
       </div>
+
+      <AdminSaveBar isDirty={isDirty} isPending={isPending} onSave={handleSave} label="Save feature flags" />
     </div>
   )
 }
