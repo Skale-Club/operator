@@ -1,5 +1,15 @@
 # Requirements: v2.9 UX Polish & Feature Completeness
 
+## Workflows Unification (Phase 102)
+
+| ID | Requirement |
+|----|-------------|
+| FLOW-01 | Single "Workflows" entry in sidebar — remove separate Automations + Flows items |
+| FLOW-02 | Unified `/workflows` route showing both automation tools and visual flows |
+| FLOW-03 | All existing automation tool configs preserved and functional |
+| FLOW-04 | All existing visual flows preserved and functional — no data loss |
+| FLOW-05 | Folders, logs, run history, integrations all accessible in unified view |
+
 ## Notifications (Phase 103)
 
 | ID | Requirement |
