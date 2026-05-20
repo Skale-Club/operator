@@ -1,8 +1,16 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  /* config options here */
-  serverExternalPackages: [], // example top-level setting
+  serverExternalPackages: [],
+  async redirects() {
+    return [
+      {
+        source: '/dashboard',
+        destination: '/',
+        permanent: true,
+      },
+    ]
+  },
 }
 
 nextConfig.allowedDevOrigins = ['192.168.56.1']
