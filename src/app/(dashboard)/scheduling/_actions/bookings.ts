@@ -340,6 +340,7 @@ const createBookingSchema = z.object({
   booker_phone: z.string().max(30).optional(),
   booker_timezone: z.string().default('UTC'),
   notes: z.string().max(2000).optional(),
+  location_kind: z.string().optional(),
 })
 
 export type CreateBookingInput = z.input<typeof createBookingSchema>
@@ -365,7 +366,7 @@ export async function createBooking(
   // Fetch event type to get duration and org_id
   const { data: et } = await supabase
     .from('event_types')
-    .select('duration_minutes, org_id, user_id, title, location_type, location_value')
+    .select('duration_minutes, org_id, user_id, title, location_type, location_value, allowed_location_kinds')
     .eq('id', parsed.data.event_type_id)
     .eq('active', true)
     .single()
@@ -443,6 +444,15 @@ export async function createBooking(
     )
   }
 
+  // Determine the effective location kind:
+  // Use the booker's selection if it's one of the allowed kinds; otherwise
+  // fall back to the first allowed kind (or the legacy location_type).
+  const allowedKinds = (et.allowed_location_kinds ?? []) as string[]
+  const effectiveLocationKind: string | null =
+    parsed.data.location_kind && allowedKinds.includes(parsed.data.location_kind)
+      ? parsed.data.location_kind
+      : (allowedKinds[0] ?? et.location_type ?? null)
+
   // Insert booking
   const { data: booking, error } = await supabase
     .from('bookings')
@@ -458,6 +468,7 @@ export async function createBooking(
       notes: parsed.data.notes ?? null,
       linked_contact_id: linkedContactId,
       status: 'confirmed',
+      location_kind: effectiveLocationKind,
     })
     .select('id, cancel_token')
     .single()
@@ -494,6 +505,15 @@ export async function createBooking(
   void (async () => {
     const hostName = await resolveHostName(et.user_id)
     const cancelUrl = `${SITE_URL}/book/cancel/${booking.id}?token=${booking.cancel_token}`
+
+    // Re-fetch the booking to pick up any meeting_url written by the
+    // google_meet flow that runs in the same request.
+    const { data: freshBooking } = await supabase
+      .from('bookings')
+      .select('meeting_url, meeting_phone, location_data')
+      .eq('id', booking.id)
+      .maybeSingle()
+
     await sendBookingConfirmation({
       bookerEmail: parsed.data.booker_email,
       bookerName: parsed.data.booker_name,
@@ -503,6 +523,10 @@ export async function createBooking(
       endAt: endAt.toISOString(),
       timezone: parsed.data.booker_timezone,
       cancelUrl,
+      locationKind: effectiveLocationKind ?? undefined,
+      meetingUrl: freshBooking?.meeting_url ?? undefined,
+      meetingPhone: freshBooking?.meeting_phone ?? undefined,
+      locationAddress: et.location_value ?? undefined,
     })
   })().catch(() => {})
 

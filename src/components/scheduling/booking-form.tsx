@@ -71,6 +71,7 @@ export function BookingForm({
         booker_phone: values.phone,
         booker_timezone: timezone,
         notes: values.notes,
+        location_kind: selectedLocationKind,
       })
 
       if (!result.ok) {
