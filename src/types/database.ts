@@ -2613,6 +2613,78 @@ export interface Database {
           }
         ]
       }
+      event_dispatches: {
+        Row: {
+          id: string
+          org_id: string
+          event_type: string
+          source_table: string
+          source_id: string
+          workflow_ids: string[]
+          payload: Json
+          parent_id: string | null
+          depth: number
+          dispatched_at: string
+        }
+        Insert: {
+          id?: string
+          org_id: string
+          event_type: string
+          source_table: string
+          source_id: string
+          workflow_ids?: string[]
+          payload?: Json
+          parent_id?: string | null
+          depth?: number
+          dispatched_at?: string
+        }
+        Update: {
+          workflow_ids?: string[]
+          payload?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'event_dispatches_org_id_fkey'
+            columns: ['org_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      scheduled_workflow_ticks: {
+        Row: {
+          workflow_id: string
+          booking_id: string
+          event_type: string
+          fired_minute: string
+          dispatched_at: string
+        }
+        Insert: {
+          workflow_id: string
+          booking_id: string
+          event_type: string
+          fired_minute: string
+          dispatched_at?: string
+        }
+        Update: Record<string, never>
+        Relationships: [
+          {
+            foreignKeyName: 'scheduled_workflow_ticks_workflow_id_fkey'
+            columns: ['workflow_id']
+            isOneToOne: false
+            referencedRelation: 'workflows'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'scheduled_workflow_ticks_booking_id_fkey'
+            columns: ['booking_id']
+            isOneToOne: false
+            referencedRelation: 'bookings'
+            referencedColumns: ['id']
+          }
+        ]
+      }
       event_types: {
         Row: {
           id: string
