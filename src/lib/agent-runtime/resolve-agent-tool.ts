@@ -2,9 +2,24 @@
 // Sibling resolver to resolveTool(orgId, toolName) in src/lib/action-engine/.
 // D-34-07: resolveTool() is NOT modified; this is a NEW function for agent-scoped authorization.
 // Queries agent_tools junction to verify tool is attached to the agent + allowed on the channel.
+//
+// SEED-033: after the legacy tool_configs lookup, falls through to a second
+// lookup against agent_tools joined to workflows (and workflow_versions for
+// the definition). Workflow-sourced tools return a ResolvedToolConfig with
+// workflowId/workflowKind populated and integration fields left null.
 
 import { createServiceRoleClient } from '@/lib/supabase/admin'
+import { extractActionTypeFromDefinition } from '@/lib/workflows/derive-action-type'
 import type { AgentChannel, ResolvedToolConfig } from './types'
+
+function isChannelAllowed(
+  allowed: AgentChannel[] | null,
+  channel: AgentChannel,
+): boolean {
+  if (allowed === null) return true
+  if (!Array.isArray(allowed)) return true
+  return (allowed as string[]).includes(channel)
+}
 
 export async function resolveAgentTool(
   agentId: string,
@@ -13,11 +28,12 @@ export async function resolveAgentTool(
 ): Promise<ResolvedToolConfig | null> {
   const supabase = createServiceRoleClient()
 
-  // Join agent_tools -> tool_configs -> integrations (service-role to bypass RLS)
-  const { data, error } = await supabase
+  // ── 1. Legacy path: agent_tools → tool_configs → integrations ─────────────
+  const { data: legacyRow } = await supabase
     .from('agent_tools')
     .select(`
       allowed_channels,
+      tool_config_id,
       tool_configs!inner (
         id,
         tool_name,
@@ -34,35 +50,98 @@ export async function resolveAgentTool(
     .eq('agent_id', agentId)
     .eq('tool_configs.tool_name', toolName)
     .eq('tool_configs.is_active', true)
+    .not('tool_config_id', 'is', null)
     .maybeSingle()
 
-  if (error || !data) return null
+  if (legacyRow) {
+    const tc = legacyRow.tool_configs as {
+      id: string
+      tool_name: string
+      action_type: string
+      config: unknown
+      is_active: boolean
+      integration_id: string | null
+      integrations?: { provider: string; encrypted_api_key: string } | null
+    }
 
-  const tc = data.tool_configs as {
-    id: string
-    tool_name: string
-    action_type: string
-    config: unknown
-    is_active: boolean
-    integration_id: string | null
-    integrations?: { provider: string; encrypted_api_key: string } | null
-  }
-
-  // Check per-tool channel restriction (agent_tools.allowed_channels)
-  // null = all channels allowed; non-null array = must include the invocation channel
-  if (data.allowed_channels !== null && Array.isArray(data.allowed_channels)) {
-    if (!(data.allowed_channels as string[]).includes(channel)) {
-      return null
+    if (!isChannelAllowed(legacyRow.allowed_channels as AgentChannel[] | null, channel)) {
+      // Tool attached but not on this channel — keep searching the workflow path
+      // before giving up entirely (a separate workflow attachment could allow it).
+    } else {
+      return {
+        toolConfigId: tc.id,
+        toolName: tc.tool_name,
+        actionType: tc.action_type as ResolvedToolConfig['actionType'],
+        config: tc.config as ResolvedToolConfig['config'],
+        integrationId: tc.integration_id,
+        integrationProvider: (tc.integrations?.provider ?? null) as ResolvedToolConfig['integrationProvider'],
+        credentialsEncrypted: tc.integrations?.encrypted_api_key ?? null,
+      }
     }
   }
 
+  // ── 2. Workflow path: agent_tools → workflows → workflow_versions ─────────
+  const { data: workflowRow } = await supabase
+    .from('agent_tools')
+    .select(`
+      allowed_channels,
+      workflow_id,
+      workflows!inner (
+        id,
+        tool_name,
+        kind,
+        is_active,
+        health_blocked,
+        current_version_id
+      )
+    `)
+    .eq('agent_id', agentId)
+    .eq('workflows.tool_name', toolName)
+    .eq('workflows.is_active', true)
+    .eq('workflows.health_blocked', false)
+    .not('workflow_id', 'is', null)
+    .maybeSingle()
+
+  if (!workflowRow) return null
+
+  if (!isChannelAllowed(workflowRow.allowed_channels as AgentChannel[] | null, channel)) {
+    return null
+  }
+
+  const wf = workflowRow.workflows as {
+    id: string
+    tool_name: string
+    kind: 'tool' | 'flow'
+    is_active: boolean
+    health_blocked: boolean
+    current_version_id: string | null
+  }
+
+  if (!wf.current_version_id) return null
+
+  const { data: version } = await supabase
+    .from('workflow_versions')
+    .select('definition')
+    .eq('id', wf.current_version_id)
+    .single()
+
+  if (!version) return null
+
+  const definition = version.definition as ResolvedToolConfig['config']
+  const actionType =
+    wf.kind === 'tool'
+      ? (extractActionTypeFromDefinition(definition) as ResolvedToolConfig['actionType'])
+      : ('run_flow' as const)
+
   return {
-    toolConfigId: tc.id,
-    toolName: tc.tool_name,
-    actionType: tc.action_type as ResolvedToolConfig['actionType'],
-    config: tc.config as ResolvedToolConfig['config'],
-    integrationId: tc.integration_id,
-    integrationProvider: (tc.integrations?.provider ?? null) as ResolvedToolConfig['integrationProvider'],
-    credentialsEncrypted: tc.integrations?.encrypted_api_key ?? null,
+    toolConfigId: wf.id,
+    toolName: wf.tool_name,
+    actionType,
+    config: definition,
+    integrationId: null,
+    integrationProvider: null,
+    credentialsEncrypted: null,
+    workflowId: wf.id,
+    workflowKind: wf.kind,
   }
 }

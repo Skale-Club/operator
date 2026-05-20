@@ -15,9 +15,24 @@ export interface MediaAttachment {
 
 export type ConversationPriority = 'normal' | 'high' | 'urgent'
 
+/** SEED-035: expanded conversation status. */
+export type ConversationStatus =
+  | 'open'
+  | 'pending'
+  | 'waiting'
+  | 'resolved'
+  | 'closed'
+
+/** SEED-035: a label assigned to a conversation. */
+export interface ConversationLabel {
+  id: string
+  name: string
+  color: string
+}
+
 export interface ConversationSummary {
   id: string
-  status: string               // 'open' | 'closed'
+  status: ConversationStatus
   createdAt: string
   updatedAt: string
   lastMessageAt?: string | null
@@ -37,6 +52,14 @@ export interface ConversationSummary {
   contactId?: string | null
   /** v2.2 — User the conversation is assigned to (assigned_user_id). */
   assignedUserId?: string | null
+  /** SEED-035 — starred (favorite). Independent of pinned. */
+  starred?: boolean
+  /** SEED-035 — true when the current user has not read the latest activity. */
+  isUnread?: boolean
+  /** SEED-035 — labels currently assigned to this conversation. */
+  labels?: ConversationLabel[]
+  /** SEED-035 — snooze deadline when status='waiting'. */
+  waitUntil?: string | null
 }
 
 export interface ConversationMessage {

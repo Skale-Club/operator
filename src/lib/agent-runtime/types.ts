@@ -83,12 +83,19 @@ export type ResolvedAgent = {
 }
 
 // Shape returned by resolveAgentTool()
+// SEED-033: workflowId/workflowKind populated when the tool is sourced from
+// a `workflows` row (kind='tool' or kind='flow'). actionType is set to
+// 'run_flow' for kind='flow'. For workflow-sourced tools, integrationId,
+// integrationProvider, and credentialsEncrypted are null — credentials are
+// resolved inside the flow engine (per-node credential_ref).
 export type ResolvedToolConfig = {
   toolConfigId: string
   toolName: string
-  actionType: Database['public']['Enums']['action_type']
+  actionType: Database['public']['Enums']['action_type'] | 'run_flow'
   config: Json
   integrationId: string | null
   integrationProvider: Database['public']['Enums']['integration_provider'] | null
   credentialsEncrypted: string | null
+  workflowId?: string
+  workflowKind?: 'tool' | 'flow'
 }

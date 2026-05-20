@@ -653,7 +653,8 @@ export interface Database {
           id: string
           organization_id: string
           agent_id: string
-          tool_config_id: string
+          tool_config_id: string | null
+          workflow_id: string | null
           allowed_channels: AgentChannel[] | null
           created_at: string
         }
@@ -661,11 +662,14 @@ export interface Database {
           id?: string
           organization_id: string
           agent_id: string
-          tool_config_id: string
+          tool_config_id?: string | null
+          workflow_id?: string | null
           allowed_channels?: AgentChannel[] | null
           created_at?: string
         }
         Update: {
+          tool_config_id?: string | null
+          workflow_id?: string | null
           allowed_channels?: AgentChannel[] | null
         }
         Relationships: [
@@ -688,6 +692,13 @@ export interface Database {
             columns: ['tool_config_id']
             isOneToOne: false
             referencedRelation: 'tool_configs'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'agent_tools_workflow_id_fkey'
+            columns: ['workflow_id']
+            isOneToOne: false
+            referencedRelation: 'workflows'
             referencedColumns: ['id']
           }
         ]
@@ -1363,6 +1374,68 @@ export interface Database {
           }
         ]
       }
+      telegram_bots: {
+        Row: {
+          id: string
+          org_id: string
+          bot_token_encrypted: string
+          bot_username: string | null
+          bot_name: string | null
+          notification_chat_ids: string[]
+          automation_enabled: boolean
+          agent_id: string | null
+          is_active: boolean
+          webhook_set: boolean
+          last_error: string | null
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          org_id: string
+          bot_token_encrypted: string
+          bot_username?: string | null
+          bot_name?: string | null
+          notification_chat_ids?: string[]
+          automation_enabled?: boolean
+          agent_id?: string | null
+          is_active?: boolean
+          webhook_set?: boolean
+          last_error?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          bot_token_encrypted?: string
+          bot_username?: string | null
+          bot_name?: string | null
+          notification_chat_ids?: string[]
+          automation_enabled?: boolean
+          agent_id?: string | null
+          is_active?: boolean
+          webhook_set?: boolean
+          last_error?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'telegram_bots_org_id_fkey'
+            columns: ['org_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'telegram_bots_agent_id_fkey'
+            columns: ['agent_id']
+            isOneToOne: false
+            referencedRelation: 'agents'
+            referencedColumns: ['id']
+          }
+        ]
+      }
       conversations: {
         Row: {
           id: string
@@ -1390,6 +1463,10 @@ export interface Database {
           evolution_instance_id: string | null
           pinned: boolean
           priority: string
+          /** SEED-035: starred (favorite) — independent of pinned. */
+          starred: boolean
+          /** SEED-035: snooze deadline for status='waiting'. */
+          wait_until: string | null
         }
         Insert: {
           id?: string
@@ -1417,6 +1494,8 @@ export interface Database {
           evolution_instance_id?: string | null
           pinned?: boolean
           priority?: string
+          starred?: boolean
+          wait_until?: string | null
         }
         Update: {
           status?: string
@@ -1438,6 +1517,8 @@ export interface Database {
           evolution_instance_id?: string | null
           pinned?: boolean
           priority?: string
+          starred?: boolean
+          wait_until?: string | null
         }
         Relationships: [
           {
@@ -1494,6 +1575,60 @@ export interface Database {
             referencedColumns: ['id']
           }
         ]
+      }
+      conversation_reads: {
+        Row: {
+          conversation_id: string
+          user_id: string
+          read_at: string
+        }
+        Insert: {
+          conversation_id: string
+          user_id: string
+          read_at?: string
+        }
+        Update: {
+          read_at?: string
+        }
+        Relationships: []
+      }
+      conversation_labels: {
+        Row: {
+          id: string
+          org_id: string
+          name: string
+          color: string
+          position: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          org_id: string
+          name: string
+          color?: string
+          position?: number
+          created_at?: string
+        }
+        Update: {
+          name?: string
+          color?: string
+          position?: number
+        }
+        Relationships: []
+      }
+      conversation_label_assignments: {
+        Row: {
+          conversation_id: string
+          label_id: string
+          created_at: string
+        }
+        Insert: {
+          conversation_id: string
+          label_id: string
+          created_at?: string
+        }
+        Update: Record<string, never>
+        Relationships: []
       }
       contacts: {
         Row: {
@@ -4015,7 +4150,7 @@ export interface Database {
     Enums: {
       user_role: UserRole
       action_type: 'create_contact' | 'get_availability' | 'create_appointment' | 'send_sms' | 'knowledge_base' | 'custom_webhook' | 'manychat_set_field' | 'manychat_add_tag' | 'manychat_trigger_flow' | 'manychat_send_message' | 'google_contacts_create' | 'google_contacts_update' | 'google_contacts_find' | 'google_contacts_delete' | 'send_whatsapp_message' | 'send_whatsapp_mention_all'
-      integration_provider: 'gohighlevel' | 'twilio' | 'calcom' | 'custom_webhook' | 'openai' | 'anthropic' | 'openrouter' | 'vapi' | 'manychat' | 'google_contacts' | 'google_calendar'
+      integration_provider: 'gohighlevel' | 'twilio' | 'calcom' | 'custom_webhook' | 'openai' | 'anthropic' | 'openrouter' | 'vapi' | 'manychat' | 'google_contacts' | 'google_calendar' | 'telegram'
       // v2.0 (Phase 33) — agent runtime enums (migrations 034, 037)
       agent_channel: AgentChannel
       agent_invocation_status: AgentInvocationStatus
