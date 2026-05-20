@@ -242,6 +242,42 @@ export async function updateWorkflow(
   return { ok: true, data }
 }
 
+// ─── Toggle active ────────────────────────────────────────────────────────────
+
+export async function toggleWorkflowActive(
+  id: string,
+  active: boolean,
+): Promise<ActionResult<void>> {
+  const user = await getUser()
+  if (!user) return { ok: false, error: 'not_authenticated' }
+
+  const supabase = await createClient()
+
+  // Try workflows table first; fall back to legacy tool_configs for unbackfilled rows.
+  const { data: wf, error: wfErr } = await supabase
+    .from('workflows')
+    .update({ is_active: active })
+    .eq('id', id)
+    .select('id')
+    .single()
+
+  if (!wfErr && wf) {
+    revalidatePath('/workflows')
+    revalidatePath(`/workflows/flows/${id}`)
+    return { ok: true, data: undefined }
+  }
+
+  const { error: tcErr } = await supabase
+    .from('tool_configs')
+    .update({ is_active: active })
+    .eq('id', id)
+
+  if (tcErr) return { ok: false, error: tcErr.message }
+
+  revalidatePath('/workflows')
+  return { ok: true, data: undefined }
+}
+
 // ─── Delete ───────────────────────────────────────────────────────────────────
 
 export async function deleteWorkflow(id: string): Promise<ActionResult<void>> {

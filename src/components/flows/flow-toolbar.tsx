@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { ArrowLeft, Save, CheckCircle2, AlertCircle, Loader2, Play, Sparkles, History, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { WorkflowToggle } from '@/components/workflows/workflow-toggle'
 import { useFlowStore } from '@/stores/flow-store'
 import { useBreadcrumbOverride } from '@/components/layout/breadcrumb-override-context'
 import { validateFlow } from '@/lib/flows/schema'
@@ -19,11 +20,12 @@ import { cn } from '@/lib/utils'
 interface FlowToolbarProps {
   workflowId: string
   workflowName: string
+  isActive: boolean
   onToggleAi?: () => void
   aiOpen?: boolean
 }
 
-export function FlowToolbar({ workflowId, workflowName, onToggleAi, aiOpen }: FlowToolbarProps) {
+export function FlowToolbar({ workflowId, workflowName, isActive, onToggleAi, aiOpen }: FlowToolbarProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [isRunning, startRun] = useTransition()
@@ -177,6 +179,12 @@ export function FlowToolbar({ workflowId, workflowName, onToggleAi, aiOpen }: Fl
 
       {/* Right — actions (shrink-0, gracefully collapse labels on small widths) */}
       <div className="flex items-center gap-1.5 shrink-0">
+        <WorkflowToggle
+          workflowId={workflowId}
+          initialActive={isActive}
+          showLabel
+        />
+        <div className="w-px h-4 bg-border mx-1" />
         <Button asChild size="sm" variant="ghost" className="gap-1.5 px-2">
           <Link href={`/workflows/flows/${workflowId}/runs`}>
             <History className="h-3.5 w-3.5" />

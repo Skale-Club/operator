@@ -24,6 +24,7 @@ export default async function FlowEditorPage({
       <FlowCanvas
         workflowId={result.data.id}
         workflowName={result.data.name}
+        isActive={result.data.is_active ?? false}
         initialDefinition={result.data.definition}
         activeIntegrations={activeIntegrations}
       />
