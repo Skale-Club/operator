@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import { APP_NAME } from '@/lib/config'
 import { DEFAULT_ACCENT, deriveAccentHover, hexToRgba } from '@/lib/branding'
-import { updateWorkspaceBranding } from '@/app/(dashboard)/settings/workspace/actions'
+import { updateWorkspaceBranding, updateDailyCostCap } from '@/app/(dashboard)/settings/workspace/actions'
 
 interface OrgBrandingShape {
   id: string
@@ -20,6 +20,7 @@ interface OrgBrandingShape {
   logo_url: string | null
   accent_color: string | null
   brand_name: string | null
+  daily_cost_cap_usd: number | null
 }
 
 interface Props {
@@ -57,6 +58,8 @@ export function WorkspaceBrandingForm({ org }: Props) {
   const [accent, setAccent] = React.useState(org.accent_color ?? DEFAULT_ACCENT)
   const [accentInput, setAccentInput] = React.useState(org.accent_color ?? DEFAULT_ACCENT)
   const [brandName, setBrandName] = React.useState(org.brand_name ?? '')
+  const [capInput, setCapInput] = React.useState(org.daily_cost_cap_usd != null ? String(org.daily_cost_cap_usd) : '')
+  const [savingCap, setSavingCap] = React.useState(false)
   const [saving, setSaving] = React.useState(false)
   const [savedAt, setSavedAt] = React.useState<number | null>(null)
   const [, force] = React.useReducer((x: number) => x + 1, 0)
@@ -264,6 +267,47 @@ export function WorkspaceBrandingForm({ org }: Props) {
                 </button>
               </div>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Daily AI cost cap */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Daily AI cost cap</CardTitle>
+          <CardDescription>
+            Maximum USD your agents can spend per day. Requests are blocked once the limit is reached. Leave blank to use the platform default.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-2 max-w-xs">
+            <span className="text-text-tertiary text-sm">$</span>
+            <Input
+              type="number"
+              min={0}
+              max={10000}
+              step={1}
+              value={capInput}
+              onChange={(e) => setCapInput(e.target.value)}
+              placeholder="Platform default"
+              className="max-w-[160px]"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={savingCap}
+              onClick={async () => {
+                setSavingCap(true)
+                const val = capInput.trim() === '' ? null : parseFloat(capInput)
+                const result = await updateDailyCostCap({ daily_cost_cap_usd: val })
+                setSavingCap(false)
+                if (!result.ok) { toast.error(result.error ?? 'Failed to save'); return }
+                toast.success('Cost cap saved')
+              }}
+            >
+              {savingCap ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Save cap'}
+            </Button>
           </div>
         </CardContent>
       </Card>

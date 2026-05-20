@@ -15,7 +15,7 @@ export default async function WorkspaceSettingsPage() {
 
   const { data: org } = await supabase
     .from('organizations')
-    .select('id, name, logo_url, accent_color, brand_name')
+    .select('id, name, logo_url, accent_color, brand_name, daily_cost_cap_usd_override')
     .eq('id', orgId as string)
     .single()
 
@@ -36,6 +36,7 @@ export default async function WorkspaceSettingsPage() {
           logo_url: org.logo_url,
           accent_color: org.accent_color,
           brand_name: org.brand_name,
+          daily_cost_cap_usd: org.daily_cost_cap_usd_override != null ? Number(org.daily_cost_cap_usd_override) : null,
         }}
       />
     </PageContainer>

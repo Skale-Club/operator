@@ -149,7 +149,7 @@ export function MetricCard({
         />
       )}
 
-      <div className="relative flex items-start justify-between gap-2">
+      <div className="relative z-10 flex items-start justify-between gap-2">
         <div className="flex min-w-0 items-center gap-1.5 text-[12px] font-medium uppercase tracking-[0.06em] text-text-tertiary">
           {icon && (() => {
             const Icon = ICON_MAP[icon]
@@ -172,7 +172,7 @@ export function MetricCard({
         )}
       </div>
 
-      <div className="relative flex items-baseline gap-1.5">
+      <div className="relative z-10 flex items-baseline gap-1.5">
         <div className="text-[28px] font-semibold leading-none tracking-tight tabular text-text-primary">
           {animatable ? (
             <AnimatedNumber
@@ -188,14 +188,18 @@ export function MetricCard({
         {unit && <div className="text-[12.5px] text-text-tertiary">{unit}</div>}
       </div>
 
+      {hint && (
+        <div className="relative z-10 text-[11.5px] text-text-tertiary">{hint}</div>
+      )}
+
       {data && data.length > 0 && (
-        <div className="relative h-10 -mx-1 min-w-0">
-          <ResponsiveContainer width="100%" height={40} minWidth={0}>
-            <AreaChart data={data} margin={{ top: 4, right: 4, bottom: 0, left: 4 }}>
+        <div className="absolute inset-0 overflow-hidden rounded-[12px] pointer-events-none" aria-hidden>
+          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+            <AreaChart data={data} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
               <defs>
                 <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={color} stopOpacity={0.35} />
-                  <stop offset="100%" stopColor={color} stopOpacity={0} />
+                  <stop offset="0%" stopColor={color} stopOpacity={0.18} />
+                  <stop offset="100%" stopColor={color} stopOpacity={0.04} />
                 </linearGradient>
               </defs>
               <Area
@@ -203,6 +207,7 @@ export function MetricCard({
                 dataKey="value"
                 stroke={color}
                 strokeWidth={1.5}
+                strokeOpacity={0.6}
                 fill={`url(#${gradientId})`}
                 isAnimationActive={false}
                 dot={false}
@@ -210,10 +215,6 @@ export function MetricCard({
             </AreaChart>
           </ResponsiveContainer>
         </div>
-      )}
-
-      {hint && (
-        <div className="relative text-[11.5px] text-text-tertiary">{hint}</div>
       )}
     </div>
   )

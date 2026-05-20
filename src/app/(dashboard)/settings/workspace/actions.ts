@@ -32,6 +32,14 @@ const updateSchema = z.object({
     .or(z.literal('')),
 })
 
+const costCapSchema = z.object({
+  daily_cost_cap_usd: z
+    .number({ invalid_type_error: 'Must be a number' })
+    .min(0, 'Cap must be ≥ $0')
+    .max(10000, 'Cap must be ≤ $10,000')
+    .nullable(),
+})
+
 export type UpdateWorkspaceBrandingInput = z.infer<typeof updateSchema>
 
 export interface ActionResult {
@@ -81,5 +89,30 @@ export async function updateWorkspaceBranding(input: UpdateWorkspaceBrandingInpu
 
   // Branding feeds into the dashboard layout — revalidate all dashboard routes.
   revalidatePath('/', 'layout')
+  return { ok: true }
+}
+
+/**
+ * Update the per-org daily AI cost cap.
+ * Pass null to remove the override and fall back to the platform default.
+ */
+export async function updateDailyCostCap(input: { daily_cost_cap_usd: number | null }): Promise<ActionResult> {
+  const parsed = costCapSchema.safeParse(input)
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? 'Invalid input' }
+  }
+
+  const supabase = await createClient()
+  const { data: orgId, error: orgErr } = await supabase.rpc('get_current_org_id')
+  if (orgErr || !orgId) return { ok: false, error: 'No active organization' }
+
+  const { error } = await supabase
+    .from('organizations')
+    .update({ daily_cost_cap_usd_override: parsed.data.daily_cost_cap_usd })
+    .eq('id', orgId as string)
+
+  if (error) return { ok: false, error: error.message }
+
+  revalidatePath('/settings/workspace')
   return { ok: true }
 }
