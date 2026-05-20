@@ -3735,6 +3735,45 @@ export interface Database {
           },
         ]
       }
+      workflow_folders: {
+        Row: {
+          id: string
+          org_id: string
+          name: string
+          color: string | null
+          icon: string | null
+          parent_id: string | null
+          position: number
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          org_id: string
+          name: string
+          color?: string | null
+          icon?: string | null
+          parent_id?: string | null
+          position?: number
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          org_id?: string
+          name?: string
+          color?: string | null
+          icon?: string | null
+          parent_id?: string | null
+          position?: number
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       workflows: {
         Row: {
           id: string
@@ -3754,6 +3793,10 @@ export interface Database {
           health_blocked: boolean
           health_blocked_reason: string | null
           legacy_tool_config_id: string | null
+          folder_id: string | null
+          position: number
+          archived_at: string | null
+          deleted_at: string | null
         }
         Insert: {
           id?: string
@@ -3773,6 +3816,10 @@ export interface Database {
           health_blocked?: boolean
           health_blocked_reason?: string | null
           legacy_tool_config_id?: string | null
+          folder_id?: string | null
+          position?: number
+          archived_at?: string | null
+          deleted_at?: string | null
         }
         Update: {
           id?: string
@@ -3792,6 +3839,10 @@ export interface Database {
           health_blocked?: boolean
           health_blocked_reason?: string | null
           legacy_tool_config_id?: string | null
+          folder_id?: string | null
+          position?: number
+          archived_at?: string | null
+          deleted_at?: string | null
         }
         Relationships: [
           {

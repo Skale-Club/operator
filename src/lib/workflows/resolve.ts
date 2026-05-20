@@ -119,6 +119,8 @@ export async function resolveWorkflowAsTool(
     .eq('kind', 'tool')
     .eq('tool_name', toolName)
     .eq('is_active', true)
+    .is('deleted_at', null)
+    .is('archived_at', null)
     .single()
 
   if (error || !workflow) return null
@@ -140,6 +142,8 @@ export async function resolveWorkflowAsToolById(
     .eq('kind', 'tool')
     .or(`id.eq.${idOrLegacyId},legacy_tool_config_id.eq.${idOrLegacyId}`)
     .eq('is_active', true)
+    .is('deleted_at', null)
+    .is('archived_at', null)
     .single()
 
   if (error || !workflow) return null

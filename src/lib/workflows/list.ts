@@ -23,19 +23,35 @@ export interface UnifiedWorkflow {
   health_blocked: boolean
   health_blocked_reason: string | null
   updated_at: string
+  folder_id: string | null
+  position: number
+  archived_at: string | null
+}
+
+export interface ListWorkflowsOptions {
+  includeArchived?: boolean
 }
 
 export async function listUnifiedWorkflows(
   orgId: string,
   supabase: SupabaseClient<Database>,
+  options: ListWorkflowsOptions = {},
 ): Promise<UnifiedWorkflow[]> {
-  const { data: rows, error } = await supabase
+  let query = supabase
     .from('workflows')
     .select(
-      'id, name, slug, description, is_active, kind, trigger_type, trigger_config, health_blocked, health_blocked_reason, updated_at, legacy_tool_config_id',
+      'id, name, slug, description, is_active, kind, trigger_type, trigger_config, health_blocked, health_blocked_reason, updated_at, legacy_tool_config_id, folder_id, position, archived_at, deleted_at',
     )
     .eq('org_id', orgId)
+    .is('deleted_at', null)
+    .order('position', { ascending: true })
     .order('updated_at', { ascending: false })
+
+  if (!options.includeArchived) {
+    query = query.is('archived_at', null)
+  }
+
+  const { data: rows, error } = await query
 
   if (error || !rows) return []
 
@@ -69,6 +85,9 @@ export async function listUnifiedWorkflows(
     health_blocked: r.health_blocked as boolean,
     health_blocked_reason: r.health_blocked_reason as string | null,
     updated_at: r.updated_at as string,
+    folder_id: (r as { folder_id: string | null }).folder_id ?? null,
+    position: (r as { position: number }).position ?? 0,
+    archived_at: (r as { archived_at: string | null }).archived_at ?? null,
   }))
 
   const fromLegacy: UnifiedWorkflow[] = unbackfilled.map((tc) => ({
@@ -83,6 +102,9 @@ export async function listUnifiedWorkflows(
     health_blocked: false,
     health_blocked_reason: null,
     updated_at: (tc.updated_at as string) ?? (tc.created_at as string),
+    folder_id: null,
+    position: 0,
+    archived_at: null,
   }))
 
   return [...fromWorkflows, ...fromLegacy].sort((a, b) =>
