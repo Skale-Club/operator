@@ -6,11 +6,17 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
 import type { ToolConfigWithIntegration } from './resolve-tool'
+import { isUnifiedEngineEnabled } from '@/lib/workflows/feature-flag'
+import { resolveWorkflowAsToolById } from '@/lib/workflows/resolve'
 
 export async function resolveToolById(
   toolConfigId: string,
   supabase: SupabaseClient<Database>
 ): Promise<ToolConfigWithIntegration | null> {
+  if (isUnifiedEngineEnabled()) {
+    return resolveWorkflowAsToolById(toolConfigId, supabase)
+  }
+
   const { data, error } = await supabase
     .from('tool_configs')
     .select('*, integrations!inner(*)')

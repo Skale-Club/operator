@@ -1,9 +1,15 @@
 // src/lib/action-engine/resolve-tool.ts
 // Resolves (orgId, toolName) → tool_config with nested integration credentials
 // Called as second step in the webhook hot path (expect ~10-25ms with composite index)
+//
+// SEED-025 Phase B: when UNIFIED_WORKFLOW_ENGINE=on, the same call routes
+// through workflows WHERE kind='tool' and returns the identical shape via
+// resolveWorkflowAsTool. Flag default OFF — legacy path is unchanged.
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
+import { isUnifiedEngineEnabled } from '@/lib/workflows/feature-flag'
+import { resolveWorkflowAsTool } from '@/lib/workflows/resolve'
 
 // ToolConfigWithIntegration: the shape returned by the joined query
 // Used by the webhook route to get both tool config and credentials in one DB call
@@ -30,6 +36,10 @@ export async function resolveTool(
   toolName: string,
   supabase: SupabaseClient<Database>
 ): Promise<ToolConfigWithIntegration | null> {
+  if (isUnifiedEngineEnabled()) {
+    return resolveWorkflowAsTool(orgId, toolName, supabase)
+  }
+
   // !inner forces the join to be non-optional, so `integrations` is a single object
   // rather than `object | null` in the inferred response type.
   const { data, error } = await supabase
