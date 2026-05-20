@@ -4,7 +4,7 @@ import { useRef, useState, useTransition } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ImagePlus, Loader2, Save, Trash2 } from 'lucide-react'
+import { ImagePlus, Loader2, Trash2 } from 'lucide-react'
 import Image from 'next/image'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
@@ -12,7 +12,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import { updateSeoConfig } from '@/app/(admin)/admin/_actions/seo-config'
+import { AdminSaveBar } from '@/components/admin/admin-save-bar'
+import { updateSeoConfig, updateFaviconUrl } from '@/app/(admin)/admin/_actions/seo-config'
 import type { SeoConfig } from '@/app/(admin)/admin/_actions/seo-config'
 
 const schema = z.object({
@@ -56,8 +57,10 @@ export function SeoConfigForm({ config }: { config: SeoConfig }) {
       const res = await fetch('/api/admin/favicon/upload', { method: 'POST', body: fd })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? 'Upload failed')
-      setFaviconUrl(json.url as string)
-      toast.success('Favicon uploaded — save settings to apply.')
+      const newUrl = json.url as string
+      setFaviconUrl(newUrl)
+      await updateFaviconUrl(config.id, newUrl)
+      toast.success('Favicon saved.')
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Upload failed')
     } finally {
@@ -83,7 +86,7 @@ export function SeoConfigForm({ config }: { config: SeoConfig }) {
           keywords,
         })
 
-        setLastSaved(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }))
+        form.reset(values)
         toast.success('SEO settings saved')
       } catch {
         toast.error('Failed to save SEO settings. Try again.')
@@ -198,7 +201,7 @@ export function SeoConfigForm({ config }: { config: SeoConfig }) {
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => setFaviconUrl(null)}
+                    onClick={async () => { setFaviconUrl(null); await updateFaviconUrl(config.id, null) }}
                     className="h-8 w-8 p-0 hover:bg-destructive/10 hover:border-destructive/30 hover:text-destructive"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -280,17 +283,12 @@ export function SeoConfigForm({ config }: { config: SeoConfig }) {
           </CardContent>
         </Card>
 
-        <div className="flex items-center justify-between pt-1">
-          {lastSaved ? (
-            <p className="text-xs text-text-tertiary">Saved at {lastSaved}</p>
-          ) : (
-            <span />
-          )}
-          <Button type="submit" disabled={isPending} className="h-9 px-5 text-sm">
-            <Save className="h-4 w-4 mr-2" />
-            {isPending ? 'Saving…' : 'Save SEO Settings'}
-          </Button>
-        </div>
+        <AdminSaveBar
+          isDirty={form.formState.isDirty}
+          isPending={isPending}
+          asSubmit
+          label="Save SEO settings"
+        />
       </form>
     </Form>
   )
