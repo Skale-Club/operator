@@ -5,6 +5,7 @@ import {
   ReactFlow,
   ReactFlowProvider,
   Background,
+  MiniMap,
   MarkerType,
   useReactFlow,
   type ReactFlowInstance,
@@ -40,6 +41,16 @@ interface FlowCanvasProps {
 // returns flow-space coordinates, so we can compare directly to edge midpoints.
 const EDGE_INSERT_THRESHOLD = 80
 const EDGE_INSERT_THRESHOLD_SQ = EDGE_INSERT_THRESHOLD * EDGE_INSERT_THRESHOLD
+const MINIMAP_WIDTH = 220
+const MINIMAP_HEIGHT = 160
+
+const NODE_TYPE_COLORS: Record<string, string> = {
+  trigger: '#f59e0b',
+  action: '#6366f1',
+  condition: '#8b5cf6',
+  wait: '#06b6d4',
+  agent: '#ec4899',
+}
 
 // Register the deletable edge as our default edge type so every line
 // rendered on the canvas shows a hover-revealed trash button at its midpoint.
@@ -52,13 +63,15 @@ function CanvasInner({ workflowId, workflowName, isActive, initialDefinition, ac
   const [, setRfInstance] = useState<ReactFlowInstance | null>(null)
   const [aiOpen, setAiOpen] = useState(false)
   const [hoveredEdgeId, setHoveredEdgeId] = useState<string | null>(null)
-  const { screenToFlowPosition, fitView } = useReactFlow()
+  const { screenToFlowPosition, fitView, zoomTo } = useReactFlow()
 
   const nodes = useFlowStore((s) => s.nodes)
   const edges = useFlowStore((s) => s.edges)
   const onNodesChange = useFlowStore((s) => s.onNodesChange)
   const onEdgesChange = useFlowStore((s) => s.onEdgesChange)
   const onConnect = useFlowStore((s) => s.onConnect)
+  const reconnectEdge = useFlowStore((s) => s.reconnectEdge)
+  const removeEdge = useFlowStore((s) => s.removeEdge)
   const addNode = useFlowStore((s) => s.addNode)
   const insertNodeOnEdge = useFlowStore((s) => s.insertNodeOnEdge)
   const setNodes = useFlowStore((s) => s.setNodes)
@@ -148,7 +161,8 @@ function CanvasInner({ workflowId, workflowName, isActive, initialDefinition, ac
 
   // ── Phase 4 — empty-state trigger picker ─────────────────────────────────
   // Drops the first trigger near the centre of the visible canvas so it lands
-  // inside the user's viewport regardless of pan/zoom. fitView then re-frames.
+  // inside the user's viewport regardless of pan/zoom. Keep the zoom at 100%
+  // so the editor does not jump into React Flow's auto-fit zoom after creation.
   const handlePickTrigger = useCallback(
     (triggerType: EmptyCanvasTriggerType) => {
       const rect = wrapperRef.current?.getBoundingClientRect()
@@ -162,9 +176,9 @@ function CanvasInner({ workflowId, workflowName, isActive, initialDefinition, ac
         event_type: triggerType,
         label: 'Trigger',
       })
-      setTimeout(() => fitView({ duration: 250, padding: 0.3 }), 50)
+      setTimeout(() => zoomTo(1, { duration: 150 }), 50)
     },
-    [addNode, screenToFlowPosition, fitView],
+    [addNode, screenToFlowPosition, zoomTo],
   )
 
   const handleAutoLayout = useCallback(() => {
@@ -218,9 +232,29 @@ function CanvasInner({ workflowId, workflowName, isActive, initialDefinition, ac
             onDrop={onDrop}
             onDragOver={onDragOver}
             onDragLeave={onDragLeave}
+            onReconnect={(oldEdge, newConnection) => {
+              if (newConnection.source && newConnection.target) {
+                reconnectEdge(
+                  oldEdge.id,
+                  newConnection.source,
+                  newConnection.target,
+                  newConnection.sourceHandle ?? null,
+                  newConnection.targetHandle ?? null,
+                )
+              }
+            }}
+            onReconnectEnd={(_event, edge, _handleType, connectionState) => {
+              // If the user dropped the endpoint in empty space (no new
+              // connection made), interpret it as "unplug" and delete the edge.
+              if (!connectionState.isValid) {
+                removeEdge(edge.id)
+              }
+            }}
+            reconnectRadius={24}
+            deleteKeyCode={['Delete', 'Backspace']}
             nodeTypes={nodeTypes}
             edgeTypes={edgeTypes}
-            fitView
+            defaultViewport={{ x: 0, y: 0, zoom: 1 }}
             proOptions={{ hideAttribution: true }}
             defaultEdgeOptions={{
               type: 'deletable',
@@ -239,6 +273,7 @@ function CanvasInner({ workflowId, workflowName, isActive, initialDefinition, ac
             }}
           >
             <Background gap={16} size={1} />
+            <CanvasMiniMap />
             <CanvasToolbar onAutoLayout={handleAutoLayout} />
           </ReactFlow>
           {showEmptyState && <EmptyCanvasState onPickTrigger={handlePickTrigger} />}
@@ -248,6 +283,22 @@ function CanvasInner({ workflowId, workflowName, isActive, initialDefinition, ac
       <NodeConfigPanel activeIntegrations={activeIntegrations} />
       <AiBuilderChat workflowId={workflowId} open={aiOpen} onClose={() => setAiOpen(false)} />
     </div>
+  )
+}
+
+function CanvasMiniMap() {
+  return (
+    <MiniMap
+      position="bottom-left"
+      nodeStrokeWidth={3}
+      pannable
+      zoomable
+      nodeColor={(node) => NODE_TYPE_COLORS[node.type ?? 'action'] ?? '#64748b'}
+      nodeBorderRadius={6}
+      maskColor="rgba(8, 9, 10, 0.7)"
+      className="nodrag nopan nowheel !m-0 !rounded-[10px] !border !border-border-subtle !bg-bg-secondary !shadow-lg"
+      style={{ bottom: 24, left: 24, width: MINIMAP_WIDTH, height: MINIMAP_HEIGHT }}
+    />
   )
 }
 

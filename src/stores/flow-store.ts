@@ -39,6 +39,8 @@ interface FlowState {
   updateNodeData: (nodeId: string, patch: Partial<FlowNodeData>) => void
   removeNode: (nodeId: string) => void
   removeEdge: (edgeId: string) => void
+  /** Replace an existing edge with a new source/target pair (for reconnection). */
+  reconnectEdge: (oldEdgeId: string, newSource: string, newTarget: string, newSourceHandle?: string | null, newTargetHandle?: string | null) => void
   setNodes: (nodes: CanvasNode[]) => void
   setSelected: (nodeId: string | null) => void
   /** SEED-043 Phase 5 — replace an existing edge with `source -> newNode -> target`.
@@ -176,6 +178,23 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   removeEdge(edgeId) {
     set((state) => ({
       edges: state.edges.filter((e) => e.id !== edgeId),
+      dirty: true,
+    }))
+  },
+
+  reconnectEdge(oldEdgeId, newSource, newTarget, newSourceHandle, newTargetHandle) {
+    set((state) => ({
+      edges: state.edges.map((e) =>
+        e.id === oldEdgeId
+          ? {
+              ...e,
+              source: newSource,
+              target: newTarget,
+              sourceHandle: newSourceHandle ?? null,
+              targetHandle: newTargetHandle ?? null,
+            }
+          : e,
+      ),
       dirty: true,
     }))
   },
