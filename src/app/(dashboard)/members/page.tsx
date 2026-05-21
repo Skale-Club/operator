@@ -1,7 +1,9 @@
 import { Suspense } from 'react'
 import { UsersRound } from 'lucide-react'
 
-import { listMembers, listInvites, inviteMember, revokeInvite, removeMember, PER_PAGE } from './actions'
+import { listMembers, listInvites, inviteMember, revokeInvite, removeMember } from './actions'
+
+const PER_PAGE = 10
 import { MembersClient } from './members-client'
 import { PageContainer, PageHeader } from '@/components/layout/page-header'
 
