@@ -4,7 +4,7 @@ import { createClient, getUser } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
-export const PER_PAGE = 10
+const PER_PAGE = 10
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
