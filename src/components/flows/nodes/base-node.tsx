@@ -32,7 +32,7 @@ function BaseNodeImpl({
         selected ? 'border-primary ring-2 ring-primary/30' : 'border-border',
       )}
     >
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-border">
+      <div className="flex items-center gap-2 px-3 py-2">
         <div
           className="h-7 w-7 rounded flex items-center justify-center shrink-0 text-white"
           style={{ backgroundColor: color }}
