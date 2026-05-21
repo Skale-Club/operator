@@ -4,7 +4,7 @@
 //
 // SEED-025 Phase B: when UNIFIED_WORKFLOW_ENGINE=on, the same call routes
 // through workflows WHERE kind='tool' and returns the identical shape via
-// resolveWorkflowAsTool. Flag default OFF — legacy path is unchanged.
+// resolveWorkflowAsTool. Flag default OFF | legacy path is unchanged.
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'

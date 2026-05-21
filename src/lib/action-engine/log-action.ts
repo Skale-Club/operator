@@ -1,6 +1,6 @@
 // src/lib/action-engine/log-action.ts
 // Writes an action_logs row after the action result is dispatched.
-// IMPORTANT: This function MUST be safe to call without try/catch — it never throws.
+// IMPORTANT: This function MUST be safe to call without try/catch | it never throws.
 // Returns the inserted action_logs.id on success, or null on any failure.
 // The Vapi caller (in vapi/tools/route.ts) ignores the return value; the ManyChat
 // dispatcher uses it to populate manychat_events.action_log_id (ROUTING-04).

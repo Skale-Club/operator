@@ -1,6 +1,6 @@
 'use client'
 
-// SEED-042 — IntegrationSheet
+// SEED-042 | IntegrationSheet
 // Routes between api_key / custom / oauth panel types based on the
 // IntegrationDefinition.
 

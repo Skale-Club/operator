@@ -53,7 +53,7 @@ interface SidebarProps {
   activeOrgName: string | null
   /** Resolved brand name (org override or APP_NAME). */
   brandName?: string
-  /** Optional org logo URL — replaces the default "O" mark when set. */
+  /** Optional org logo URL | replaces the default "O" mark when set. */
   logoUrl?: string | null
 }
 
@@ -82,7 +82,7 @@ export function Sidebar({ user, isPlatformAdmin, activeOrgId, activeOrgName, bra
         collapsed ? 'w-[60px]' : 'w-[232px]',
       )}
     >
-      {/* Header — brand + collapse */}
+      {/* Header | brand + collapse */}
       <div className="flex h-14 items-center justify-between px-3">
         <Link
           href="/dashboard"
@@ -187,7 +187,7 @@ export function Sidebar({ user, isPlatformAdmin, activeOrgId, activeOrgName, bra
                       collapsed && 'justify-center px-0',
                     )}
                   >
-                    {/* active indicator — left bar */}
+                    {/* active indicator | left bar */}
                     {isActive && (
                       <span className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-[2.5px] rounded-r-full bg-accent shadow-[0_0_8px_var(--accent-glow)]" />
                     )}
@@ -215,7 +215,7 @@ export function Sidebar({ user, isPlatformAdmin, activeOrgId, activeOrgName, bra
         })}
       </nav>
 
-      {/* Footer — user menu (org switcher moved to header) */}
+      {/* Footer | user menu (org switcher moved to header) */}
       <div className="border-t border-border-subtle p-2 space-y-1">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

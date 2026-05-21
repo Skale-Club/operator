@@ -133,7 +133,7 @@ export function KanbanBoard({ stages, opportunities, cardFields = DEFAULT_CARD_F
   // Track if the deal already lived in a won stage to avoid double-firing.
   const wonStageIds = React.useMemo(() => new Set(stages.filter((s) => s.is_won).map((s) => s.id)), [stages])
 
-  // Wider distance so clicks register as clicks, not drags. No delay — delay
+  // Wider distance so clicks register as clicks, not drags. No delay | delay
   // makes drag feel laggy / unresponsive on first attempt.
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -305,7 +305,7 @@ export function KanbanBoard({ stages, opportunities, cardFields = DEFAULT_CARD_F
         ))}
       </div>
 
-      {/* Portal to document.body — parent has framer-motion transform which
+      {/* Portal to document.body | parent has framer-motion transform which
           would otherwise break position:fixed used by DragOverlay, causing
           the dragged card to render far from the cursor. */}
       {typeof document !== 'undefined' && createPortal(

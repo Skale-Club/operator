@@ -98,7 +98,7 @@ export function LogsFilters({
         </Select>
       )}
 
-      {/* Date from — key forces remount when value cleared */}
+      {/* Date from | key forces remount when value cleared */}
       <Input
         key={`from-${from}`}
         type="date"

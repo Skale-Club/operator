@@ -1,31 +1,29 @@
 'use client'
 
 /**
- * Redesigned conversation list (v2.2 / SEED-011 + v2.2 page-based pagination +
- * SEED-035 unread/star/labels/filters).
+ * Redesigned conversation list (v2.2 / SEED-011 + v2.2 page-based pagination).
  *
  * Visual contract:
  *   - Sticky header: "Inbox" + total count, full-width search with ⌘K hint,
- *     filter pills (All / Unread / Mine + per-channel) using ChannelBadge,
- *     and an advanced filter button (popover) with a badge counting active
- *     filters.
+ *     filter pills (All / Unread / Mine + per-channel) using ChannelBadge.
  *   - Pinned section floats to the top on every page when any pinned conv exists.
- *   - Cards: avatar, name (bold when unread), last-message preview, ChannelBadge
- *     inline, relative timestamp, unread dot on the right, star button on hover,
- *     labels chips below the preview.
+ *   - Cards: avatar, name, last-message preview (1 line), ChannelBadge inline,
+ *     relative timestamp, unread + bot/priority status pills, hover/selected
+ *     states, optional 3px accent left-border when priority != normal.
  *   - Skeleton during initial fetch; brief flash on page change.
  *   - Sticky pagination footer at the bottom with Prev / "X–Y of N" / Next.
  *
- * Filter model:
- *   - Top pills cover the quick paths (All / Unread / Mine + channels).
- *   - The advanced FilterPanel covers everything else (status multi-select,
- *     priority, bot, assigned, labels, starred/pinned/unread).
- *   - Both fire into `onFilterChange` so the parent merges them into the
- *     server query.
+ * Pagination model:
+ *   - True page-based pagination (NOT infinite scroll). 30 conversations
+ *     per page max | DOM stays bounded, scroll bar stays usable.
+ *   - Filter pill changes propagate up to the parent via `onFilterChange`,
+ *     which drives `usePaginatedConversations` to reset to page 1 and refetch.
+ *   - Search is client-side only | it filters within the current page.
+ *   - Page-change handler scrolls the list viewport back to the top.
  */
 
 import { useState, useEffect, useMemo, useRef, useCallback, memo } from 'react'
-import { Search, Pin, Star, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, Pin, Archive, ArchiveRestore, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { formatDistanceToNowStrict } from 'date-fns'
 
 import { ConversationSummary } from '@/types/chat'
@@ -59,9 +57,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu'
-import { FilterPanel, EMPTY_FILTERS, type AdvancedFilters } from '@/components/chat/filter-panel'
 import { cn } from '@/lib/utils'
-import type { OrgMember } from '@/app/(dashboard)/chat/actions'
 
 // Map raw `channel` strings (DB) → design-system Channel enum
 const CHANNEL_MAP: Record<string, Channel> = {
@@ -95,17 +91,8 @@ interface FilterPill {
 
 export interface ConversationFilterChange {
   status: string | null
-  /** SEED-035: csv if more than one status is selected */
-  statuses?: string[] | null
   assigned: string | null
   channel: string | null
-  /** SEED-035 server filters */
-  unread?: boolean
-  priority?: string[]
-  botStatus?: string | null
-  starred?: boolean
-  labelIds?: string[]
-  assignedUserId?: string | null
 }
 
 interface ConversationListProps {
@@ -117,7 +104,7 @@ interface ConversationListProps {
   currentUserId: string | null
   /** True during the very first load or a filter-change re-load. */
   isLoading: boolean
-  /** True while changing pages — keeps the previous page visible briefly. */
+  /** True while changing pages | keeps the previous page visible briefly. */
   isPageLoading: boolean
   loadError: string | null
 
@@ -138,11 +125,6 @@ interface ConversationListProps {
   onConversationDeleted: (id: string) => void
   /** Optimistic pin/unpin handled by parent; updates apply on realtime echo. */
   onPin?: (id: string, pinned: boolean) => void
-  /** SEED-035: optimistic star toggle. */
-  onStar?: (id: string, starred: boolean) => void
-  /** SEED-035: members + labels for the advanced filter panel. */
-  members?: OrgMember[]
-  orgLabels?: Array<{ id: string; name: string; color: string }>
 }
 
 function formatRelative(c: ConversationSummary): string {
@@ -174,7 +156,7 @@ function initialOf(name: string): string {
   return name.replace(/[^a-zA-Z0-9]/g, '').charAt(0).toUpperCase() || '?'
 }
 
-// All channels are always available as pills — we don't auto-derive from
+// All channels are always available as pills | we don't auto-derive from
 // loaded data anymore because pagination only gives us a window.
 const ALL_CHANNEL_PILLS: Channel[] = ['whatsapp', 'instagram', 'messenger', 'sms', 'voice', 'web']
 
@@ -200,18 +182,14 @@ export function ConversationList({
   onConversationUpdated,
   onConversationDeleted,
   onPin,
-  onStar,
-  members = [],
-  orgLabels = [],
 }: ConversationListProps) {
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [activeFilter, setActiveFilter] = useState<FilterId>('all')
-  const [advanced, setAdvanced] = useState<AdvancedFilters>(EMPTY_FILTERS)
   const searchRef = useRef<HTMLInputElement>(null)
   const scrollViewportRef = useRef<HTMLDivElement | null>(null)
 
-  // Debounce search (300ms) — search is client-side over the current page.
+  // Debounce search (300ms) | search is client-side over the current page.
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300)
     return () => clearTimeout(t)
@@ -229,42 +207,19 @@ export function ConversationList({
     return () => window.removeEventListener('keydown', handler)
   }, [])
 
-  // Translate pill + advanced filters into the parent's filter contract.
+  // Propagate filter changes to parent (which drives server fetch + page reset).
   useEffect(() => {
     let status: string | null = null
     let assigned: string | null = null
     let channel: string | null = null
-    let unread = advanced.unread
-    if (activeFilter === 'unread') unread = true
+    if (activeFilter === 'unread') status = 'open'
     else if (activeFilter === 'mine') assigned = 'me'
     else if (activeFilter !== 'all') {
       const dbValue = CHANNEL_TO_DB[activeFilter as Channel]
       if (dbValue) channel = dbValue
     }
-    // Combine: if the user picks a status pill via the panel, prefer multi.
-    const statuses = advanced.statuses
-    if (statuses.length === 1 && !status) status = statuses[0]
-
-    // Resolve "assigned to" — prefer the panel choice; if user clicked the
-    // "Mine" pill, that wins via the `assigned='me'` shortcut above.
-    let assignedUserId: string | null = null
-    if (advanced.assignedUserIds.length === 1) {
-      assignedUserId = advanced.assignedUserIds[0]
-    }
-
-    onFilterChange({
-      status,
-      statuses: statuses.length > 1 ? statuses : null,
-      assigned,
-      channel,
-      unread,
-      priority: advanced.priorities,
-      botStatus: advanced.botStatuses.length === 1 ? advanced.botStatuses[0] : null,
-      starred: advanced.starred,
-      labelIds: advanced.labelIds,
-      assignedUserId,
-    })
-  }, [activeFilter, advanced, onFilterChange])
+    onFilterChange({ status, assigned, channel })
+  }, [activeFilter, onFilterChange])
 
   // Scroll to top whenever the page changes (so the user always lands at the
   // top of the new page instead of mid-scroll).
@@ -290,7 +245,7 @@ export function ConversationList({
     }))
   }, [])
 
-  // Search is local-only — filters the current page.
+  // Search is local-only | filters the current page.
   const filteredUnpinned = useMemo(() => {
     if (!debouncedSearch.trim()) return conversations
     const q = debouncedSearch.toLowerCase()
@@ -345,14 +300,13 @@ export function ConversationList({
             onChange={(e) => setSearch(e.target.value)}
             className="h-9 pl-9 pr-12 text-[13px] rounded-[8px] bg-bg-primary border-border-subtle focus-visible:border-accent focus-visible:ring-[3px] focus-visible:ring-accent/15"
           />
-          {/* SEED-040: hide the ⌘K hint on touch devices — it's noise there. */}
-          <kbd className="hidden md:block absolute right-2.5 top-1/2 -translate-y-1/2 rounded-[5px] border border-border-subtle bg-bg-tertiary px-1.5 py-0.5 text-[10px] font-mono text-text-tertiary">
+          <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-[5px] border border-border-subtle bg-bg-tertiary px-1.5 py-0.5 text-[10px] font-mono text-text-tertiary">
             ⌘K
           </kbd>
         </div>
 
-        {/* Status filter row + advanced filter button */}
-        <div className="mt-3 flex items-center gap-1.5">
+        {/* Status filter row */}
+        <div className="mt-3 flex gap-1.5">
           {statusPills.map((pill) => {
             const active = activeFilter === pill.id
             return (
@@ -371,18 +325,9 @@ export function ConversationList({
               </button>
             )
           })}
-
-          <div className="ml-auto">
-            <FilterPanel
-              value={advanced}
-              onChange={setAdvanced}
-              members={members}
-              labels={orgLabels}
-            />
-          </div>
         </div>
 
-        {/* Channel filter row — icon-only, fits all channels on one row */}
+        {/* Channel filter row | icon-only, fits all channels on one row */}
         <div className="mt-2 flex items-center gap-1">
           <span className="text-[10px] uppercase tracking-wider text-text-tertiary mr-1.5">
             Channel
@@ -419,7 +364,8 @@ export function ConversationList({
         </div>
       </div>
 
-      {/* List */}
+      {/* List | min-h-0 lets the flex child shrink below content size so
+          the internal ScrollArea actually scrolls instead of overflowing. */}
       <ScrollArea className="min-h-0 flex-1" viewportRef={scrollViewportRef}>
         <div className="p-2 space-y-1">
           {isLoading ? (
@@ -471,7 +417,6 @@ export function ConversationList({
                       selected={c.id === selectedId}
                       onSelect={onSelect}
                       onPin={onPin}
-                      onStar={onStar}
                       onArchive={onConversationUpdated}
                       onDelete={onConversationDeleted}
                     />
@@ -486,7 +431,6 @@ export function ConversationList({
                   selected={c.id === selectedId}
                   onSelect={onSelect}
                   onPin={onPin}
-                  onStar={onStar}
                   onArchive={onConversationUpdated}
                   onDelete={onConversationDeleted}
                 />
@@ -556,7 +500,6 @@ interface ConversationCardProps {
   selected: boolean
   onSelect: (id: string) => void
   onPin?: (id: string, pinned: boolean) => void
-  onStar?: (id: string, starred: boolean) => void
   onArchive: () => void
   onDelete: (id: string) => void
 }
@@ -566,7 +509,7 @@ function ConversationCardBase({
   selected,
   onSelect,
   onPin,
-  onStar,
+  onArchive,
   onDelete,
 }: ConversationCardProps) {
   const [showDelete, setShowDelete] = useState(false)
@@ -576,9 +519,6 @@ function ConversationCardBase({
   const isBotPaused = conversation.botStatus === 'paused'
   const isArchived = conversation.status === 'closed'
   const priority = conversation.priority ?? 'normal'
-  const isUnread = Boolean(conversation.isUnread)
-  const starred = Boolean(conversation.starred)
-  const labels = conversation.labels ?? []
 
   const priorityBar =
     priority === 'urgent'
@@ -589,6 +529,19 @@ function ConversationCardBase({
           ? 'before:bg-accent'
           : 'before:bg-transparent'
 
+  const handleArchiveClick = useCallback(
+    async (e: React.MouseEvent) => {
+      e.stopPropagation()
+      await fetch(`/api/chat/conversations/${conversation.id}/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: isArchived ? 'open' : 'closed' }),
+      })
+      onArchive()
+    },
+    [conversation.id, isArchived, onArchive],
+  )
+
   const handleDeleteConfirm = useCallback(
     async (e: React.MouseEvent) => {
       e.stopPropagation()
@@ -596,14 +549,6 @@ function ConversationCardBase({
       onDelete(conversation.id)
     },
     [conversation.id, onDelete],
-  )
-
-  const handleMarkUnread = useCallback(
-    async (e: Event) => {
-      e.stopPropagation()
-      await fetch(`/api/chat/conversations/${conversation.id}/read`, { method: 'DELETE' })
-    },
-    [conversation.id],
   )
 
   return (
@@ -623,9 +568,7 @@ function ConversationCardBase({
         priorityBar,
         selected
           ? 'bg-accent-muted/60'
-          : isUnread
-            ? 'bg-bg-tertiary/60 hover:bg-bg-tertiary/80'
-            : 'hover:bg-bg-tertiary/50 focus-visible:bg-bg-tertiary/60 focus-visible:ring-2 focus-visible:ring-accent/20',
+          : 'hover:bg-bg-tertiary/50 focus-visible:bg-bg-tertiary/60 focus-visible:ring-2 focus-visible:ring-accent/20',
       )}
     >
       <Avatar className="h-9 w-9 shrink-0 mt-0.5">
@@ -647,41 +590,25 @@ function ConversationCardBase({
             {conversation.pinned && (
               <Pin className="h-3 w-3 shrink-0 text-text-tertiary" fill="currentColor" />
             )}
-            {starred && (
-              <Star className="h-3 w-3 shrink-0 text-amber-400" fill="currentColor" />
-            )}
             <span
               className={cn(
-                'min-w-0 truncate text-[13px] tracking-tight',
-                isUnread ? 'font-semibold text-text-primary' : 'font-medium text-text-primary',
+                'min-w-0 truncate text-[13px] font-semibold tracking-tight',
+                selected ? 'text-text-primary' : 'text-text-primary',
               )}
             >
               {name}
             </span>
           </div>
-          <div className="flex shrink-0 items-center gap-1.5">
-            <span className="whitespace-nowrap text-right text-[10.5px] tabular-nums text-text-tertiary">
-              {formatRelative(conversation)}
-            </span>
-            {isUnread && (
-              <span
-                className="h-2 w-2 rounded-full bg-accent"
-                aria-label="Unread"
-                title="Unread"
-              />
-            )}
-          </div>
+          <span className="shrink-0 whitespace-nowrap text-right text-[10.5px] tabular-nums text-text-tertiary">
+            {formatRelative(conversation)}
+          </span>
         </div>
 
         <div className="flex min-w-0 items-center justify-between gap-2">
           <p
             className={cn(
               'min-w-0 flex-1 truncate text-[12px] leading-snug',
-              isUnread
-                ? 'font-medium text-text-secondary'
-                : selected
-                  ? 'text-text-secondary'
-                  : 'text-text-tertiary',
+              selected ? 'text-text-secondary' : 'text-text-tertiary',
             )}
           >
             {conversation.lastMessage || (
@@ -712,34 +639,11 @@ function ConversationCardBase({
             )}
           </div>
         )}
-
-        {labels.length > 0 && (
-          <div className="mt-1 flex flex-wrap items-center gap-1">
-            {labels.slice(0, 3).map((l) => (
-              <span
-                key={l.id}
-                className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium"
-                style={{ backgroundColor: `${l.color}20`, color: l.color }}
-              >
-                {l.name}
-              </span>
-            ))}
-            {labels.length > 3 && (
-              <span className="text-[10px] text-text-tertiary">+{labels.length - 3}</span>
-            )}
-          </div>
-        )}
       </div>
 
-      {/*
-        Quick actions (right side).
-        SEED-040: on mobile (no hover), these are always visible so users can
-        pin/star/menu without a long-press. On md+ we fall back to the original
-        hover-reveal pattern (opacity 0 → 1 on group-hover) to keep the inbox
-        visually quiet.
-      */}
+      {/* Hover-only quick actions (right side) */}
       <div
-        className="absolute right-2 top-2 flex gap-0.5 rounded-[6px] bg-bg-elevated/95 p-0.5 ring-1 ring-border-subtle shadow-sm opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:focus-within:opacity-100"
+        className="absolute right-2 top-2 hidden gap-0.5 rounded-[6px] bg-bg-elevated/95 p-0.5 ring-1 ring-border-subtle shadow-sm group-hover:flex"
         onClick={(e) => e.stopPropagation()}
       >
         {onPin && (
@@ -753,22 +657,6 @@ function ConversationCardBase({
             className="flex h-6 w-6 items-center justify-center rounded-[5px] text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary"
           >
             <Pin className="h-3 w-3" fill={conversation.pinned ? 'currentColor' : 'none'} />
-          </button>
-        )}
-        {onStar && (
-          <button
-            type="button"
-            title={starred ? 'Unstar' : 'Star'}
-            onClick={(e) => {
-              e.stopPropagation()
-              onStar(conversation.id, !starred)
-            }}
-            className={cn(
-              'flex h-6 w-6 items-center justify-center rounded-[5px] hover:bg-bg-tertiary',
-              starred ? 'text-amber-400' : 'text-text-tertiary hover:text-text-primary',
-            )}
-          >
-            <Star className="h-3 w-3" fill={starred ? 'currentColor' : 'none'} />
           </button>
         )}
         <DropdownMenu>
@@ -787,9 +675,18 @@ function ConversationCardBase({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-            <DropdownMenuItem onSelect={handleMarkUnread}>
-              <span className="h-2 w-2 rounded-full bg-accent mr-2" />
-              Mark as unread
+            <DropdownMenuItem onClick={handleArchiveClick}>
+              {isArchived ? (
+                <>
+                  <ArchiveRestore className="h-3.5 w-3.5 mr-2" />
+                  Reopen
+                </>
+              ) : (
+                <>
+                  <Archive className="h-3.5 w-3.5 mr-2" />
+                  Archive
+                </>
+              )}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -837,7 +734,6 @@ function ConversationCardBase({
 const MemoConversationCard = memo(ConversationCardBase, (prev, next) => {
   if (prev.selected !== next.selected) return false
   if (prev.onPin !== next.onPin) return false
-  if (prev.onStar !== next.onStar) return false
   const a = prev.conversation
   const b = next.conversation
   return (
@@ -849,9 +745,6 @@ const MemoConversationCard = memo(ConversationCardBase, (prev, next) => {
     a.status === b.status &&
     a.botStatus === b.botStatus &&
     a.assignedUserId === b.assignedUserId &&
-    a.visitorName === b.visitorName &&
-    a.isUnread === b.isUnread &&
-    a.starred === b.starred &&
-    (a.labels?.length ?? 0) === (b.labels?.length ?? 0)
+    a.visitorName === b.visitorName
   )
 })

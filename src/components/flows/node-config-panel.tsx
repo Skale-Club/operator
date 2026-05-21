@@ -67,7 +67,7 @@ export function NodeConfigPanel({ activeIntegrations }: NodeConfigPanelProps) {
 
   return (
     <div className="w-80 border-l border-border bg-card shrink-0 flex flex-col">
-      {/* Header — friendly title + type subtitle */}
+      {/* Header | friendly title + type subtitle */}
       <div className="flex items-start justify-between px-3 py-3 border-b border-border">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-text-primary truncate">{friendlyTitle}</p>
@@ -124,7 +124,7 @@ export function NodeConfigPanel({ activeIntegrations }: NodeConfigPanelProps) {
                 <SelectContent>
                   {filterTriggers(activeSet).length === 0 && (
                     <div className="px-2 py-1.5 text-[11px] text-text-tertiary">
-                      No triggers available — connect an integration first.
+                      No triggers available | connect an integration first.
                     </div>
                   )}
                   {/* Always include the currently selected event so user can change away */}
@@ -166,7 +166,7 @@ export function NodeConfigPanel({ activeIntegrations }: NodeConfigPanelProps) {
                   className="h-8 text-xs font-mono"
                 />
                 <p className="text-[10.5px] text-text-tertiary">
-                  e.g. <code>0 9 * * 1</code> — every Monday at 9 AM
+                  e.g. <code>0 9 * * 1</code> | every Monday at 9 AM
                 </p>
               </div>
             )}

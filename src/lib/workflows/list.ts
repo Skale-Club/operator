@@ -94,7 +94,7 @@ export async function listUnifiedWorkflows(
     id: tc.id as string,
     name: tc.tool_name as string,
     slug: (tc.tool_name as string).toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-    description: `Legacy tool (${tc.action_type as string}) — run \`npx supabase db push\` to migrate.`,
+    description: `Legacy tool (${tc.action_type as string}) | run \`npx supabase db push\` to migrate.`,
     is_active: tc.is_active as boolean,
     kind: 'tool',
     trigger_type: 'tool_call',

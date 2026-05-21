@@ -7,11 +7,11 @@
 //      ('meeting.starts_in', 'meeting.ended')
 //   2. For each, find bookings whose target moment falls in [now, now + 1min)
 //   3. Enqueue exactly once per (workflow, booking, event, fired_minute)
-//      using scheduled_workflow_ticks idempotency table — duplicates are
+//      using scheduled_workflow_ticks idempotency table | duplicates are
 //      safely dropped at the DB level
 //   4. Dispatch via lib/scheduling/transition.emitCalendarEvent
 //
-// The caller sends CRON_SECRET as Authorization: Bearer header — required
+// The caller sends CRON_SECRET as Authorization: Bearer header | required
 // to prevent unauthorized invocations.
 
 export const runtime = 'nodejs'

@@ -12,7 +12,7 @@
  *   - Custom fields rendered using FIELD_RENDER_CONFIG (read-only display for
  *     non-text types, inline editable for text/long_text/number/email/url)
  *
- * Renders gracefully when `contactId` is null — falls back to the
+ * Renders gracefully when `contactId` is null | falls back to the
  * UnregisteredCard with a CTA to create the contact pre-filled with whatever
  * signals the conversation already has.
  */
@@ -326,7 +326,7 @@ export function ContactInfoPanel({
                     ? 'bg-emerald-500/15 text-emerald-400 ring-emerald-500/30'
                     : 'bg-bg-tertiary text-text-tertiary ring-border-subtle',
                 )}
-                title={r.active ? `${r.label} — open conversation` : `${r.label} — available`}
+                title={r.active ? `${r.label} | open conversation` : `${r.label} | available`}
               >
                 <ChannelBadge channel={r.channel} showLabel={false} size="sm" className="!h-3.5 !w-3.5" />
                 {r.label}
@@ -439,7 +439,7 @@ export function ContactInfoPanel({
                         {editable ? (
                           <InlineEditField
                             value={display || null}
-                            placeholder="—"
+                            placeholder="|"
                             type={def.type === 'email' ? 'email' : 'text'}
                             multiline={def.type === 'long_text'}
                             onSave={saveField(`custom_fields.${def.key}`)}
@@ -452,7 +452,7 @@ export function ContactInfoPanel({
                               display ? 'text-text-primary' : 'italic text-text-tertiary',
                             )}
                           >
-                            {display || '—'}
+                            {display || '|'}
                           </div>
                         )}
                       </div>
@@ -678,7 +678,7 @@ export function ContactInfoPanel({
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-[12px] capitalize text-text-primary">
-                        {c.direction} · {c.status ?? '—'}
+                        {c.direction} · {c.status ?? '|'}
                       </div>
                       <div className="text-[10.5px] text-text-tertiary">
                         {relativeTime(c.started_at)}
@@ -713,7 +713,7 @@ export function ContactInfoPanel({
                     <ChannelBadge channel={(c.channel as Channel) ?? 'unknown'} showLabel={false} size="sm" />
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-[12px] text-text-primary">
-                        {c.last_message || '—'}
+                        {c.last_message || '|'}
                       </div>
                       <div className="text-[10.5px] text-text-tertiary">
                         {relativeTime(c.last_message_at)} · {c.status}

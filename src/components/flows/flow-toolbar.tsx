@@ -106,7 +106,7 @@ export function FlowToolbar({ workflowId, workflowName, isActive, onToggleAi, ai
       if (result.data.status === 'succeeded') {
         toast.success('Run succeeded')
       } else {
-        toast.error('Run failed — check run history')
+        toast.error('Run failed | check run history')
       }
       router.push(`/automations/flows/runs/${result.data.runId}`)
     })
@@ -136,7 +136,7 @@ export function FlowToolbar({ workflowId, workflowName, isActive, onToggleAi, ai
 
   return (
     <div className="flex items-center gap-2 px-3 py-2 border-b border-border bg-background shrink-0">
-      {/* Left — back + name (flex-grow) */}
+      {/* Left | back + name (flex-grow) */}
       <div className="flex items-center gap-2 min-w-0 flex-1">
         <Button asChild variant="ghost" size="sm" className="shrink-0 px-2">
           <Link href="/workflows" aria-label="Back to workflows">
@@ -177,7 +177,7 @@ export function FlowToolbar({ workflowId, workflowName, isActive, onToggleAi, ai
         {statusEl && <div className="hidden lg:flex">{statusEl}</div>}
       </div>
 
-      {/* Right — actions (shrink-0, gracefully collapse labels on small widths) */}
+      {/* Right | actions (shrink-0, gracefully collapse labels on small widths) */}
       <div className="flex items-center gap-1.5 shrink-0">
         <WorkflowToggle
           workflowId={workflowId}
