@@ -24,7 +24,7 @@ function toTitleCase(str: string) {
 export function AppBreadcrumb() {
   const pathname = usePathname()
   const segments = pathname.split('/').filter(Boolean)
-  const { getSegmentLabel } = useBreadcrumbOverride()
+  const { getSegmentLabel, suffix } = useBreadcrumbOverride()
 
   // Match the top-level path segment to a sidebar nav item so the icon
   // shown in the header is the same as the icon highlighted in the sidebar.
@@ -58,7 +58,10 @@ export function AppBreadcrumb() {
               <BreadcrumbItem className={isFirst ? 'flex items-center gap-2' : undefined}>
                 {isFirst && <Icon className="h-4 w-4 text-text-secondary shrink-0" />}
                 {isLast ? (
-                  <BreadcrumbPage>{getSegmentLabel(segment) ?? toTitleCase(segment)}</BreadcrumbPage>
+                  <BreadcrumbPage className="flex items-center gap-2">
+                    {getSegmentLabel(segment) ?? toTitleCase(segment)}
+                    {suffix}
+                  </BreadcrumbPage>
                 ) : (
                   <BreadcrumbLink asChild>
                     <Link href={href}>{getSegmentLabel(segment) ?? toTitleCase(segment)}</Link>
