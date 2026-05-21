@@ -20,7 +20,17 @@ const ScrollArea = React.forwardRef<
     className={cn("relative overflow-hidden", className)}
     {...props}
   >
-    <ScrollAreaPrimitive.Viewport ref={viewportRef} className="h-full w-full rounded-[inherit]">
+    {/*
+      [&>div]:!block + [&>div]:!min-w-0 overrides Radix's default
+      `display: table` on the inner viewport wrapper. Without this, child
+      content keeps its intrinsic width and breaks `truncate` / `min-w-0`
+      flex children (e.g. conversation rows pushing channel icons off-screen
+      when the inbox column is narrowed).
+    */}
+    <ScrollAreaPrimitive.Viewport
+      ref={viewportRef}
+      className="h-full w-full rounded-[inherit] [&>div]:!block [&>div]:!min-w-0"
+    >
       {children}
     </ScrollAreaPrimitive.Viewport>
     <ScrollBar />
