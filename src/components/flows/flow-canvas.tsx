@@ -19,6 +19,7 @@ import { FlowToolbar } from './flow-toolbar'
 import { AiBuilderChat } from './ai-builder-chat'
 import { CanvasToolbar } from './canvas-toolbar'
 import { EmptyCanvasState, type EmptyCanvasTriggerType } from './empty-canvas-state'
+import { DeletableEdge } from './edges/deletable-edge'
 import type { FlowDefinition, FlowNodeType } from '@/lib/flows/schema'
 import type { IntegrationKey } from '@/lib/flows/node-metadata'
 import { saveWorkflowDefinition } from '@/app/(dashboard)/workflows/flows/_actions/workflows'
@@ -39,6 +40,12 @@ interface FlowCanvasProps {
 // returns flow-space coordinates, so we can compare directly to edge midpoints.
 const EDGE_INSERT_THRESHOLD = 80
 const EDGE_INSERT_THRESHOLD_SQ = EDGE_INSERT_THRESHOLD * EDGE_INSERT_THRESHOLD
+
+// Register the deletable edge as our default edge type so every line
+// rendered on the canvas shows a hover-revealed trash button at its midpoint.
+const edgeTypes = {
+  deletable: DeletableEdge,
+}
 
 function CanvasInner({ workflowId, workflowName, isActive, initialDefinition, activeIntegrations }: FlowCanvasProps) {
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -212,9 +219,11 @@ function CanvasInner({ workflowId, workflowName, isActive, initialDefinition, ac
             onDragOver={onDragOver}
             onDragLeave={onDragLeave}
             nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
             fitView
             proOptions={{ hideAttribution: true }}
             defaultEdgeOptions={{
+              type: 'deletable',
               style: { stroke: 'rgba(148, 163, 184, 0.5)', strokeWidth: 1.5 },
               markerEnd: {
                 type: MarkerType.ArrowClosed,

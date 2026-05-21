@@ -38,6 +38,7 @@ interface FlowState {
   addNode: (type: FlowNodeType, position: { x: number; y: number }, data?: Partial<FlowNodeData>) => string
   updateNodeData: (nodeId: string, patch: Partial<FlowNodeData>) => void
   removeNode: (nodeId: string) => void
+  removeEdge: (edgeId: string) => void
   setNodes: (nodes: CanvasNode[]) => void
   setSelected: (nodeId: string | null) => void
   /** SEED-043 Phase 5 — replace an existing edge with `source -> newNode -> target`.
@@ -168,6 +169,13 @@ export const useFlowStore = create<FlowState>((set, get) => ({
       nodes: state.nodes.filter((n) => n.id !== nodeId),
       edges: state.edges.filter((e) => e.source !== nodeId && e.target !== nodeId),
       selectedNodeId: state.selectedNodeId === nodeId ? null : state.selectedNodeId,
+      dirty: true,
+    }))
+  },
+
+  removeEdge(edgeId) {
+    set((state) => ({
+      edges: state.edges.filter((e) => e.id !== edgeId),
       dirty: true,
     }))
   },

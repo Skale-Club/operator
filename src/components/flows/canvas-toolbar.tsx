@@ -15,6 +15,9 @@ const NODE_TYPE_COLORS: Record<string, string> = {
   agent: '#ec4899',
 }
 
+const MINIMAP_WIDTH = 220
+const MINIMAP_HEIGHT = 160
+
 interface CanvasToolbarProps {
   onAutoLayout: () => void
 }
@@ -28,7 +31,7 @@ export function CanvasToolbar({ onAutoLayout }: CanvasToolbarProps) {
   return (
     <TooltipProvider delayDuration={200}>
       <div
-        className="absolute z-10 flex items-center gap-0.5 rounded-[10px] border border-border-subtle bg-bg-secondary px-1 py-1 shadow-lg"
+        className="nodrag nopan nowheel absolute z-10 flex items-center gap-0.5 rounded-[10px] border border-border-subtle bg-bg-secondary px-1 py-1 shadow-lg"
         style={{ bottom: 24, right: 24 }}
       >
         <ToolbarBtn icon={<Plus className="h-3.5 w-3.5" />} label="Zoom in" onClick={() => zoomIn({ duration: 150 })} />
@@ -41,8 +44,9 @@ export function CanvasToolbar({ onAutoLayout }: CanvasToolbarProps) {
           <TooltipTrigger asChild>
             <button
               type="button"
+              aria-label="Reset zoom to 100%"
               onClick={() => zoomTo(1, { duration: 200 })}
-              className="px-2 py-1 text-[11px] font-mono tabular-nums text-text-secondary hover:text-text-primary rounded-[6px] hover:bg-bg-tertiary transition-colors"
+              className="h-7 min-w-[42px] rounded-[6px] px-2 text-center font-mono text-[11px] tabular-nums text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary"
             >
               {pct}%
             </button>
@@ -67,16 +71,23 @@ export function CanvasToolbar({ onAutoLayout }: CanvasToolbarProps) {
               <MapIcon className="h-3.5 w-3.5" />
             </button>
           </PopoverTrigger>
-          <PopoverContent side="top" align="end" className="p-0 w-[220px] h-[160px] overflow-hidden">
+          <PopoverContent
+            side="top"
+            align="end"
+            sideOffset={8}
+            className="p-0 overflow-hidden"
+            style={{ width: MINIMAP_WIDTH, height: MINIMAP_HEIGHT }}
+          >
             <MiniMap
+              position="top-left"
               nodeStrokeWidth={3}
               pannable
               zoomable
               nodeColor={(node) => NODE_TYPE_COLORS[node.type ?? 'action'] ?? '#64748b'}
               nodeBorderRadius={6}
               maskColor="rgba(8, 9, 10, 0.7)"
-              className="!bg-bg-secondary"
-              style={{ width: '100%', height: '100%', position: 'relative', top: 0, right: 0 }}
+              className="!m-0 !bg-bg-secondary"
+              style={{ width: MINIMAP_WIDTH, height: MINIMAP_HEIGHT, position: 'relative' }}
             />
           </PopoverContent>
         </Popover>
