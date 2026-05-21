@@ -111,12 +111,16 @@ export function ContactDetailSheet({ contactId, onOpenChange }: ContactDetailShe
       <DialogContent className="flex h-[min(780px,calc(100vh-2rem))] max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] max-w-[560px] flex-col overflow-hidden p-0 gap-0">
         {loading && !contact ? (
           <div className="p-6 space-y-3 animate-pulse">
+            <DialogTitle className="sr-only">Loading contact</DialogTitle>
             <div className="h-16 w-16 rounded-full bg-bg-tertiary" />
             <div className="h-5 w-2/3 rounded bg-bg-tertiary" />
             <div className="h-4 w-1/2 rounded bg-bg-tertiary" />
           </div>
         ) : !contact ? (
-          <div className="p-6 text-[13px] text-text-secondary">Contact not found.</div>
+          <div className="p-6 text-[13px] text-text-secondary">
+            <DialogTitle className="sr-only">Contact not found</DialogTitle>
+            Contact not found.
+          </div>
         ) : editing ? (
           <div className="flex flex-col overflow-hidden h-full">
             <DialogHeader className="border-b border-border-subtle px-6 py-4">
