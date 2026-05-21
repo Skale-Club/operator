@@ -22,6 +22,8 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
+import { useVisualViewport } from '@/hooks/use-visual-viewport'
+import { haptic } from '@/lib/haptics'
 
 /** SEED-039: channel the message will be sent on. */
 export type ComposerChannel = {
@@ -65,6 +67,8 @@ export function MessageComposer({
   const [isSending, setIsSending] = useState(false)
   const ref = useRef<HTMLTextAreaElement>(null)
   const lastTypingRef = useRef(0)
+  // SEED-040: push the composer above the iOS soft keyboard when it opens.
+  const keyboardOffset = useVisualViewport()
 
   // Auto-resize
   useEffect(() => {
@@ -81,6 +85,8 @@ export function MessageComposer({
     if (!content || isSending || disabled) return
     setValue('')
     setIsSending(true)
+    // SEED-040: tiny haptic confirmation on send (no-op on desktop / iOS).
+    haptic(10)
     try {
       await onSendMessage(content)
     } finally {
@@ -110,7 +116,13 @@ export function MessageComposer({
   const canSend = value.trim().length > 0 && !isDisabled
 
   return (
-    <div className="shrink-0 border-t border-border-subtle bg-bg-primary/95 px-4 py-3 backdrop-blur md:px-6">
+    <div
+      className="shrink-0 border-t border-border-subtle bg-bg-primary/95 px-4 py-3 pb-safe backdrop-blur md:px-6"
+      style={{
+        transform: keyboardOffset > 0 ? `translateY(-${keyboardOffset}px)` : undefined,
+        transition: 'transform 100ms',
+      }}
+    >
       {disabled && disabledHint && (
         <div className="mb-2 flex items-center justify-between gap-3 rounded-[8px] border border-warning/30 bg-[var(--warning-muted)] px-3 py-2">
           <p className="text-[12px] text-warning">{disabledHint}</p>

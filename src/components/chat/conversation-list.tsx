@@ -340,7 +340,7 @@ export function ConversationList({
             onChange={(e) => setSearch(e.target.value)}
             className="h-9 pl-9 pr-12 text-[13px] rounded-[8px] bg-bg-primary border-border-subtle focus-visible:border-accent focus-visible:ring-[3px] focus-visible:ring-accent/15"
           />
-          <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-[5px] border border-border-subtle bg-bg-tertiary px-1.5 py-0.5 text-[10px] font-mono text-text-tertiary">
+          <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 hidden md:inline-block rounded-[5px] border border-border-subtle bg-bg-tertiary px-1.5 py-0.5 text-[10px] font-mono text-text-tertiary">
             ⌘K
           </kbd>
         </div>

@@ -146,7 +146,7 @@ export function ChatHeader({
     (conversation.channelAccountName ? `· ${conversation.channelAccountName}` : '')
 
   return (
-    <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border-subtle bg-bg-primary/95 px-4 py-3 backdrop-blur">
+    <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border-subtle bg-bg-primary/95 px-4 py-3 pt-safe backdrop-blur">
       {/* Left cluster | back + avatar + identity */}
       <div className="flex min-w-0 items-center gap-3">
         <Button

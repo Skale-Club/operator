@@ -215,6 +215,13 @@ export interface ContactDetail extends ContactRow {
     label: string
     type: string
   }>
+  /** SEED-039: linked account (resolved from `account_id`). */
+  account: {
+    id: string
+    name: string
+    website: string | null
+    address: string | null
+  } | null
 }
 
 export async function getContact(id: string): Promise<ContactDetail | null> {
@@ -306,6 +313,25 @@ export async function getContact(id: string): Promise<ContactDetail | null> {
     ? defsResult.data.map((d) => ({ id: d.id, key: d.key, label: d.label, type: d.type as string }))
     : []
 
+  // SEED-039: resolve linked account when set so the panel can render a
+  // clickable "Company" link and surface the account address.
+  let account: ContactDetail['account'] = null
+  if ((contact as ContactRow).account_id) {
+    const { data: acct } = await supabase
+      .from('accounts')
+      .select('id, name, website, address')
+      .eq('id', (contact as ContactRow).account_id!)
+      .maybeSingle()
+    if (acct) {
+      account = {
+        id: acct.id,
+        name: acct.name,
+        website: acct.website ?? null,
+        address: acct.address ?? null,
+      }
+    }
+  }
+
   return {
     ...(contact as ContactRow),
     tagIds,
@@ -317,6 +343,7 @@ export async function getContact(id: string): Promise<ContactDetail | null> {
     bookings: bookingRows,
     contact_notes: (notes ?? []) as ContactDetail['contact_notes'],
     customFieldDefs,
+    account,
   }
 }
 

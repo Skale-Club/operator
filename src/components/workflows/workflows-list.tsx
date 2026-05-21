@@ -30,6 +30,7 @@ import { formatDistanceToNow, parseISO } from 'date-fns'
 import { toast } from 'sonner'
 
 import { Card, CardContent } from '@/components/ui/card'
+import { NewWorkflowButton } from '@/components/flows/new-workflow-button'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -158,13 +159,9 @@ export function WorkflowsList({ workflows, folders = [] }: Props) {
           <p className="text-sm text-text-secondary mb-4">
             Build your first workflow visually, or ask Copilot to create one from a single sentence.
           </p>
-          <Link
-            href="/workflows/flows/new"
-            className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline"
-          >
-            <WorkflowIcon className="h-3.5 w-3.5" />
-            Create your first workflow
-          </Link>
+          <div className="inline-block">
+            <NewWorkflowButton />
+          </div>
         </CardContent>
       </Card>
     )

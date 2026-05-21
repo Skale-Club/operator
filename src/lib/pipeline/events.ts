@@ -29,6 +29,13 @@ export type OpportunityEventType =
   | 'opportunity.assigned'
   | 'opportunity.value_changed'
   | 'opportunity.deleted'
+  // Time-based events emitted by src/app/api/cron/scheduling-tick/route.ts
+  // (SEED-036 scheduler). These are NOT emitted on user request paths.
+  | 'opportunity.aged_in_stage'
+  | 'opportunity.no_activity'
+  | 'opportunity.close_date_approaching'
+  | 'opportunity.close_date_passed'
+  | 'opportunity.stale'
 
 export const OPPORTUNITY_EVENTS: readonly OpportunityEventType[] = [
   'opportunity.created',
@@ -40,6 +47,19 @@ export const OPPORTUNITY_EVENTS: readonly OpportunityEventType[] = [
   'opportunity.assigned',
   'opportunity.value_changed',
   'opportunity.deleted',
+  'opportunity.aged_in_stage',
+  'opportunity.no_activity',
+  'opportunity.close_date_approaching',
+  'opportunity.close_date_passed',
+  'opportunity.stale',
+] as const
+
+export const OPPORTUNITY_TIME_BASED_EVENTS: readonly OpportunityEventType[] = [
+  'opportunity.aged_in_stage',
+  'opportunity.no_activity',
+  'opportunity.close_date_approaching',
+  'opportunity.close_date_passed',
+  'opportunity.stale',
 ] as const
 
 export interface OpportunityEventPayload {
