@@ -27,7 +27,7 @@
 //     filters so the "Showing 1–30 of N" range matches what the user sees.
 
 import { createClient, getUser } from '@/lib/supabase/server'
-import type { ConversationSummary, ConversationPriority } from '@/types/chat'
+import type { ConversationSummary, ConversationPriority, ConversationStatus } from '@/types/chat'
 
 export const runtime = 'nodejs'
 
@@ -141,7 +141,7 @@ export async function GET(request: Request): Promise<Response> {
     const pageId = meta?.page_id
     return {
       id: row.id as string,
-      status: row.status as string,
+      status: row.status as ConversationStatus,
       createdAt: row.created_at as string,
       updatedAt: row.updated_at as string,
       lastMessageAt: (row.last_message_at as string | null) ?? null,

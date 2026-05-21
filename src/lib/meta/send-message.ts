@@ -2,6 +2,7 @@
 // Sole caller of Meta Graph API Send endpoint.
 // Import META_GRAPH_VERSION | never hardcode 'v21.0'.
 import { META_GRAPH_VERSION } from '@/lib/meta/oauth'
+import type { MetaOutboundMedia } from './types'
 
 type SendSuccess = { messageId: string }
 type SendError   = { error: string; code?: number }
@@ -9,11 +10,17 @@ type SendError   = { error: string; code?: number }
 export async function sendMetaMessage(
   pageToken: string,
   recipientId: string,
-  text: string
+  text: string,
+  media?: MetaOutboundMedia,
 ): Promise<SendSuccess | SendError> {
   const url = `https://graph.facebook.com/${META_GRAPH_VERSION}/me/messages`
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 10_000)
+
+  // Build message payload: media attachment takes precedence when provided.
+  const messagePayload = media
+    ? { attachment: { type: media.type, payload: { url: media.url, is_reusable: true } } }
+    : { text }
 
   try {
     const res = await fetch(url, {
@@ -25,7 +32,7 @@ export async function sendMetaMessage(
       },
       body: JSON.stringify({
         recipient: { id: recipientId },
-        message: { text },
+        message: messagePayload,
         messaging_type: 'RESPONSE',
       }),
     })

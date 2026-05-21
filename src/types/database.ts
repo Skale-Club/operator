@@ -293,7 +293,7 @@ export interface Database {
         Row: {
           id: string
           organization_id: string
-          provider: 'gohighlevel' | 'twilio' | 'calcom' | 'custom_webhook' | 'openai' | 'anthropic' | 'openrouter' | 'vapi' | 'manychat' | 'google_contacts' | 'google_calendar'
+          provider: 'gohighlevel' | 'twilio' | 'calcom' | 'custom_webhook' | 'openai' | 'anthropic' | 'openrouter' | 'vapi' | 'manychat' | 'google_contacts' | 'google_calendar' | 'telegram'
           name: string
           encrypted_api_key: string
           key_hint: string | null
@@ -311,7 +311,7 @@ export interface Database {
         Insert: {
           id?: string
           organization_id: string
-          provider: 'gohighlevel' | 'twilio' | 'calcom' | 'custom_webhook' | 'openai' | 'anthropic' | 'openrouter' | 'vapi' | 'manychat' | 'google_contacts' | 'google_calendar'
+          provider: 'gohighlevel' | 'twilio' | 'calcom' | 'custom_webhook' | 'openai' | 'anthropic' | 'openrouter' | 'vapi' | 'manychat' | 'google_contacts' | 'google_calendar' | 'telegram'
           name: string
           encrypted_api_key: string
           key_hint?: string | null
@@ -415,7 +415,7 @@ export interface Database {
           organization_id: string
           integration_id: string | null
           tool_name: string
-          action_type: 'create_contact' | 'get_availability' | 'create_appointment' | 'send_sms' | 'knowledge_base' | 'custom_webhook' | 'manychat_set_field' | 'manychat_add_tag' | 'manychat_trigger_flow' | 'manychat_send_message' | 'google_contacts_create' | 'google_contacts_update' | 'google_contacts_find' | 'google_contacts_delete' | 'send_whatsapp_message' | 'send_whatsapp_mention_all'
+          action_type: 'create_contact' | 'get_availability' | 'create_appointment' | 'send_sms' | 'knowledge_base' | 'custom_webhook' | 'manychat_set_field' | 'manychat_add_tag' | 'manychat_trigger_flow' | 'manychat_send_message' | 'google_contacts_create' | 'google_contacts_update' | 'google_contacts_find' | 'google_contacts_delete' | 'send_whatsapp_message' | 'send_whatsapp_mention_all' | 'send_telegram_notification' | 'pipeline_move_opportunity' | 'pipeline_update_opportunity' | 'pipeline_mark_won' | 'pipeline_mark_lost' | 'pipeline_add_note' | 'pipeline_assign_user' | 'pipeline_create_opportunity'
           config: Json
           fallback_message: string
           is_active: boolean
@@ -429,7 +429,7 @@ export interface Database {
           organization_id: string
           integration_id?: string | null
           tool_name: string
-          action_type: 'create_contact' | 'get_availability' | 'create_appointment' | 'send_sms' | 'knowledge_base' | 'custom_webhook' | 'manychat_set_field' | 'manychat_add_tag' | 'manychat_trigger_flow' | 'manychat_send_message' | 'google_contacts_create' | 'google_contacts_update' | 'google_contacts_find' | 'google_contacts_delete' | 'send_whatsapp_message' | 'send_whatsapp_mention_all'
+          action_type: 'create_contact' | 'get_availability' | 'create_appointment' | 'send_sms' | 'knowledge_base' | 'custom_webhook' | 'manychat_set_field' | 'manychat_add_tag' | 'manychat_trigger_flow' | 'manychat_send_message' | 'google_contacts_create' | 'google_contacts_update' | 'google_contacts_find' | 'google_contacts_delete' | 'send_whatsapp_message' | 'send_whatsapp_mention_all' | 'send_telegram_notification' | 'pipeline_move_opportunity' | 'pipeline_update_opportunity' | 'pipeline_mark_won' | 'pipeline_mark_lost' | 'pipeline_add_note' | 'pipeline_assign_user' | 'pipeline_create_opportunity'
           config?: Json
           fallback_message: string
           is_active?: boolean
@@ -441,7 +441,7 @@ export interface Database {
         Update: {
           integration_id?: string | null
           tool_name?: string
-          action_type?: 'create_contact' | 'get_availability' | 'create_appointment' | 'send_sms' | 'knowledge_base' | 'custom_webhook' | 'manychat_set_field' | 'manychat_add_tag' | 'manychat_trigger_flow' | 'manychat_send_message' | 'google_contacts_create' | 'google_contacts_update' | 'google_contacts_find' | 'google_contacts_delete' | 'send_whatsapp_message' | 'send_whatsapp_mention_all'
+          action_type?: 'create_contact' | 'get_availability' | 'create_appointment' | 'send_sms' | 'knowledge_base' | 'custom_webhook' | 'manychat_set_field' | 'manychat_add_tag' | 'manychat_trigger_flow' | 'manychat_send_message' | 'google_contacts_create' | 'google_contacts_update' | 'google_contacts_find' | 'google_contacts_delete' | 'send_whatsapp_message' | 'send_whatsapp_mention_all' | 'send_telegram_notification' | 'pipeline_move_opportunity' | 'pipeline_update_opportunity' | 'pipeline_mark_won' | 'pipeline_mark_lost' | 'pipeline_add_note' | 'pipeline_assign_user' | 'pipeline_create_opportunity'
           config?: Json
           fallback_message?: string
           is_active?: boolean
@@ -653,7 +653,8 @@ export interface Database {
           id: string
           organization_id: string
           agent_id: string
-          tool_config_id: string
+          tool_config_id: string | null
+          workflow_id: string | null
           allowed_channels: AgentChannel[] | null
           created_at: string
         }
@@ -661,11 +662,14 @@ export interface Database {
           id?: string
           organization_id: string
           agent_id: string
-          tool_config_id: string
+          tool_config_id?: string | null
+          workflow_id?: string | null
           allowed_channels?: AgentChannel[] | null
           created_at?: string
         }
         Update: {
+          tool_config_id?: string | null
+          workflow_id?: string | null
           allowed_channels?: AgentChannel[] | null
         }
         Relationships: [
@@ -688,6 +692,13 @@ export interface Database {
             columns: ['tool_config_id']
             isOneToOne: false
             referencedRelation: 'tool_configs'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'agent_tools_workflow_id_fkey'
+            columns: ['workflow_id']
+            isOneToOne: false
+            referencedRelation: 'workflows'
             referencedColumns: ['id']
           }
         ]
@@ -1335,7 +1346,8 @@ export interface Database {
           evolution_instance_id: string | null
           pinned: boolean
           priority: string
-          typing_at: string | null
+          starred: boolean
+          wait_until: string | null
         }
         Insert: {
           id?: string
@@ -1363,7 +1375,8 @@ export interface Database {
           evolution_instance_id?: string | null
           pinned?: boolean
           priority?: string
-          typing_at?: string | null
+          starred?: boolean
+          wait_until?: string | null
         }
         Update: {
           status?: string
@@ -1385,7 +1398,8 @@ export interface Database {
           evolution_instance_id?: string | null
           pinned?: boolean
           priority?: string
-          typing_at?: string | null
+          starred?: boolean
+          wait_until?: string | null
         }
         Relationships: [
           {
@@ -1406,6 +1420,8 @@ export interface Database {
           content: string
           created_at: string
           metadata: Record<string, unknown> | null
+          message_type: string
+          channel: string | null
         }
         Insert: {
           id?: string
@@ -1415,11 +1431,15 @@ export interface Database {
           content: string
           created_at?: string
           metadata?: Record<string, unknown> | null
+          message_type?: string
+          channel?: string | null
         }
         Update: {
           role?: string
           content?: string
           metadata?: Record<string, unknown> | null
+          message_type?: string
+          channel?: string | null
         }
         Relationships: [
           {
@@ -2039,6 +2059,7 @@ export interface Database {
           name: string
           is_default: boolean
           position: number
+          card_fields: Json
           created_at: string
           updated_at: string
         }
@@ -2048,6 +2069,7 @@ export interface Database {
           name: string
           is_default?: boolean
           position?: number
+          card_fields?: Json
           created_at?: string
           updated_at?: string
         }
@@ -2055,6 +2077,7 @@ export interface Database {
           name?: string
           is_default?: boolean
           position?: number
+          card_fields?: Json
           updated_at?: string
         }
         Relationships: [
@@ -2698,6 +2721,8 @@ export interface Database {
           location_type: 'video' | 'phone' | 'in_person'
           location_value: string | null
           active: boolean
+          allowed_location_kinds: string[]
+          default_store_location_id: string | null
           created_at: string
           updated_at: string
         }
@@ -2713,6 +2738,8 @@ export interface Database {
           location_type?: 'video' | 'phone' | 'in_person'
           location_value?: string | null
           active?: boolean
+          allowed_location_kinds?: string[]
+          default_store_location_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -2725,6 +2752,8 @@ export interface Database {
           location_type?: 'video' | 'phone' | 'in_person'
           location_value?: string | null
           active?: boolean
+          allowed_location_kinds?: string[]
+          default_store_location_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -3085,6 +3114,8 @@ export interface Database {
           updated_at: string
           // v2.0 (Phase 33, migration 039 | CHAN-06): NULL = legacy tool_config_id dispatch
           agent_id: string | null
+          // migration 094: provider abstraction ('direct' | 'manychat')
+          provider: string
         }
         Insert: {
           id?: string
@@ -3105,6 +3136,7 @@ export interface Database {
           created_at?: string
           updated_at?: string
           agent_id?: string | null
+          provider?: string
         }
         Update: {
           channel_type?: MetaChannelType
@@ -3121,6 +3153,7 @@ export interface Database {
           config?: Json
           updated_at?: string
           agent_id?: string | null
+          provider?: string
         }
         Relationships: [
           {
@@ -3549,6 +3582,10 @@ export interface Database {
           health_blocked: boolean
           health_blocked_reason: string | null
           legacy_tool_config_id: string | null
+          folder_id: string | null
+          position: number
+          archived_at: string | null
+          deleted_at: string | null
         }
         Insert: {
           id?: string
@@ -3568,6 +3605,10 @@ export interface Database {
           health_blocked?: boolean
           health_blocked_reason?: string | null
           legacy_tool_config_id?: string | null
+          folder_id?: string | null
+          position?: number
+          archived_at?: string | null
+          deleted_at?: string | null
         }
         Update: {
           id?: string
@@ -3587,6 +3628,10 @@ export interface Database {
           health_blocked?: boolean
           health_blocked_reason?: string | null
           legacy_tool_config_id?: string | null
+          folder_id?: string | null
+          position?: number
+          archived_at?: string | null
+          deleted_at?: string | null
         }
         Relationships: [
           {
@@ -3922,12 +3967,354 @@ export interface Database {
         }
         Relationships: []
       }
+      whatsapp_providers: {
+        Row: {
+          id: string
+          org_id: string
+          provider: 'evolution' | 'zapi' | 'wapi'
+          display_name: string
+          phone_number: string | null
+          status: 'disconnected' | 'connecting' | 'connected' | 'qr_pending' | 'error'
+          is_active: boolean
+          config_encrypted: string
+          webhook_secret_encrypted: string | null
+          last_error: string | null
+          connected_at: string | null
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          org_id: string
+          provider: 'evolution' | 'zapi' | 'wapi'
+          display_name?: string
+          phone_number?: string | null
+          status?: 'disconnected' | 'connecting' | 'connected' | 'qr_pending' | 'error'
+          is_active?: boolean
+          config_encrypted: string
+          webhook_secret_encrypted?: string | null
+          last_error?: string | null
+          connected_at?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          display_name?: string
+          phone_number?: string | null
+          status?: 'disconnected' | 'connecting' | 'connected' | 'qr_pending' | 'error'
+          is_active?: boolean
+          config_encrypted?: string
+          webhook_secret_encrypted?: string | null
+          last_error?: string | null
+          connected_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'whatsapp_providers_org_id_fkey'
+            columns: ['org_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      integration_health_checks: {
+        Row: {
+          id: string
+          integration_id: string
+          organization_id: string
+          status: 'connected' | 'degraded' | 'disconnected'
+          latency_ms: number | null
+          error: string | null
+          checked_at: string
+        }
+        Insert: {
+          id?: string
+          integration_id: string
+          organization_id: string
+          status: 'connected' | 'degraded' | 'disconnected'
+          latency_ms?: number | null
+          error?: string | null
+          checked_at?: string
+        }
+        Update: Record<string, never>
+        Relationships: [
+          {
+            foreignKeyName: 'integration_health_checks_integration_id_fkey'
+            columns: ['integration_id']
+            isOneToOne: false
+            referencedRelation: 'integrations'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'integration_health_checks_organization_id_fkey'
+            columns: ['organization_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      conversation_reads: {
+        Row: {
+          conversation_id: string
+          user_id: string
+          read_at: string
+        }
+        Insert: {
+          conversation_id: string
+          user_id: string
+          read_at?: string
+        }
+        Update: {
+          read_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'conversation_reads_conversation_id_fkey'
+            columns: ['conversation_id']
+            isOneToOne: false
+            referencedRelation: 'conversations'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      conversation_labels: {
+        Row: {
+          id: string
+          org_id: string
+          name: string
+          color: string
+          position: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          org_id: string
+          name: string
+          color?: string
+          position?: number
+          created_at?: string
+        }
+        Update: {
+          name?: string
+          color?: string
+          position?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'conversation_labels_org_id_fkey'
+            columns: ['org_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      conversation_label_assignments: {
+        Row: {
+          conversation_id: string
+          label_id: string
+          created_at: string
+        }
+        Insert: {
+          conversation_id: string
+          label_id: string
+          created_at?: string
+        }
+        Update: Record<string, never>
+        Relationships: [
+          {
+            foreignKeyName: 'conversation_label_assignments_conversation_id_fkey'
+            columns: ['conversation_id']
+            isOneToOne: false
+            referencedRelation: 'conversations'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'conversation_label_assignments_label_id_fkey'
+            columns: ['label_id']
+            isOneToOne: false
+            referencedRelation: 'conversation_labels'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      workflow_folders: {
+        Row: {
+          id: string
+          org_id: string
+          name: string
+          color: string | null
+          icon: string | null
+          parent_id: string | null
+          position: number
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          org_id: string
+          name: string
+          color?: string | null
+          icon?: string | null
+          parent_id?: string | null
+          position?: number
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          name?: string
+          color?: string | null
+          icon?: string | null
+          parent_id?: string | null
+          position?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'workflow_folders_org_id_fkey'
+            columns: ['org_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      scheduled_opportunity_ticks: {
+        Row: {
+          id: string
+          org_id: string
+          workflow_id: string
+          opportunity_id: string
+          event_type: string
+          fire_at: string
+          fired: boolean
+          fired_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          org_id: string
+          workflow_id: string
+          opportunity_id: string
+          event_type: string
+          fire_at: string
+          fired?: boolean
+          fired_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          fired?: boolean
+          fired_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'scheduled_opportunity_ticks_org_id_fkey'
+            columns: ['org_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'scheduled_opportunity_ticks_workflow_id_fkey'
+            columns: ['workflow_id']
+            isOneToOne: false
+            referencedRelation: 'workflows'
+            referencedColumns: ['id']
+          }
+        ]
+      }
+      telegram_bots: {
+        Row: {
+          id: string
+          org_id: string
+          bot_token_encrypted: string
+          bot_username: string | null
+          bot_name: string | null
+          notification_chat_ids: string[]
+          automation_enabled: boolean
+          agent_id: string | null
+          is_active: boolean
+          webhook_set: boolean
+          last_error: string | null
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          org_id: string
+          bot_token_encrypted: string
+          bot_username?: string | null
+          bot_name?: string | null
+          notification_chat_ids?: string[]
+          automation_enabled?: boolean
+          agent_id?: string | null
+          is_active?: boolean
+          webhook_set?: boolean
+          last_error?: string | null
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          bot_token_encrypted?: string
+          bot_username?: string | null
+          bot_name?: string | null
+          notification_chat_ids?: string[]
+          automation_enabled?: boolean
+          agent_id?: string | null
+          is_active?: boolean
+          webhook_set?: boolean
+          last_error?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'telegram_bots_org_id_fkey'
+            columns: ['org_id']
+            isOneToOne: false
+            referencedRelation: 'organizations'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'telegram_bots_agent_id_fkey'
+            columns: ['agent_id']
+            isOneToOne: false
+            referencedRelation: 'agents'
+            referencedColumns: ['id']
+          }
+        ]
+      }
     }
     Views: Record<string, never>
     Functions: {
       get_current_org_id: {
         Args: Record<string, never>
         Returns: string | null
+      }
+      get_org_member_profiles: {
+        Args: {
+          p_org_id: string
+          p_page?: number
+          p_per_page?: number
+        }
+        Returns: Array<{
+          id: string
+          user_id: string
+          role: string
+          joined_at: string
+          email: string | null
+          phone: string | null
+          full_name: string | null
+          total_count: number
+        }>
       }
       match_documents: {
         Args: {
@@ -3944,8 +4331,8 @@ export interface Database {
     }
     Enums: {
       user_role: UserRole
-      action_type: 'create_contact' | 'get_availability' | 'create_appointment' | 'send_sms' | 'knowledge_base' | 'custom_webhook' | 'manychat_set_field' | 'manychat_add_tag' | 'manychat_trigger_flow' | 'manychat_send_message' | 'google_contacts_create' | 'google_contacts_update' | 'google_contacts_find' | 'google_contacts_delete' | 'send_whatsapp_message' | 'send_whatsapp_mention_all'
-      integration_provider: 'gohighlevel' | 'twilio' | 'calcom' | 'custom_webhook' | 'openai' | 'anthropic' | 'openrouter' | 'vapi' | 'manychat' | 'google_contacts' | 'google_calendar'
+      action_type: 'create_contact' | 'get_availability' | 'create_appointment' | 'send_sms' | 'knowledge_base' | 'custom_webhook' | 'manychat_set_field' | 'manychat_add_tag' | 'manychat_trigger_flow' | 'manychat_send_message' | 'google_contacts_create' | 'google_contacts_update' | 'google_contacts_find' | 'google_contacts_delete' | 'send_whatsapp_message' | 'send_whatsapp_mention_all' | 'send_telegram_notification' | 'pipeline_move_opportunity' | 'pipeline_update_opportunity' | 'pipeline_mark_won' | 'pipeline_mark_lost' | 'pipeline_add_note' | 'pipeline_assign_user' | 'pipeline_create_opportunity'
+      integration_provider: 'gohighlevel' | 'twilio' | 'calcom' | 'custom_webhook' | 'openai' | 'anthropic' | 'openrouter' | 'vapi' | 'manychat' | 'google_contacts' | 'google_calendar' | 'telegram'
       // v2.0 (Phase 33) | agent runtime enums (migrations 034, 037)
       agent_channel: AgentChannel
       agent_invocation_status: AgentInvocationStatus

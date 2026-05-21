@@ -34,6 +34,8 @@ interface MessageListProps {
   isAgentThinking?: boolean
   /** OBS-08: Maps agent_id → agent name for per-message badges. */
   agentMap?: Record<string, string>
+  /** SEED-039: primary channel of the conversation for per-message badge fallback. */
+  primaryChannel?: string
 }
 
 function formatTime(iso: string): string {

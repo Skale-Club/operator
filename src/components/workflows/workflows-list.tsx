@@ -28,8 +28,23 @@ interface WorkflowSummary {
   updated_at: string
 }
 
+interface WorkflowFolder {
+  id: string
+  org_id: string
+  name: string
+  color: string | null
+  icon: string | null
+  parent_id: string | null
+  position: number
+  created_by: string | null
+  created_at: string
+  updated_at: string
+}
+
 interface Props {
   workflows: WorkflowSummary[]
+  // SEED-038: folder sidebar — passed from page, UI not yet wired
+  folders?: WorkflowFolder[]
 }
 
 const TRIGGER_META: Record<

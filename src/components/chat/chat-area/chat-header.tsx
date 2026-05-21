@@ -12,7 +12,7 @@
  * stays on its own path because it has loading state.
  */
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import {
   ArrowLeft,
   Archive,
@@ -31,7 +31,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 
-import { ConversationSummary, ConversationPriority } from '@/types/chat'
+import { ConversationSummary, ConversationPriority, ConversationStatus, ConversationLabel } from '@/types/chat'
 import { ChannelBadge, type Channel } from '@/components/design-system/channel-badge'
 import { StatusPill } from '@/components/design-system/status-pill'
 import { Button } from '@/components/ui/button'
@@ -82,19 +82,32 @@ const PRIORITY_CYCLE: Record<ConversationPriority, ConversationPriority> = {
 interface ChatHeaderProps {
   conversation: ConversationSummary
   onBack: () => void
-  onStatusChange: (status: 'open' | 'closed') => void
+  /** SEED-035: accepts expanded status set + optional wait_until for snooze. */
+  onStatusChange: (status: ConversationStatus, waitUntil?: string | null) => void
   onDelete: () => void
   onBotStatusToggle: (id: string, currentStatus: string) => void
   isBotToggling: boolean
   onPinToggle: (id: string, pinned: boolean) => void
   onPriorityCycle: (id: string, next: ConversationPriority) => void
   onAssign: (id: string, userId: string | null) => void
+  /** SEED-035: star/unstar conversation. */
+  onStarToggle?: (id: string, starred: boolean) => void
+  /** SEED-035: org-wide labels for the label picker. */
+  orgLabels?: Array<{ id: string; name: string; color: string }>
+  /** SEED-035: mutate the labels assigned to this conversation. */
+  onLabelsChange?: (id: string, labels: ConversationLabel[]) => void
   members: OrgMember[]
   /** Right contact-info panel visible? */
   infoPanelOpen: boolean
   onToggleInfoPanel: () => void
   /** Phone for the "Call" quick-action | null hides the button. */
   callPhone?: string | null
+  /** SEED-039: distinct channels present in this thread. */
+  threadChannels?: string[]
+  /** SEED-039: active channel filter (null = all). */
+  channelFilter?: string[] | null
+  /** SEED-039: update the channel filter. */
+  onChannelFilterChange?: React.Dispatch<React.SetStateAction<string[] | null>>
 }
 
 export function ChatHeader({
@@ -107,10 +120,16 @@ export function ChatHeader({
   onPinToggle,
   onPriorityCycle,
   onAssign,
+  onStarToggle: _onStarToggle,
+  orgLabels: _orgLabels,
+  onLabelsChange: _onLabelsChange,
   members,
   infoPanelOpen,
   onToggleInfoPanel,
   callPhone,
+  threadChannels: _threadChannels,
+  channelFilter: _channelFilter,
+  onChannelFilterChange: _onChannelFilterChange,
 }: ChatHeaderProps) {
   const [showDelete, setShowDelete] = useState(false)
   const name = conversation.visitorName ?? conversation.visitorPhone ?? conversation.visitorEmail ?? 'Anonymous'

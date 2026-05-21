@@ -11,7 +11,7 @@
  *   - Optional typing broadcast via onTyping callback (debounced 500ms)
  */
 
-import { KeyboardEvent, useEffect, useRef, useState } from 'react'
+import React, { KeyboardEvent, useEffect, useRef, useState } from 'react'
 import { Send, Paperclip, Smile, Mic } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -22,6 +22,12 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
+
+/** SEED-039: channel the message will be sent on. */
+export type ComposerChannel = {
+  channel: string
+  label: string
+}
 
 interface MessageComposerProps {
   onSendMessage: (content: string) => Promise<void>
@@ -34,6 +40,12 @@ interface MessageComposerProps {
   /** Optional hint banner (e.g. "Bot is active | pause bot to send manually"). */
   disabledHint?: string
   onResumeManual?: () => void
+  /** SEED-039: channels this contact can be reached on. */
+  availableChannels?: ComposerChannel[]
+  /** SEED-039: currently selected outbound channel. */
+  activeChannel?: string
+  /** SEED-039: callback when the operator switches channel. */
+  onActiveChannelChange?: React.Dispatch<React.SetStateAction<string | null>>
 }
 
 const MAX_ROWS = 8
@@ -45,6 +57,9 @@ export function MessageComposer({
   disabled,
   disabledHint,
   onResumeManual,
+  availableChannels: _availableChannels,
+  activeChannel: _activeChannel,
+  onActiveChannelChange: _onActiveChannelChange,
 }: MessageComposerProps) {
   const [value, setValue] = useState('')
   const [isSending, setIsSending] = useState(false)

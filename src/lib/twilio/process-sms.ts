@@ -24,6 +24,16 @@ export type TwilioSmsPayload = {
   MessageSid: string
   AccountSid?: string
   NumMedia?: string
+  // MMS media attachments (up to 10)
+  MediaUrl0?: string; MediaUrl1?: string; MediaUrl2?: string; MediaUrl3?: string
+  MediaUrl4?: string; MediaUrl5?: string; MediaUrl6?: string; MediaUrl7?: string
+  MediaUrl8?: string; MediaUrl9?: string
+  MediaContentType0?: string; MediaContentType1?: string; MediaContentType2?: string
+  MediaContentType3?: string; MediaContentType4?: string; MediaContentType5?: string
+  MediaContentType6?: string; MediaContentType7?: string; MediaContentType8?: string
+  MediaContentType9?: string
+  // Twilio auth token passed internally for media download | never stored
+  _authToken?: string
 }
 
 export async function processTwilioSms(

@@ -32,6 +32,7 @@ import {
   ConversationSummary,
   ConversationMessage,
   ConversationPriority,
+  ConversationStatus,
 } from '@/types/chat'
 import {
   toggleBotStatus,
@@ -65,7 +66,7 @@ function mapConversationRow(row: Record<string, unknown>): ConversationSummary {
   const pageId = meta?.page_id ?? null
   return {
     id: row.id as string,
-    status: (row.status as string) ?? 'open',
+    status: ((row.status as string) ?? 'open') as ConversationStatus,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
     lastMessageAt: (row.last_message_at as string | null) ?? null,
@@ -412,7 +413,7 @@ export function ChatLayout({ currentOrgId, currentUserId, agentMap }: ChatLayout
     }
   }
 
-  async function handleStatusChange(status: 'open' | 'closed') {
+  async function handleStatusChange(status: ConversationStatus) {
     if (!selectedId) return
     try {
       await fetch(`/api/chat/conversations/${selectedId}/status`, {

@@ -2,10 +2,11 @@ import { Suspense } from 'react'
 import { UsersRound } from 'lucide-react'
 
 import { listMembers, listInvites, inviteMember, revokeInvite, removeMember } from './actions'
-
-const PER_PAGE = 10
 import { MembersClient } from './members-client'
 import { PageContainer, PageHeader } from '@/components/layout/page-header'
+import { Badge } from '@/components/ui/badge'
+
+const PER_PAGE = 10
 
 export const dynamic = 'force-dynamic'
 
@@ -29,6 +30,7 @@ export default async function MembersPage({ searchParams }: Props) {
         eyebrowIcon={UsersRound}
         title="Members"
         description="Manage team members and invitations for this organization."
+        actions={<Badge variant="secondary">{total}</Badge>}
       />
       <Suspense fallback={null}>
         <MembersClient
