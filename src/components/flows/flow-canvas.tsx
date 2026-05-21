@@ -128,6 +128,7 @@ function CanvasInner({ workflowId, workflowName, isActive, initialDefinition, ac
             <Controls
               className="!bg-bg-secondary !border !border-border-subtle !rounded-[10px] !shadow-lg overflow-hidden [&>button]:!bg-transparent [&>button]:!border-0 [&>button]:!border-b [&>button]:!border-border-subtle [&>button:last-child]:!border-b-0 [&>button]:!text-text-secondary [&>button:hover]:!text-text-primary [&>button:hover]:!bg-bg-tertiary [&>button>svg]:!fill-current"
               showInteractive={false}
+              style={{ bottom: 32, left: 16 }}
             />
             <MiniMap
               nodeStrokeWidth={3}
@@ -137,6 +138,7 @@ function CanvasInner({ workflowId, workflowName, isActive, initialDefinition, ac
               nodeBorderRadius={6}
               maskColor="rgba(8, 9, 10, 0.7)"
               className="!bg-bg-secondary !border !border-border-subtle !rounded-[10px]"
+              style={{ bottom: 32, right: 16 }}
             />
           </ReactFlow>
         </div>
