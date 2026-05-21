@@ -1,11 +1,18 @@
 ---
 id: SEED-042
-status: planted
+status: complete
 planted: 2026-05-20
+shipped: 2026-05-21
 trigger_when: now (autonomous execution)
 scope: Large
 priority: high
 depends_on: [SEED-031]
+phases_pending:
+  - Real brand SVG logos (currently letter-avatar fallback for all entries)
+  - Twilio Voice SDK and SIP tabs are stubs that link to /integrations/twilio
+  - OpenRouter live model fetch falls back to a curated static list when the
+    proxy returns empty (e.g. no key configured yet)
+  - Legacy per-integration sub-pages still live (additive rollout)
 ---
 
 # SEED-042: Integrations Page — Redesign Completo

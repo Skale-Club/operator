@@ -199,6 +199,210 @@ export async function testConnection(
   }
 }
 
+// ────────────────────────────────────────────────────────────────────────────
+// SEED-042 — Registry-driven helpers
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Test arbitrary credentials BEFORE they are persisted. Used by the unified
+ * /integrations panel to gate the Save button. Returns ok=true when a minimal
+ * API ping succeeds for the provider.
+ */
+export async function testIntegrationConnection(
+  provider: string,
+  credentials: Record<string, string>,
+): Promise<{ ok: boolean; error?: string }> {
+  const user = await getUser()
+  if (!user) return { ok: false, error: 'Not authenticated.' }
+
+  const apiKey = credentials.api_key ?? ''
+  if (!apiKey) return { ok: false, error: 'API key is required.' }
+
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 5000)
+
+  try {
+    if (provider === 'gohighlevel') {
+      const locationId = credentials.location_id ?? ''
+      if (!locationId) return { ok: false, error: 'Location ID is required.' }
+      const res = await fetch(
+        `https://services.leadconnectorhq.com/contacts/?locationId=${encodeURIComponent(locationId)}&limit=1`,
+        {
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            Version: '2021-07-28',
+          },
+          signal: controller.signal,
+        },
+      )
+      if (res.ok) return { ok: true }
+      return { ok: false, error: `GoHighLevel returned ${res.status}` }
+    }
+
+    if (provider === 'openrouter') {
+      const res = await fetch('https://openrouter.ai/api/v1/models', {
+        headers: { Authorization: `Bearer ${apiKey}` },
+        signal: controller.signal,
+      })
+      if (res.ok) return { ok: true }
+      return { ok: false, error: `OpenRouter returned ${res.status}` }
+    }
+
+    if (provider === 'vapi') {
+      const res = await fetch('https://api.vapi.ai/assistant', {
+        headers: { Authorization: `Bearer ${apiKey}` },
+        signal: controller.signal,
+      })
+      if (res.ok) return { ok: true }
+      return { ok: false, error: `Vapi returned ${res.status}` }
+    }
+
+    if (provider === 'calcom') {
+      const res = await fetch(
+        `https://api.cal.com/v1/me?apiKey=${encodeURIComponent(apiKey)}`,
+        { signal: controller.signal },
+      )
+      if (res.ok) return { ok: true }
+      return { ok: false, error: `Cal.com returned ${res.status}` }
+    }
+
+    if (provider === 'manychat') {
+      const res = await fetch('https://api.manychat.com/fb/page/getInfo', {
+        headers: { Authorization: `Bearer ${apiKey}` },
+        signal: controller.signal,
+      })
+      if (res.ok) return { ok: true }
+      return { ok: false, error: `ManyChat returned ${res.status}` }
+    }
+
+    if (provider === 'twilio') {
+      const accountSid = credentials.account_sid ?? apiKey
+      const authToken = credentials.auth_token ?? credentials.api_key ?? ''
+      if (!accountSid || !authToken) {
+        return { ok: false, error: 'Account SID and Auth Token are required.' }
+      }
+      const auth = Buffer.from(`${accountSid}:${authToken}`).toString('base64')
+      const res = await fetch(
+        `https://api.twilio.com/2010-04-01/Accounts/${encodeURIComponent(accountSid)}.json`,
+        {
+          headers: { Authorization: `Basic ${auth}` },
+          signal: controller.signal,
+        },
+      )
+      if (res.ok) return { ok: true }
+      return { ok: false, error: `Twilio returned ${res.status}` }
+    }
+
+    // No test path defined — assume callers will handle the unconfigured case.
+    return { ok: false, error: `No test endpoint defined for ${provider}` }
+  } catch (err) {
+    if (err instanceof Error && err.name === 'AbortError') {
+      return { ok: false, error: 'Connection timed out after 5 seconds.' }
+    }
+    return { ok: false, error: err instanceof Error ? err.message : 'Unknown error.' }
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
+/**
+ * Save (insert or update) credentials for a provider. The api_key column is
+ * encrypted at rest; the other fields land on `config` JSONB or `location_id`.
+ * Does NOT toggle is_active — use toggleIntegrationActive separately.
+ */
+export async function saveIntegrationCredentials(
+  provider: string,
+  credentials: Record<string, string>,
+): Promise<{ ok: boolean; error?: string }> {
+  const user = await getUser()
+  if (!user) return { ok: false, error: 'Not authenticated.' }
+  const supabase = await createClient()
+
+  const { data: orgId, error: orgError } = await supabase.rpc('get_current_org_id')
+  if (orgError || !orgId) return { ok: false, error: 'No active organization.' }
+
+  const apiKey = credentials.api_key ?? ''
+  if (!apiKey) return { ok: false, error: 'API key is required.' }
+
+  const locationId = credentials.location_id ?? null
+  const config: Record<string, string> = { ...credentials }
+  delete config.api_key
+  delete config.location_id
+
+  // Find an existing row for this provider/org
+  const { data: existing } = await supabase
+    .from('integrations')
+    .select('id')
+    .eq('organization_id', orgId)
+    .eq('provider', provider as Provider)
+    .limit(1)
+    .maybeSingle()
+
+  const encryptedKey = await encrypt(apiKey)
+  const payload = {
+    organization_id: orgId,
+    provider: provider as Provider,
+    name: provider,
+    encrypted_api_key: encryptedKey,
+    key_hint: maskApiKey(apiKey),
+    location_id: locationId,
+    config,
+  }
+
+  if (existing?.id) {
+    const { error } = await supabase
+      .from('integrations')
+      .update({
+        encrypted_api_key: encryptedKey,
+        key_hint: maskApiKey(apiKey),
+        location_id: locationId,
+        config,
+      })
+      .eq('id', existing.id)
+    if (error) return { ok: false, error: error.message }
+  } else {
+    const { error } = await supabase.from('integrations').insert(payload)
+    if (error) return { ok: false, error: error.message }
+  }
+
+  revalidatePath('/integrations')
+  return { ok: true }
+}
+
+/**
+ * Flip the is_active flag for an integration. Idempotent.
+ */
+export async function toggleIntegrationActive(
+  provider: string,
+  active: boolean,
+): Promise<{ ok: boolean; error?: string }> {
+  const user = await getUser()
+  if (!user) return { ok: false, error: 'Not authenticated.' }
+  const supabase = await createClient()
+
+  const { data: orgId } = await supabase.rpc('get_current_org_id')
+  if (!orgId) return { ok: false, error: 'No active organization.' }
+
+  const { error } = await supabase
+    .from('integrations')
+    .update({ is_active: active })
+    .eq('organization_id', orgId)
+    .eq('provider', provider as Provider)
+
+  if (error) return { ok: false, error: error.message }
+  revalidatePath('/integrations')
+  return { ok: true }
+}
+
+/**
+ * UI-friendly fetch used by the new integration list. Same shape as
+ * getIntegrations(), exposed under the SEED-042 naming so the page reads
+ * intentionally.
+ */
+export async function getIntegrationsForDisplay(): Promise<IntegrationForDisplay[]> {
+  return getIntegrations()
+}
+
 export async function deleteIntegration(id: string): Promise<{ error?: string } | void> {
   const user = await getUser()
   if (!user) return { error: 'Not authenticated.' }
