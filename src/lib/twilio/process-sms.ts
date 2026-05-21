@@ -1,6 +1,6 @@
 // src/lib/twilio/process-sms.ts
 // Processes a validated inbound Twilio SMS webhook (SEED-005).
-// Called from /api/twilio/sms via after() — runs after 200 TwiML is returned.
+// Called from /api/twilio/sms via after() | runs after 200 TwiML is returned.
 //
 // Pipeline:
 //   1. Upsert conversation by (org_id, channel='sms', visitor_phone=From).
@@ -10,7 +10,7 @@
 //   4. Persist the assistant reply as a conversation_message.
 //   5. Send the reply via the existing send_sms executor (Twilio Messages REST API).
 //
-// All errors are caught locally — this function never throws (after() context).
+// All errors are caught locally | this function never throws (after() context).
 
 import { createServiceRoleClient } from '@/lib/supabase/admin'
 import { runAgent } from '@/lib/agent-runtime/run-agent'
@@ -102,7 +102,7 @@ export async function processTwilioSms(
     .maybeSingle()
 
   if (dupCheck) {
-    console.log('[twilio/sms] Duplicate MessageSid — skipping message insert:', messageSid)
+    console.log('[twilio/sms] Duplicate MessageSid | skipping message insert:', messageSid)
     return
   }
 
@@ -114,7 +114,7 @@ export async function processTwilioSms(
     metadata: { message_sid: messageSid, from_number: fromNumber },
   })
 
-  // --- 3. Bot status gate — skip AI if a human has taken over -----------
+  // --- 3. Bot status gate | skip AI if a human has taken over -----------
   const botStatus = existing?.bot_status ?? 'active'
   if (botStatus !== 'active') {
     console.log('[twilio/sms] Bot paused for conversation:', conversationId)
@@ -130,7 +130,7 @@ export async function processTwilioSms(
     .maybeSingle()
 
   if (!defaultRow?.agent_id) {
-    // No agent configured for SMS on this org — inbound logged, no auto-reply.
+    // No agent configured for SMS on this org | inbound logged, no auto-reply.
     return
   }
 
@@ -167,7 +167,7 @@ export async function processTwilioSms(
       )
     } catch (err) {
       console.error('[twilio/sms] sendSms error:', err)
-      // Continue trying remaining chunks — don't bail on a partial failure.
+      // Continue trying remaining chunks | don't bail on a partial failure.
       continue
     }
 

@@ -1,4 +1,4 @@
-// POST /api/chat/conversations/[id]/status — update status to 'open' | 'closed'
+// POST /api/chat/conversations/[id]/status | update status to 'open' | 'closed'
 import { createClient, getUser } from '@/lib/supabase/server'
 import { z } from 'zod'
 

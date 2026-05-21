@@ -307,7 +307,7 @@ export function ContactInfoPanel({
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-[12px] capitalize text-text-primary">
-                        {c.direction} · {c.status ?? '—'}
+                        {c.direction} · {c.status ?? '|'}
                       </div>
                       <div className="text-[10.5px] text-text-tertiary">
                         {relativeTime(c.started_at)}
@@ -341,7 +341,7 @@ export function ContactInfoPanel({
                     <ChannelBadge channel={(c.channel as Channel) ?? 'unknown'} showLabel={false} size="sm" />
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-[12px] text-text-primary">
-                        {c.last_message || '—'}
+                        {c.last_message || '|'}
                       </div>
                       <div className="text-[10.5px] text-text-tertiary">
                         {relativeTime(c.last_message_at)} · {c.status}

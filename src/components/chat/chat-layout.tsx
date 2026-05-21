@@ -111,7 +111,7 @@ export function ChatLayout({ currentOrgId, currentUserId, agentMap }: ChatLayout
     channel: null,
   })
 
-  // Stable filter setter — the list calls this from an effect, so we want to
+  // Stable filter setter | the list calls this from an effect, so we want to
   // ignore identical updates to prevent refetch loops.
   const handleFilterChange = useCallback((next: ConversationFilterChange) => {
     setFilters((prev) => {
@@ -335,7 +335,7 @@ export function ChatLayout({ currentOrgId, currentUserId, agentMap }: ChatLayout
           event: 'typing',
           payload: { user_id: currentUserId, conversation_id: selectedId, ts: Date.now() },
         })
-        // Best-effort cleanup — the receiver auto-times out after 3s.
+        // Best-effort cleanup | the receiver auto-times out after 3s.
         setTimeout(() => {
           supabase.removeChannel(channel)
         }, 500)
@@ -420,7 +420,7 @@ export function ChatLayout({ currentOrgId, currentUserId, agentMap }: ChatLayout
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       })
-      // Realtime UPDATE will reconcile the list — no manual refetch needed.
+      // Realtime UPDATE will reconcile the list | no manual refetch needed.
     } catch {
       // ignore
     }
@@ -470,7 +470,7 @@ export function ChatLayout({ currentOrgId, currentUserId, agentMap }: ChatLayout
         upsertConversation({ ...current, pinned: !pinnedNext })
       }
     } else {
-      // Pin/unpin flips a row between the pinned and unpinned buckets — the
+      // Pin/unpin flips a row between the pinned and unpinned buckets | the
       // optimistic upsert removes it from the source bucket, but only a
       // refetch can put it back in the destination bucket with proper sort.
       refreshConversations()
@@ -530,7 +530,7 @@ export function ChatLayout({ currentOrgId, currentUserId, agentMap }: ChatLayout
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-bg-primary">
       <PushPermissionBanner />
-      {/* Desktop — 3-column grid */}
+      {/* Desktop | 3-column grid */}
       <div className="hidden md:flex h-full min-h-0 w-full overflow-hidden">
         <div className="h-full min-h-0 shrink-0 overflow-hidden" style={{ width: inboxWidth }}>
           <ConversationList
@@ -597,7 +597,7 @@ export function ChatLayout({ currentOrgId, currentUserId, agentMap }: ChatLayout
         </div>
         {infoOpen && (
           // Below lg (1024px) we hide the info panel to keep the chat column
-          // readable — user can still toggle it via the chat header button
+          // readable | user can still toggle it via the chat header button
           // which re-renders when viewport widens enough.
           <div className="hidden lg:block h-full min-h-0 shrink-0 overflow-hidden lg:w-[300px] xl:w-[340px]">
             <ContactInfoPanel
@@ -612,7 +612,7 @@ export function ChatLayout({ currentOrgId, currentUserId, agentMap }: ChatLayout
         )}
       </div>
 
-      {/* Mobile — single-column with drawer-style navigation */}
+      {/* Mobile | single-column with drawer-style navigation */}
       <div className="md:hidden flex h-full min-h-0 w-full overflow-hidden">
         {mobileView === 'list' && (
           <div className="h-full min-h-0 w-full">

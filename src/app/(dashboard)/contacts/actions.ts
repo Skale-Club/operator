@@ -5,14 +5,14 @@
  *
  * Patterns mirror src/app/(dashboard)/agents/actions.ts:
  *   - Cached getUser() for auth gating
- *   - RLS-scoped createClient() — never filter by org_id manually
+ *   - RLS-scoped createClient() | never filter by org_id manually
  *   - Service-role client only for cross-table linking jobs that must outrun
  *     get_current_org_id()
  *
  * Naming convention: getContacts/getContact use plain reads; create/update/delete
  * write through the user's client so RLS denies cross-org mutations; bulk
  * imports use the user client too (RLS auto-injects org_id via default-ish
- * checks — we still pass org_id explicitly because the column is NOT NULL).
+ * checks | we still pass org_id explicitly because the column is NOT NULL).
  */
 
 import { revalidatePath } from 'next/cache'
@@ -106,7 +106,7 @@ export async function getContacts(
       if (contactIds.length > 0) {
         query = query.in('id', contactIds)
       } else {
-        // No contacts for this tag — return empty
+        // No contacts for this tag | return empty
         return { rows: [], total: 0, page: f.page, pageSize: f.pageSize, allTags }
       }
     } else {
@@ -242,7 +242,7 @@ export async function getContact(id: string): Promise<ContactDetail | null> {
 /**
  * Creates a contact, dedup-by-phone when a phone is provided. If a contact in
  * the same org already has the same normalised phone, we return its id without
- * inserting — the form treats that as a friendly "linked existing" outcome.
+ * inserting | the form treats that as a friendly "linked existing" outcome.
  */
 export async function createContact(
   input: ContactFormInput,
@@ -421,7 +421,7 @@ export async function previewCsv(
   }
   const parsed = parseCsv(csvText)
   if (!parsed.headers.length) {
-    return { error: 'No columns detected — is this a valid CSV?' }
+    return { error: 'No columns detected | is this a valid CSV?' }
   }
   return {
     preview: {
@@ -449,7 +449,7 @@ export async function importContactsCsv(
   if (!csvText) return { error: 'No CSV provided.' }
 
   const parsed = parseCsv(csvText)
-  if (!parsed.headers.length) return { error: 'Invalid CSV — no headers.' }
+  if (!parsed.headers.length) return { error: 'Invalid CSV | no headers.' }
 
   // Build index lookup: contact field → header column index
   const fieldToIdx: Partial<Record<ContactField, number>> = {}
@@ -663,7 +663,7 @@ export async function exportContactsCsv(): Promise<{ error?: string; csv?: strin
 
   // Standard headers
   const stdHeaders = ['name', 'phone', 'email', 'company', 'notes', 'source', 'created_at']
-  // Custom field headers — currency expands to two columns
+  // Custom field headers | currency expands to two columns
   const cfHeaders: string[] = []
   for (const def of defs) {
     if (def.type === 'currency') {

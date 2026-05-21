@@ -25,13 +25,13 @@ import { cn } from '@/lib/utils'
 
 interface MessageComposerProps {
   onSendMessage: (content: string) => Promise<void>
-  /** Optional — fired (debounced ~500ms) while the user is typing. */
+  /** Optional | fired (debounced ~500ms) while the user is typing. */
   onTyping?: () => void
   /** Channel hint shown in the footer ("Sending via WhatsApp"). */
   channelLabel?: string | null
   /** When true the composer is disabled and shows a hint. */
   disabled?: boolean
-  /** Optional hint banner (e.g. "Bot is active — pause bot to send manually"). */
+  /** Optional hint banner (e.g. "Bot is active | pause bot to send manually"). */
   disabledHint?: string
   onResumeManual?: () => void
 }

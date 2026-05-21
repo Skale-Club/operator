@@ -92,7 +92,7 @@ export function MessageList({
     return () => viewport.removeEventListener('scroll', onScroll)
   }, [])
 
-  // Auto-scroll when messages array changes — but only if the user is already
+  // Auto-scroll when messages array changes | but only if the user is already
   // at the bottom. Otherwise surface the "new messages" pill.
   useLayoutEffect(() => {
     const grew = messages.length > prevCountRef.current
@@ -200,7 +200,7 @@ export function MessageList({
                   )
                 }
 
-                // Bot/admin/assistant — right-aligned bubble
+                // Bot/admin/assistant | right-aligned bubble
                 return (
                   <div
                     key={message.id}

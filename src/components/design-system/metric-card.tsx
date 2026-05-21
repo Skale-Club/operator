@@ -35,9 +35,9 @@ export interface MetricCardProps {
   trend?: number | null
   /** Optional sparkline data points */
   data?: { value: number }[]
-  /** Optional icon slug — looked up internally because lucide icons are functions and can't cross Server→Client boundary */
+  /** Optional icon slug | looked up internally because lucide icons are functions and can't cross Server→Client boundary */
   icon?: MetricIconName
-  /** Tone hint — affects sparkline color */
+  /** Tone hint | affects sparkline color */
   tone?: 'default' | 'success' | 'warning' | 'danger' | 'info'
   /** Make whole card clickable */
   href?: string
@@ -48,7 +48,7 @@ export interface MetricCardProps {
   index?: number
 }
 
-// Icon registry — string slug → Lucide component. Kept inside the client
+// Icon registry | string slug → Lucide component. Kept inside the client
 // component so server callers can pass a serializable string instead of a
 // function (which would fail Server→Client serialization).
 const ICON_MAP = {
@@ -167,7 +167,7 @@ export function MetricCard({
             )}
           >
             <TrendIcon className="h-3 w-3" />
-            <span>{trend === null || trend === undefined ? '—' : `${Math.abs(trend) > 999 ? '999+' : Math.abs(trend)}%`}</span>
+            <span>{trend === null || trend === undefined ? '|' : `${Math.abs(trend) > 999 ? '999+' : Math.abs(trend)}%`}</span>
           </div>
         )}
       </div>

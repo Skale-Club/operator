@@ -18,13 +18,13 @@ export interface ConversationSummary {
   channelMetadata: Record<string, string>     // JSON from channel_metadata column
   botStatus: string                           // 'active' | 'paused'
   channelAccountName?: string | null          // page_name from meta_channels (null for widget)
-  /** v2.2 — pin to the top of the inbox list. */
+  /** v2.2 | pin to the top of the inbox list. */
   pinned?: boolean
-  /** v2.2 — 'normal' | 'high' | 'urgent'. Drives the colored left-border. */
+  /** v2.2 | 'normal' | 'high' | 'urgent'. Drives the colored left-border. */
   priority?: ConversationPriority
-  /** v2.2 — Optional contact link. Used by the right-side ContactInfoPanel. */
+  /** v2.2 | Optional contact link. Used by the right-side ContactInfoPanel. */
   contactId?: string | null
-  /** v2.2 — User the conversation is assigned to (assigned_user_id). */
+  /** v2.2 | User the conversation is assigned to (assigned_user_id). */
   assignedUserId?: string | null
 }
 

@@ -1,10 +1,10 @@
 'use client'
 
 /**
- * usePaginatedConversations — page-based chat inbox feed (v2.2).
+ * usePaginatedConversations | page-based chat inbox feed (v2.2).
  *
  * Why page-based instead of infinite scroll: appending every page to the DOM
- * makes the inbox scroll bar shrink to a sliver — it's hard to navigate when
+ * makes the inbox scroll bar shrink to a sliver | it's hard to navigate when
  * the user has hundreds of conversations. True pagination keeps the visible
  * list bounded to `pageSize` items (default 30) plus the small pinned set,
  * and exposes Prev / Next / range indicator controls in a sticky footer.
@@ -18,13 +18,13 @@
  *     current page (only takes effect on page 1 to avoid disrupting ordering
  *     on other pages).
  *   - upsert(c): updates a conversation in place if present on the current
- *     page. Out-of-window updates are ignored — the next fetch will catch
+ *     page. Out-of-window updates are ignored | the next fetch will catch
  *     them.
  *   - remove(id): drops a conversation from the current page.
  *   - refresh(): hard refetch the current page (used after mutations that
  *     might change ordering or counts).
  *
- * The hook owns its own AbortController so rapid filter changes don't race —
+ * The hook owns its own AbortController so rapid filter changes don't race |
  * only the latest fetch's result is committed.
  */
 
@@ -210,7 +210,7 @@ export function usePaginatedConversations(
       })
       return
     }
-    // Only mutate the visible page on page 1 — otherwise ordering would drift.
+    // Only mutate the visible page on page 1 | otherwise ordering would drift.
     if (pageRef.current !== 1) return
     setConversations((prev) => {
       if (prev.some((x) => x.id === c.id)) return prev
@@ -228,7 +228,7 @@ export function usePaginatedConversations(
       const idx = prev.findIndex((x) => x.id === c.id)
       if (idx < 0) return prev
       if (!c.pinned) {
-        // Got unpinned — drop from pinned bucket; the unpinned bucket
+        // Got unpinned | drop from pinned bucket; the unpinned bucket
         // refresh below (or the next fetch) will surface it.
         return prev.filter((x) => x.id !== c.id)
       }
@@ -245,7 +245,7 @@ export function usePaginatedConversations(
         return prev
       }
       if (c.pinned) {
-        // It just got pinned — remove from this bucket. The next refresh
+        // It just got pinned | remove from this bucket. The next refresh
         // will surface it in the pinned bucket.
         return prev.filter((x) => x.id !== c.id)
       }

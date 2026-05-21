@@ -100,7 +100,7 @@ export async function emitCalendarEvent(
   )
 
   // Actually invoking the workflow runtime is intentionally deferred to a
-  // queue worker (or inline for tests) — SEED-027 Phase C ships the worker.
+  // queue worker (or inline for tests) | SEED-027 Phase C ships the worker.
   // Phase B contract: the dispatch row exists and the workflow_ids are
   // captured. Run engine can re-walk recent rows even if it was offline.
 

@@ -37,7 +37,7 @@ interface ChatAreaProps {
   isLoading: boolean
   /** Typing indicator from the other party (Realtime broadcast). */
   isTyping?: boolean
-  /** "Agent thinking" — set while runAgent is processing. */
+  /** "Agent thinking" | set while runAgent is processing. */
   isAgentThinking?: boolean
   onSendMessage: (content: string) => Promise<void>
   onTyping?: () => void
@@ -116,7 +116,7 @@ export function ChatArea({
         callPhone={conversation.visitorPhone ?? null}
       />
 
-      {/* Internal/debug toggle — small, optional, off by default */}
+      {/* Internal/debug toggle | small, optional, off by default */}
       <div className="flex shrink-0 items-center justify-end gap-2 border-b border-border-subtle bg-bg-secondary/30 px-4 py-1.5">
         <label className="flex items-center gap-1.5 text-[11px] text-text-tertiary cursor-pointer">
           <input
@@ -144,7 +144,7 @@ export function ChatArea({
         disabled={isBotActive}
         disabledHint={
           isBotActive
-            ? 'Bot is active — pause it to send messages manually.'
+            ? 'Bot is active | pause it to send messages manually.'
             : undefined
         }
         onResumeManual={

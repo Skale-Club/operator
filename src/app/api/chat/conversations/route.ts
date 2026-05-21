@@ -4,11 +4,11 @@
 // of every page by the UI. Auth-gated: returns 401 if no user session.
 //
 // Query params:
-//   page      — 1-indexed page number (default 1)
-//   pageSize  — items per page (default 30, max 100)
-//   status    — 'open' | 'closed' (optional filter)
-//   assigned  — 'me' (filter to conversations assigned to the current user)
-//   channel   — 'whatsapp' | 'instagram' | 'messenger' | 'sms' | 'voice' | 'widget' | 'web'
+//   page      | 1-indexed page number (default 1)
+//   pageSize  | items per page (default 30, max 100)
+//   status    | 'open' | 'closed' (optional filter)
+//   assigned  | 'me' (filter to conversations assigned to the current user)
+//   channel   | 'whatsapp' | 'instagram' | 'messenger' | 'sms' | 'voice' | 'widget' | 'web'
 //
 // Response shape:
 //   {

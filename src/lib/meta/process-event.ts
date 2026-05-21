@@ -1,8 +1,8 @@
 // src/lib/meta/process-event.ts
-// Pure async function — no HTTP layer. Processes a validated Meta webhook payload.
+// Pure async function | no HTTP layer. Processes a validated Meta webhook payload.
 // Called from src/app/api/meta/webhook/route.ts via after().
 //
-// v2.0 agent path (CHAN-05 — Phase 37): when meta_channels.agent_id is non-null,
+// v2.0 agent path (CHAN-05 | Phase 37): when meta_channels.agent_id is non-null,
 //   invokes runAgent({ stream: false }) and replies via sendMetaMessage.
 // v1.x legacy path: uses automation_id / tool_config_id → executeAction, unchanged.
 
@@ -213,7 +213,7 @@ export async function processMetaEvent(payload: MetaWebhookPayload): Promise<voi
 }
 
 // ---------------------------------------------------------------------------
-// Agent reply dispatch (v2.0 — CHAN-05)
+// Agent reply dispatch (v2.0 | CHAN-05)
 // ---------------------------------------------------------------------------
 
 interface AgentReplyInput {

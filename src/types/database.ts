@@ -1,5 +1,5 @@
 // Database type definitions for Opps
-// Auto-generated shape — replace with Supabase CLI output after applying migrations:
+// Auto-generated shape | replace with Supabase CLI output after applying migrations:
 //   npx supabase gen types typescript --local > src/types/database.ts
 //
 // These types match the schema defined in supabase/migrations/001_foundation.sql
@@ -22,12 +22,12 @@ export type CampaignContactStatus = 'pending' | 'calling' | 'completed' | 'faile
 export type ConversationChannel = 'widget' | 'messenger' | 'instagram'
 export type MetaChannelType = 'messenger' | 'instagram'
 
-// v2.0 (Phase 33) — agent runtime enums
+// v2.0 (Phase 33) | agent runtime enums
 export type AgentChannel = 'web_widget' | 'whatsapp' | 'messenger' | 'instagram' | 'manychat' | 'telegram' | 'sms'
 export type AgentInvocationStatus = 'success' | 'error' | 'aborted' | 'skipped' | 'denied' | 'running'
 export type AgentInvocationMode = 'production' | 'playground'
 
-// v2.1 — contacts (CRM) source enum
+// v2.1 | contacts (CRM) source enum
 export type ContactSource = 'manual' | 'whatsapp' | 'sms' | 'instagram' | 'csv_import' | 'ghl_sync'
 
 // v2.4 � accounts (CRM Companies) source enum (SEED-016)
@@ -73,7 +73,7 @@ export type ContactImportDedupStrategy =
   | 'update_existing'
   | 'create_duplicate'
 
-// v2.1 — call system (SEED-007)
+// v2.1 | call system (SEED-007)
 export type CallRoutingMode = 'phone_forward' | 'sip' | 'browser'
 export type CallDirection = 'inbound' | 'outbound'
 
@@ -528,7 +528,7 @@ export interface Database {
           response_payload: Json
           error_detail: string | null
           created_at: string
-          // v2.0 (Phase 33, migration 037 — OBS-02 additive): NULL = legacy v1.x action
+          // v2.0 (Phase 33, migration 037 | OBS-02 additive): NULL = legacy v1.x action
           agent_invocation_id: string | null
           trace_id: string | null
         }
@@ -566,7 +566,7 @@ export interface Database {
         ]
       }
       // ----------------------------------------------------------------------
-      // v2.0 (Phase 33) — agent runtime tables (migrations 034-038)
+      // v2.0 (Phase 33) | agent runtime tables (migrations 034-038)
       // ----------------------------------------------------------------------
       agents: {
         Row: {
@@ -3083,7 +3083,7 @@ export interface Database {
           config: Json
           created_at: string
           updated_at: string
-          // v2.0 (Phase 33, migration 039 — CHAN-06): NULL = legacy tool_config_id dispatch
+          // v2.0 (Phase 33, migration 039 | CHAN-06): NULL = legacy tool_config_id dispatch
           agent_id: string | null
         }
         Insert: {
@@ -3154,7 +3154,7 @@ export interface Database {
         }
         Insert: {
           id?: string
-          org_id?: string       // set by RLS via get_current_org_id() — do not pass manually
+          org_id?: string       // set by RLS via get_current_org_id() | do not pass manually
           channel_name: string
           encrypted_api_key: string
           key_hint?: string | null
@@ -3195,12 +3195,12 @@ export interface Database {
           priority: number
           created_at: string
           updated_at: string
-          // v2.0 (Phase 33, migration 039 — CHAN-06): NULL = legacy tool_config_id dispatch
+          // v2.0 (Phase 33, migration 039 | CHAN-06): NULL = legacy tool_config_id dispatch
           agent_id: string | null
         }
         Insert: {
           id?: string
-          org_id?: string       // set by RLS via get_current_org_id() — do not pass manually
+          org_id?: string       // set by RLS via get_current_org_id() | do not pass manually
           channel_id: string
           event_type: string
           condition?: Json
@@ -3269,7 +3269,7 @@ export interface Database {
           created_at?: string
         }
         Update: {
-          // Service-role dispatcher only — authenticated client has no UPDATE policy.
+          // Service-role dispatcher only | authenticated client has no UPDATE policy.
           // Append-only contract enforced at the SQL layer; this widening exists so
           // src/lib/manychat/dispatch-event.ts can flip status + link FKs after match.
           status?: 'matched' | 'unmatched' | 'error'
@@ -3946,7 +3946,7 @@ export interface Database {
       user_role: UserRole
       action_type: 'create_contact' | 'get_availability' | 'create_appointment' | 'send_sms' | 'knowledge_base' | 'custom_webhook' | 'manychat_set_field' | 'manychat_add_tag' | 'manychat_trigger_flow' | 'manychat_send_message' | 'google_contacts_create' | 'google_contacts_update' | 'google_contacts_find' | 'google_contacts_delete' | 'send_whatsapp_message' | 'send_whatsapp_mention_all'
       integration_provider: 'gohighlevel' | 'twilio' | 'calcom' | 'custom_webhook' | 'openai' | 'anthropic' | 'openrouter' | 'vapi' | 'manychat' | 'google_contacts' | 'google_calendar'
-      // v2.0 (Phase 33) — agent runtime enums (migrations 034, 037)
+      // v2.0 (Phase 33) | agent runtime enums (migrations 034, 037)
       agent_channel: AgentChannel
       agent_invocation_status: AgentInvocationStatus
       agent_invocation_mode: AgentInvocationMode

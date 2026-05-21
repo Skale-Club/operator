@@ -1,4 +1,4 @@
-// Admin chat — Inbox tab + Playground tab
+// Admin chat | Inbox tab + Playground tab
 // Tab is URL-driven: ?tab=inbox (default) | ?tab=playground
 // Auth: handled by (dashboard)/layout.tsx
 import Link from 'next/link'
@@ -96,7 +96,7 @@ async function PlaygroundTab() {
   if (!config) {
     return (
       <div className="flex h-full items-center justify-center text-[13px] text-text-tertiary">
-        Could not load playground — widget token not found.
+        Could not load playground | widget token not found.
       </div>
     )
   }

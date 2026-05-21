@@ -1,6 +1,6 @@
 // src/lib/meta/send-message.ts
 // Sole caller of Meta Graph API Send endpoint.
-// Import META_GRAPH_VERSION — never hardcode 'v21.0'.
+// Import META_GRAPH_VERSION | never hardcode 'v21.0'.
 import { META_GRAPH_VERSION } from '@/lib/meta/oauth'
 
 type SendSuccess = { messageId: string }

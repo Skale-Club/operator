@@ -119,7 +119,7 @@ export default async function IntegrationsPage() {
         eyebrow="Connections"
         eyebrowIcon={Plug}
         title="Integrations"
-        description="Wire Xphere into the rest of your stack — messaging, voice, CRM, scheduling, and AI providers."
+        description="Wire Xphere into the rest of your stack | messaging, voice, CRM, scheduling, and AI providers."
       />
 
       {/* Dedicated channel/integration cards */}

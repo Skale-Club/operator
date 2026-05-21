@@ -93,7 +93,7 @@ interface ChatHeaderProps {
   /** Right contact-info panel visible? */
   infoPanelOpen: boolean
   onToggleInfoPanel: () => void
-  /** Phone for the "Call" quick-action — null hides the button. */
+  /** Phone for the "Call" quick-action | null hides the button. */
   callPhone?: string | null
 }
 
@@ -128,7 +128,7 @@ export function ChatHeader({
 
   return (
     <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border-subtle bg-bg-primary/95 px-4 py-3 backdrop-blur">
-      {/* Left cluster — back + avatar + identity */}
+      {/* Left cluster | back + avatar + identity */}
       <div className="flex min-w-0 items-center gap-3">
         <Button
           variant="ghost"
@@ -144,7 +144,7 @@ export function ChatHeader({
               {initial}
             </AvatarFallback>
           </Avatar>
-          {/* Status dot — defaults to success when conversation is open + bot active */}
+          {/* Status dot | defaults to success when conversation is open + bot active */}
           <span
             className={cn(
               'absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full ring-2 ring-bg-primary',
@@ -173,7 +173,7 @@ export function ChatHeader({
         </div>
       </div>
 
-      {/* Right cluster — actions */}
+      {/* Right cluster | actions */}
       <div className="flex shrink-0 items-center gap-1">
         <TooltipProvider delayDuration={200}>
           {callPhone && (

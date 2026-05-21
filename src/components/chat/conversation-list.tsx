@@ -15,10 +15,10 @@
  *
  * Pagination model:
  *   - True page-based pagination (NOT infinite scroll). 30 conversations
- *     per page max — DOM stays bounded, scroll bar stays usable.
+ *     per page max | DOM stays bounded, scroll bar stays usable.
  *   - Filter pill changes propagate up to the parent via `onFilterChange`,
  *     which drives `usePaginatedConversations` to reset to page 1 and refetch.
- *   - Search is client-side only — it filters within the current page.
+ *   - Search is client-side only | it filters within the current page.
  *   - Page-change handler scrolls the list viewport back to the top.
  */
 
@@ -104,7 +104,7 @@ interface ConversationListProps {
   currentUserId: string | null
   /** True during the very first load or a filter-change re-load. */
   isLoading: boolean
-  /** True while changing pages — keeps the previous page visible briefly. */
+  /** True while changing pages | keeps the previous page visible briefly. */
   isPageLoading: boolean
   loadError: string | null
 
@@ -156,7 +156,7 @@ function initialOf(name: string): string {
   return name.replace(/[^a-zA-Z0-9]/g, '').charAt(0).toUpperCase() || '?'
 }
 
-// All channels are always available as pills — we don't auto-derive from
+// All channels are always available as pills | we don't auto-derive from
 // loaded data anymore because pagination only gives us a window.
 const ALL_CHANNEL_PILLS: Channel[] = ['whatsapp', 'instagram', 'messenger', 'sms', 'voice', 'web']
 
@@ -189,7 +189,7 @@ export function ConversationList({
   const searchRef = useRef<HTMLInputElement>(null)
   const scrollViewportRef = useRef<HTMLDivElement | null>(null)
 
-  // Debounce search (300ms) — search is client-side over the current page.
+  // Debounce search (300ms) | search is client-side over the current page.
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300)
     return () => clearTimeout(t)
@@ -245,7 +245,7 @@ export function ConversationList({
     }))
   }, [])
 
-  // Search is local-only — filters the current page.
+  // Search is local-only | filters the current page.
   const filteredUnpinned = useMemo(() => {
     if (!debouncedSearch.trim()) return conversations
     const q = debouncedSearch.toLowerCase()
@@ -327,7 +327,7 @@ export function ConversationList({
           })}
         </div>
 
-        {/* Channel filter row — icon-only, fits all channels on one row */}
+        {/* Channel filter row | icon-only, fits all channels on one row */}
         <div className="mt-2 flex items-center gap-1">
           <span className="text-[10px] uppercase tracking-wider text-text-tertiary mr-1.5">
             Channel
@@ -364,7 +364,7 @@ export function ConversationList({
         </div>
       </div>
 
-      {/* List — min-h-0 lets the flex child shrink below content size so
+      {/* List | min-h-0 lets the flex child shrink below content size so
           the internal ScrollArea actually scrolls instead of overflowing. */}
       <ScrollArea className="min-h-0 flex-1" viewportRef={scrollViewportRef}>
         <div className="p-2 space-y-1">

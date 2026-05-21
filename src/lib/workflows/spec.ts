@@ -60,7 +60,7 @@ export const TRIGGERS: TriggerSpec[] = [
     },
   },
 
-  // ─── Calendar events (SEED-027 — only available once that seed ships;
+  // ─── Calendar events (SEED-027 | only available once that seed ships;
   // declared here so the spec is the unified registry).
   {
     type: 'event:meeting.scheduled',
@@ -122,7 +122,7 @@ export interface NodeSpec {
 }
 
 export const NODES: NodeSpec[] = [
-  // ─── Action — messaging
+  // ─── Action | messaging
   {
     type: 'send_sms',
     kind: 'action',
@@ -169,7 +169,7 @@ export const NODES: NodeSpec[] = [
     },
   },
 
-  // ─── Action — CRM
+  // ─── Action | CRM
   {
     type: 'create_contact',
     kind: 'action',
@@ -192,7 +192,7 @@ export const NODES: NodeSpec[] = [
     integration_required: ['google_contacts'],
   },
 
-  // ─── Action — knowledge
+  // ─── Action | knowledge
   {
     type: 'knowledge_base',
     kind: 'action',
@@ -204,7 +204,7 @@ export const NODES: NodeSpec[] = [
     },
   },
 
-  // ─── Action — webhook escape hatch
+  // ─── Action | webhook escape hatch
   {
     type: 'custom_webhook',
     kind: 'action',

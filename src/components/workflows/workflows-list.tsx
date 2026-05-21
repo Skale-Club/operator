@@ -1,4 +1,4 @@
-// SEED-025 Phase E: unified workflows list. Replaces the tabs view —
+// SEED-025 Phase E: unified workflows list. Replaces the tabs view |
 // every row is a workflow regardless of internal kind and trigger type.
 
 import Link from 'next/link'

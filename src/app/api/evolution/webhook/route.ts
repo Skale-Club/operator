@@ -1,9 +1,9 @@
 // src/app/api/evolution/webhook/route.ts
-// Evolution Go webhook receiver — always returns HTTP 200.
+// Evolution Go webhook receiver | always returns HTTP 200.
 //
 // Evolution Go sends one POST per event (configured at instance create time).
 // The instance name arrives either in the JSON body (`instance` field) or as
-// a path/query parameter — we handle both. Signature validation is optional:
+// a path/query parameter | we handle both. Signature validation is optional:
 // if the instance has a configured webhook_secret, we verify a SHA-256 HMAC
 // over the raw body (Evolution Go header: `x-webhook-signature`).
 //
@@ -52,7 +52,7 @@ export async function POST(request: Request): Promise<Response> {
       return Response.json({ ok: true })
     }
 
-    // Optional signature check — only enforced when instance has a secret configured
+    // Optional signature check | only enforced when instance has a secret configured
     const instance = await resolveEvolutionInstanceByName(payload.instance)
     if (instance?.webhookSecret) {
       const sig =
@@ -60,7 +60,7 @@ export async function POST(request: Request): Promise<Response> {
         request.headers.get('x-hub-signature-256')
       if (!verifySignature(rawBody, sig, instance.webhookSecret)) {
         console.warn('[evolution/webhook] invalid signature for instance:', payload.instance)
-        // Still return 200 — we just won't process. Evolution Go would otherwise retry forever.
+        // Still return 200 | we just won't process. Evolution Go would otherwise retry forever.
         return Response.json({ ok: true })
       }
     }

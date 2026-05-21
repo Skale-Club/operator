@@ -1,5 +1,5 @@
 // SEED-025 Phase E: unified workflows page. No more tabs separating
-// "Action Tools" and "Visual Flows" — everything is a Workflow with a
+// "Action Tools" and "Visual Flows" | everything is a Workflow with a
 // kind/trigger badge, surfaced in one list.
 
 import Link from 'next/link'
