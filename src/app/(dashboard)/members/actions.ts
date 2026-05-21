@@ -133,6 +133,37 @@ export async function revokeInvite(inviteId: string) {
   return { error: null }
 }
 
+// ── updateMemberRole ──────────────────────────────────────────────────────────
+
+export async function updateMemberRole(memberId: string, role: 'admin' | 'member') {
+  const { error, user, orgId } = await requireAdmin()
+  if (error || !user || !orgId) return { error }
+
+  const supabase = await createClient()
+
+  const { data: targetMember } = await supabase
+    .from('org_members')
+    .select('user_id')
+    .eq('id', memberId)
+    .eq('organization_id', orgId)
+    .single()
+
+  if (targetMember?.user_id === user.id) {
+    return { error: 'You cannot change your own role.' }
+  }
+
+  const { error: dbError } = await supabase
+    .from('org_members')
+    .update({ role })
+    .eq('id', memberId)
+    .eq('organization_id', orgId)
+
+  if (dbError) return { error: dbError.message }
+
+  revalidatePath('/members')
+  return { error: null }
+}
+
 // ── removeMember ──────────────────────────────────────────────────────────────
 
 export async function removeMember(memberId: string) {

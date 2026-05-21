@@ -1,7 +1,7 @@
 import { Suspense } from 'react'
 import { UsersRound } from 'lucide-react'
 
-import { listMembers, listInvites, inviteMember, revokeInvite, removeMember } from './actions'
+import { listMembers, listInvites, inviteMember, revokeInvite, removeMember, updateMemberRole } from './actions'
 import { MembersClient } from './members-client'
 import { PageContainer, PageHeader } from '@/components/layout/page-header'
 
@@ -40,6 +40,7 @@ export default async function MembersPage({ searchParams }: Props) {
           inviteMember={inviteMember}
           revokeInvite={revokeInvite}
           removeMember={removeMember}
+          updateMemberRole={updateMemberRole}
         />
       </Suspense>
     </PageContainer>

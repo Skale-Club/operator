@@ -68,6 +68,7 @@ interface MembersClientProps {
   inviteMember: (formData: FormData) => Promise<{ error: string | null | undefined }>
   revokeInvite: (id: string) => Promise<{ error: string | null | undefined }>
   removeMember: (id: string) => Promise<{ error: string | null | undefined }>
+  updateMemberRole: (id: string, role: 'admin' | 'member') => Promise<{ error: string | null | undefined }>
 }
 
 export function MembersClient({
@@ -79,6 +80,7 @@ export function MembersClient({
   inviteMember,
   revokeInvite,
   removeMember,
+  updateMemberRole,
 }: MembersClientProps) {
   const router = useRouter()
   const [inviteOpen, setInviteOpen] = useState(false)
@@ -136,6 +138,18 @@ export function MembersClient({
         return
       }
       toast.success('Member removed')
+      router.refresh()
+    })
+  }
+
+  function handleRoleChange(memberId: string, role: 'admin' | 'member') {
+    startTransition(async () => {
+      const result = await updateMemberRole(memberId, role)
+      if (result.error) {
+        toast.error(result.error)
+        return
+      }
+      toast.success(`Role updated to ${role}`)
       router.refresh()
     })
   }
@@ -259,9 +273,19 @@ export function MembersClient({
                     {member.phone ?? '—'}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={member.role === 'admin' ? 'default' : 'secondary'}>
-                      {member.role}
-                    </Badge>
+                    <Select
+                      value={member.role}
+                      onValueChange={(v) => handleRoleChange(member.id, v as 'admin' | 'member')}
+                      disabled={isPending}
+                    >
+                      <SelectTrigger className="h-7 w-[90px] text-xs border-0 bg-transparent px-2 gap-1 focus:ring-0">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        <SelectItem value="member">Member</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
                     {new Date(member.joined_at).toLocaleDateString()}
