@@ -3,6 +3,7 @@
 import { Plus, Minus, Maximize2, LayoutGrid } from 'lucide-react'
 import { useReactFlow, useStore } from '@xyflow/react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { CANVAS_BASE_ZOOM, toDisplayZoomPercent } from './canvas-zoom'
 
 interface CanvasToolbarProps {
   onAutoLayout: () => void
@@ -11,7 +12,7 @@ interface CanvasToolbarProps {
 export function CanvasToolbar({ onAutoLayout }: CanvasToolbarProps) {
   const zoom = useStore((s) => s.transform[2])
   const { zoomIn, zoomOut, zoomTo, fitView } = useReactFlow()
-  const pct = Math.round(zoom * 100)
+  const pct = toDisplayZoomPercent(zoom)
 
   return (
     <TooltipProvider delayDuration={200}>
@@ -30,7 +31,7 @@ export function CanvasToolbar({ onAutoLayout }: CanvasToolbarProps) {
             <button
               type="button"
               aria-label="Reset zoom to 100%"
-              onClick={() => zoomTo(1, { duration: 200 })}
+              onClick={() => zoomTo(CANVAS_BASE_ZOOM, { duration: 200 })}
               className="h-7 min-w-[42px] rounded-[6px] px-2 text-center font-mono text-[11px] tabular-nums text-text-secondary transition-colors hover:bg-bg-tertiary hover:text-text-primary"
             >
               {pct}%

@@ -2,7 +2,14 @@
 
 import { memo } from 'react'
 import type { NodeProps } from '@xyflow/react'
-import { Zap, Play, GitBranch, Clock, Bot, Square } from 'lucide-react'
+import {
+  ClockCountdown,
+  FlowArrow,
+  Lightning,
+  PlayCircle,
+  Robot,
+  StopCircle,
+} from '@phosphor-icons/react'
 import { BaseNode, type NodeVisualState } from './base-node'
 import type { CanvasNode } from '@/stores/flow-store'
 import { getActionMetadata, getTriggerMetadata } from '@/lib/flows/node-metadata'
@@ -13,7 +20,7 @@ import {
 import { isNodeConfigComplete } from '@/lib/flows/node-config-validity'
 import { formatActionTitle, formatConfigSubtitle } from '@/lib/flows/format'
 
-const ICON_SIZE = 'h-3.5 w-3.5'
+const ICON_SIZE = 'h-[18px] w-[18px]'
 
 // Generic per-node-type fallback colours (used when the integration registry
 // doesn't supply a brand colour).
@@ -27,7 +34,7 @@ function TriggerNodeImpl({ data, selected }: NodeProps<CanvasNode>) {
   if (flow.kind !== 'trigger') {
     return (
       <BaseNode
-        icon={<Zap className={ICON_SIZE} />}
+        icon={<Lightning className={ICON_SIZE} weight="fill" />}
         title={data.label || 'Trigger'}
         color={FALLBACK_TRIGGER_COLOR}
         selected={selected}
@@ -52,7 +59,7 @@ function TriggerNodeImpl({ data, selected }: NodeProps<CanvasNode>) {
 
   return (
     <BaseNode
-      icon={<Zap className={ICON_SIZE} />}
+      icon={<Lightning className={ICON_SIZE} weight="fill" />}
       logo={visual?.logo}
       title={title}
       subtitle={subtitle}
@@ -71,7 +78,7 @@ function ActionNodeImpl({ data, selected }: NodeProps<CanvasNode>) {
   if (flow.kind !== 'action') {
     return (
       <BaseNode
-        icon={<Play className={ICON_SIZE} />}
+        icon={<PlayCircle className={ICON_SIZE} weight="fill" />}
         title={data.label || 'Action'}
         color={FALLBACK_ACTION_COLOR}
         selected={selected}
@@ -103,7 +110,7 @@ function ActionNodeImpl({ data, selected }: NodeProps<CanvasNode>) {
 
   return (
     <BaseNode
-      icon={<Play className={ICON_SIZE} />}
+      icon={<PlayCircle className={ICON_SIZE} weight="fill" />}
       logo={visual?.logo}
       title={title}
       subtitle={subtitle}
@@ -123,7 +130,7 @@ function ConditionNodeImpl({ data, selected }: NodeProps<CanvasNode>) {
     flow.kind === 'condition' && flow.expression ? flow.expression.slice(0, 30) : 'if/else branch'
   return (
     <BaseNode
-      icon={<GitBranch className={ICON_SIZE} />}
+      icon={<FlowArrow className={ICON_SIZE} weight="fill" />}
       title={data.label || 'Condition'}
       subtitle={subtitle}
       color="#8b5cf6"
@@ -136,17 +143,32 @@ export const ConditionNode = memo(ConditionNodeImpl)
 
 // ─── Wait ─────────────────────────────────────────────────────────────────────
 
+function formatWaitDuration(value: string | undefined): string | null {
+  const match = value?.trim().toLowerCase().match(/^(\d+)\s*([mhdw])$/)
+  if (!match) return value?.trim() || null
+
+  const amount = Number(match[1])
+  const unit = match[2]
+  const label =
+    unit === 'm' ? 'minute' :
+    unit === 'h' ? 'hour' :
+    unit === 'd' ? 'day' :
+    'week'
+
+  return `${amount} ${label}${amount === 1 ? '' : 's'}`
+}
+
 function WaitNodeImpl({ data, selected }: NodeProps<CanvasNode>) {
   const flow = data.flowData
   const subtitle =
     flow.kind === 'wait'
       ? flow.mode === 'sleep'
-        ? `Sleep ${flow.duration ?? ''}`
-        : 'Wait for event'
+        ? `Sleep - ${formatWaitDuration(flow.duration) ?? '1 hour'}`
+        : `Wait for event - ${formatWaitDuration(flow.timeout) ?? '7 days'}`
       : ''
   return (
     <BaseNode
-      icon={<Clock className={ICON_SIZE} />}
+      icon={<ClockCountdown className={ICON_SIZE} weight="fill" />}
       title={data.label || 'Wait'}
       subtitle={subtitle}
       color="#06b6d4"
@@ -163,7 +185,7 @@ function AgentNodeImpl({ data, selected }: NodeProps<CanvasNode>) {
   const subtitle = flow.kind === 'agent' ? `Max ${flow.max_steps} steps` : ''
   return (
     <BaseNode
-      icon={<Bot className={ICON_SIZE} />}
+      icon={<Robot className={ICON_SIZE} weight="fill" />}
       title={data.label || 'Agent'}
       subtitle={subtitle}
       color="#ec4899"
@@ -178,7 +200,7 @@ export const AgentNode = memo(AgentNodeImpl)
 function EndNodeImpl({ data, selected }: NodeProps<CanvasNode>) {
   return (
     <BaseNode
-      icon={<Square className={ICON_SIZE} />}
+      icon={<StopCircle className={ICON_SIZE} weight="fill" />}
       title={data.label || 'End'}
       color="#64748b"
       selected={selected}

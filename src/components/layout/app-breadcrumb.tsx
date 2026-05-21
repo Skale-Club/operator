@@ -23,7 +23,10 @@ function toTitleCase(str: string) {
 
 export function AppBreadcrumb() {
   const pathname = usePathname()
-  const segments = pathname.split('/').filter(Boolean)
+  const rawSegments = pathname.split('/').filter(Boolean)
+  const segments = rawSegments
+    .map((segment, index) => ({ segment, rawIndex: index }))
+    .filter(({ segment, rawIndex }) => !(rawSegments[0] === 'workflows' && rawSegments[1] === 'flows' && rawIndex === 1))
   const { getSegmentLabel, suffix } = useBreadcrumbOverride()
 
   // Match the top-level path segment to a sidebar nav item so the icon
@@ -47,9 +50,9 @@ export function AppBreadcrumb() {
   return (
     <Breadcrumb>
       <BreadcrumbList>
-        {segments.map((segment, index) => {
+        {segments.map(({ segment, rawIndex }, index) => {
           const isLast = index === segments.length - 1
-          const href = `/${segments.slice(0, index + 1).join('/')}`
+          const href = `/${rawSegments.slice(0, rawIndex + 1).join('/')}`
           const isFirst = index === 0
 
           return (

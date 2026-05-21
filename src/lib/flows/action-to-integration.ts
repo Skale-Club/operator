@@ -27,8 +27,7 @@ export const ACTION_TO_INTEGRATION: Record<string, string> = {
 
   // GoHighLevel CRM
   create_contact: 'gohighlevel',
-  create_task: 'gohighlevel',
-  create_note: 'gohighlevel',
+  // create_task and create_note are platform-native (tasks table) — no brand mapping
   update_pipeline_stage: 'gohighlevel',
 
   // Cal.com scheduling

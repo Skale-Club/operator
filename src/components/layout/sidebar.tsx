@@ -87,7 +87,7 @@ export function Sidebar({ user, isPlatformAdmin, activeOrgId, activeOrgName, bra
         <Link
           href="/dashboard"
           className={cn(
-            'flex items-center gap-2 px-1.5 py-1 rounded-[8px] hover:bg-bg-tertiary motion-fast',
+            'group/logo flex items-center gap-2 px-1.5 py-1 rounded-[8px] motion-fast',
             collapsed && 'justify-center w-full px-0',
           )}
         >
@@ -97,10 +97,10 @@ export function Sidebar({ user, isPlatformAdmin, activeOrgId, activeOrgName, bra
               <img
                 src={logoUrl}
                 alt={brandName ?? APP_NAME}
-                className="h-6 w-6 rounded-[7px] object-cover ring-1 ring-border-subtle"
+                className="h-6 w-6 rounded-[7px] object-cover ring-1 ring-border-subtle transition-shadow duration-200 group-hover/logo:shadow-glow"
               />
             ) : (
-              <div className="h-6 w-6 rounded-[7px] bg-gradient-to-br from-accent via-accent to-accent-hover shadow-glow flex items-center justify-center">
+              <div className="h-6 w-6 rounded-[7px] bg-gradient-to-br from-accent via-accent to-accent-hover flex items-center justify-center transition-shadow duration-200 group-hover/logo:shadow-glow">
                 <span className="text-[11px] font-bold text-white tracking-tighter">
                   {(brandName ?? APP_NAME).charAt(0).toUpperCase()}
                 </span>

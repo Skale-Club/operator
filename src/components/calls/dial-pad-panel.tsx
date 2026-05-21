@@ -243,7 +243,14 @@ export function DialPadPanel({ initialRecordCalls, routingMode }: DialPadPanelPr
   const showResults = trimmedSearch.length >= 3
 
   return (
-    <div className="fixed inset-0 z-50 sm:inset-auto sm:top-16 sm:right-4">
+    <>
+      {/* Desktop backdrop overlay with blur */}
+      <div
+        className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm sm:block hidden animate-dialpad-overlay"
+        onClick={() => setOpen(false)}
+      />
+
+      <div className="fixed inset-0 z-50 sm:inset-auto sm:top-16 sm:right-4">
       <div className="w-full h-full sm:w-[272px] sm:h-auto sm:max-h-[calc(100vh-5rem)] rounded-none sm:rounded-[18px] border-0 sm:border sm:border-border bg-bg-primary shadow-2xl flex flex-col overflow-hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border px-6 sm:px-4 py-4 sm:py-3">
@@ -452,8 +459,9 @@ export function DialPadPanel({ initialRecordCalls, routingMode }: DialPadPanelPr
                 aria-label="Toggle call recording"
               />
             </div>
-          </div>
         </div>
+      </div>
     </div>
-  )
+  </>
+)
 }

@@ -217,8 +217,8 @@ export default async function ToolDetailPage({
           Execution logs
         </h2>
         <LogsFilters
-          toolOptions={[]}
-          showToolFilter={false}
+          workflowOptions={[]}
+          showWorkflowFilter={false}
           basePath={basePath}
           status={status}
           from={from}
@@ -230,7 +230,7 @@ export default async function ToolDetailPage({
           total={total}
           page={page}
           pageCount={pageCount}
-          showToolColumn={false}
+          showWorkflowColumn={false}
           prevHref={prevHref}
           nextHref={nextHref}
         />

@@ -11,11 +11,6 @@ import { useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
-  Workflow as WorkflowIcon,
-  Calendar,
-  Clock,
-  MousePointerClick,
-  Webhook,
   ChevronRight,
   Folder as FolderIcon,
   FolderOpen,
@@ -24,8 +19,16 @@ import {
   Trash2,
   FolderInput,
   Pencil,
-  type LucideIcon,
 } from 'lucide-react'
+import {
+  CalendarBlank,
+  ClockCountdown,
+  CursorClick,
+  FlowArrow,
+  Lightning,
+  WebhooksLogo,
+  type Icon,
+} from '@phosphor-icons/react'
 import { formatDistanceToNow, parseISO } from 'date-fns'
 import { toast } from 'sonner'
 
@@ -110,13 +113,13 @@ interface Props {
 
 const TRIGGER_META: Record<
   WorkflowSummary['trigger_type'],
-  { label: string; Icon: LucideIcon; color: string }
+  { label: string; Icon: Icon; color: string }
 > = {
-  tool_call:   { label: 'Tool call', Icon: MousePointerClick, color: '#6366f1' },
-  event:       { label: 'Event',     Icon: Calendar,          color: '#f59e0b' },
-  schedule:    { label: 'Schedule',  Icon: Clock,             color: '#06b6d4' },
-  manual:      { label: 'Manual',    Icon: MousePointerClick, color: '#64748b' },
-  webhook_url: { label: 'Webhook',   Icon: Webhook,           color: '#f97316' },
+  tool_call:   { label: 'Tool call', Icon: CursorClick,    color: '#6366f1' },
+  event:       { label: 'Event',     Icon: CalendarBlank,  color: '#f59e0b' },
+  schedule:    { label: 'Schedule',  Icon: ClockCountdown, color: '#06b6d4' },
+  manual:      { label: 'Manual',    Icon: Lightning,      color: '#64748b' },
+  webhook_url: { label: 'Webhook',   Icon: WebhooksLogo,   color: '#f97316' },
 }
 
 function triggerLabel(workflow: WorkflowSummary): string {
@@ -154,7 +157,7 @@ export function WorkflowsList({ workflows, folders = [] }: Props) {
     return (
       <Card>
         <CardContent className="p-12 text-center">
-          <WorkflowIcon className="mx-auto h-8 w-8 text-text-tertiary mb-3" />
+          <FlowArrow className="mx-auto h-8 w-8 text-text-tertiary mb-3" weight="fill" />
           <p className="text-sm font-medium text-text-primary mb-1">No workflows yet</p>
           <p className="text-sm text-text-secondary mb-4">
             Build your first workflow visually, or ask Copilot to create one from a single sentence.
@@ -370,7 +373,7 @@ function WorkflowRow({ workflow: w, folders }: RowProps) {
           className="flex h-8 w-8 items-center justify-center rounded-[7px] shrink-0"
           style={{ backgroundColor: color }}
         >
-          <Icon className="h-3.5 w-3.5 text-white" />
+          <Icon className="h-4 w-4 text-white" weight="fill" />
         </div>
       </td>
       <td className="px-4 py-3">
@@ -390,7 +393,7 @@ function WorkflowRow({ workflow: w, folders }: RowProps) {
       </td>
       <td className="px-4 py-3">
         <span className="inline-flex items-center gap-1.5 text-xs text-text-secondary">
-          <Icon className="h-3 w-3" style={{ color }} />
+          <Icon className="h-3.5 w-3.5" weight="fill" style={{ color }} />
           {triggerLabel(w)}
         </span>
       </td>

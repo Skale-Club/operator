@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 export type NodeVisualState = 'default' | 'incomplete' | 'error' | 'disabled'
 
 interface BaseNodeProps {
-  /** Lucide-style icon. Used as a fallback when `logo` is missing or fails to load. */
+  /** Fallback icon used when `logo` is missing or fails to load. */
   icon: React.ReactNode
   /** Optional path to a brand SVG (e.g. `/logos/twilio.svg`). Renders inside
    *  the coloured tile when present; falls back to `icon` on load error so
@@ -64,7 +64,7 @@ function StateBadge({ state }: { state: NodeVisualState }) {
 }
 
 /** Icon-tile renderer that prefers the brand `logo` and falls back to the
- *  lucide `icon` when the SVG path 404s or isn't provided. The fallback is
+ *  fallback `icon` when the SVG path 404s or isn't provided. The fallback is
  *  important: brand SVGs may not be on disk yet (registry seeds them
  *  optimistically) and we never want a missing asset to break the canvas. */
 function NodeIconTile({
@@ -81,7 +81,7 @@ function NodeIconTile({
 
   return (
     <div
-      className="h-7 w-7 rounded flex items-center justify-center shrink-0 text-white overflow-hidden"
+      className="h-9 w-9 rounded-[8px] flex items-center justify-center shrink-0 text-white overflow-hidden"
       style={{ backgroundColor: color }}
     >
       {showLogo ? (
@@ -89,8 +89,8 @@ function NodeIconTile({
         <img
           src={logo}
           alt=""
-          width={18}
-          height={18}
+          width={22}
+          height={22}
           className="object-contain"
           onError={() => setLogoFailed(true)}
         />

@@ -17,8 +17,8 @@ import { nodeTypes } from './nodes'
 import { FlowPalette } from './flow-palette'
 import { NodeConfigPanel } from './node-config-panel'
 import { FlowToolbar } from './flow-toolbar'
-import { AiBuilderChat } from './ai-builder-chat'
 import { CanvasToolbar } from './canvas-toolbar'
+import { CANVAS_BASE_ZOOM } from './canvas-zoom'
 import { EmptyCanvasState, type EmptyCanvasTriggerType } from './empty-canvas-state'
 import { DeletableEdge } from './edges/deletable-edge'
 import type { FlowDefinition, FlowNodeType } from '@/lib/flows/schema'
@@ -61,7 +61,6 @@ const edgeTypes = {
 function CanvasInner({ workflowId, workflowName, isActive, initialDefinition, activeIntegrations }: FlowCanvasProps) {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const [, setRfInstance] = useState<ReactFlowInstance | null>(null)
-  const [aiOpen, setAiOpen] = useState(false)
   const [hoveredEdgeId, setHoveredEdgeId] = useState<string | null>(null)
   const { screenToFlowPosition, fitView, zoomTo } = useReactFlow()
 
@@ -176,7 +175,7 @@ function CanvasInner({ workflowId, workflowName, isActive, initialDefinition, ac
         event_type: triggerType,
         label: 'Trigger',
       })
-      setTimeout(() => zoomTo(1, { duration: 150 }), 50)
+      setTimeout(() => zoomTo(CANVAS_BASE_ZOOM, { duration: 150 }), 50)
     },
     [addNode, screenToFlowPosition, zoomTo],
   )
@@ -216,8 +215,6 @@ function CanvasInner({ workflowId, workflowName, isActive, initialDefinition, ac
           workflowId={workflowId}
           workflowName={workflowName}
           isActive={isActive}
-          onToggleAi={() => setAiOpen((v) => !v)}
-          aiOpen={aiOpen}
         />
         <div ref={wrapperRef} className="flex-1 relative">
           <ReactFlow
@@ -254,7 +251,7 @@ function CanvasInner({ workflowId, workflowName, isActive, initialDefinition, ac
             deleteKeyCode={['Delete', 'Backspace']}
             nodeTypes={nodeTypes}
             edgeTypes={edgeTypes}
-            defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+            defaultViewport={{ x: 0, y: 0, zoom: CANVAS_BASE_ZOOM }}
             proOptions={{ hideAttribution: true }}
             defaultEdgeOptions={{
               type: 'deletable',
@@ -272,7 +269,7 @@ function CanvasInner({ workflowId, workflowName, isActive, initialDefinition, ac
               strokeDasharray: '4 4',
             }}
           >
-            <Background gap={16} size={1} />
+            <Background gap={16} size={0.85} color="rgba(148, 163, 184, 0.34)" />
             <CanvasMiniMap />
             <CanvasToolbar onAutoLayout={handleAutoLayout} />
           </ReactFlow>
@@ -281,7 +278,6 @@ function CanvasInner({ workflowId, workflowName, isActive, initialDefinition, ac
       </div>
 
       <NodeConfigPanel activeIntegrations={activeIntegrations} />
-      <AiBuilderChat workflowId={workflowId} open={aiOpen} onClose={() => setAiOpen(false)} />
     </div>
   )
 }
@@ -296,7 +292,7 @@ function CanvasMiniMap() {
       nodeColor={(node) => NODE_TYPE_COLORS[node.type ?? 'action'] ?? '#64748b'}
       nodeBorderRadius={6}
       maskColor="rgba(8, 9, 10, 0.7)"
-      className="nodrag nopan nowheel !m-0 !rounded-[10px] !border !border-border-subtle !bg-bg-secondary !shadow-lg"
+      className="nodrag nopan nowheel !m-0 !rounded-[10px] !border-0 !bg-bg-secondary/80 !shadow-lg"
       style={{ bottom: 24, left: 24, width: MINIMAP_WIDTH, height: MINIMAP_HEIGHT }}
     />
   )

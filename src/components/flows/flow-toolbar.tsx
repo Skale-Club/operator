@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
-import { ArrowLeft, Save, CheckCircle2, AlertCircle, Loader2, Play, Sparkles, History, Pencil } from 'lucide-react'
+import { ArrowLeft, Save, CheckCircle2, AlertCircle, Loader2, Play, History, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { WorkflowToggle } from '@/components/workflows/workflow-toggle'
 import { useFlowStore } from '@/stores/flow-store'
@@ -21,11 +21,9 @@ interface FlowToolbarProps {
   workflowId: string
   workflowName: string
   isActive: boolean
-  onToggleAi?: () => void
-  aiOpen?: boolean
 }
 
-export function FlowToolbar({ workflowId, workflowName, isActive, onToggleAi, aiOpen }: FlowToolbarProps) {
+export function FlowToolbar({ workflowId, workflowName, isActive }: FlowToolbarProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [isRunning, startRun] = useTransition()
@@ -191,17 +189,6 @@ export function FlowToolbar({ workflowId, workflowName, isActive, onToggleAi, ai
             <span className="hidden md:inline">Runs</span>
           </Link>
         </Button>
-        {onToggleAi && (
-          <Button
-            size="sm"
-            variant={aiOpen ? 'secondary' : 'outline'}
-            onClick={onToggleAi}
-            className="gap-1.5 px-2"
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            <span className="hidden md:inline">AI</span>
-          </Button>
-        )}
         <Button
           size="sm"
           variant="outline"
