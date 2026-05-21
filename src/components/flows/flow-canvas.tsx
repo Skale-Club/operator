@@ -8,6 +8,7 @@ import {
   Controls,
   MiniMap,
   useReactFlow,
+  useStore,
   type ReactFlowInstance,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
@@ -128,8 +129,9 @@ function CanvasInner({ workflowId, workflowName, isActive, initialDefinition, ac
             <Controls
               className="!bg-bg-secondary !border !border-border-subtle !rounded-[10px] !shadow-lg overflow-hidden [&>button]:!bg-transparent [&>button]:!border-0 [&>button]:!border-b [&>button]:!border-border-subtle [&>button:last-child]:!border-b-0 [&>button]:!text-text-secondary [&>button:hover]:!text-text-primary [&>button:hover]:!bg-bg-tertiary [&>button>svg]:!fill-current"
               showInteractive={false}
-              style={{ bottom: 32, left: 16 }}
+              style={{ bottom: 80, left: 16 }}
             />
+            <ZoomIndicator />
             <MiniMap
               nodeStrokeWidth={3}
               pannable
@@ -138,7 +140,7 @@ function CanvasInner({ workflowId, workflowName, isActive, initialDefinition, ac
               nodeBorderRadius={6}
               maskColor="rgba(8, 9, 10, 0.7)"
               className="!bg-bg-secondary !border !border-border-subtle !rounded-[10px]"
-              style={{ bottom: 32, right: 16 }}
+              style={{ bottom: 80, right: 16 }}
             />
           </ReactFlow>
         </div>
@@ -155,5 +157,26 @@ export function FlowCanvas(props: FlowCanvasProps) {
     <ReactFlowProvider>
       <CanvasInner {...props} />
     </ReactFlowProvider>
+  )
+}
+
+/**
+ * Pinned zoom-percentage chip — sits just above the Controls cluster.
+ * Reads the live viewport.zoom from the React Flow store and re-renders
+ * on every zoom change. Click to reset to 100%.
+ */
+function ZoomIndicator() {
+  const zoom = useStore((s) => s.transform[2])
+  const { zoomTo } = useReactFlow()
+  const pct = Math.round(zoom * 100)
+  return (
+    <button
+      type="button"
+      onClick={() => zoomTo(1, { duration: 200 })}
+      title="Reset zoom to 100%"
+      className="absolute bottom-[148px] left-4 z-10 rounded-[8px] border border-border-subtle bg-bg-secondary px-2 py-1 text-[11px] font-mono tabular-nums text-text-secondary shadow-sm hover:text-text-primary hover:bg-bg-tertiary transition-colors"
+    >
+      {pct}%
+    </button>
   )
 }
